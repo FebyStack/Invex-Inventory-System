@@ -9,3 +9,10 @@ localResources:
     - ../environments/Invex Local.environment.yaml
     - ../environments/Invex-1.environment.yaml
     - ../environments/New Environment-1.environment.yaml
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  environments:
+    ../environments/New Environment-1.environment.yaml: 286b7b53-5176-5326-be60-8ec031776169
+    ../environments/Invex Local.environment.yaml: ba37989a-492d-57a9-809a-8ffa3a642f92

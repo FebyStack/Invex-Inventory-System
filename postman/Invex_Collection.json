@@ -1465,6 +1465,413 @@
           }
         }
       ]
+    },
+    {
+      "name": "Reason Codes",
+      "description": "Manage reason codes for stock adjustments",
+      "item": [
+        {
+          "name": "1. GET All Reason Codes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns data array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. POST Create Reason Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.environment.set('reasonCodeId', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAMPLE_TEST\",\n  \"description\": \"Test reason code\",\n  \"adjustment_type\": \"BOTH\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. DELETE Reason Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes/{{reasonCodeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes",
+                "{{reasonCodeId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Adjustments",
+      "description": "Manual stock corrections with reason codes",
+      "item": [
+        {
+          "name": "1. POST Valid Adjustment (INCREASE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.environment.set('adjustmentId', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 6,\n  \"notes\": \"Found items during recount\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. POST Without Reason Code (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error mentions required fields', () => pm.expect(pm.response.json().message).to.include('required'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. POST Soft-Deleted Reason Code (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error mentions deleted', () => pm.expect(pm.response.json().message).to.include('not found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 9999\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. POST INCREASE with DAMAGED Code (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error mentions type mismatch', () => pm.expect(pm.response.json().message).to.include('only allows'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 1,\n  \"notes\": \"Trying to INCREASE with DAMAGED (DECREASE only)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. GET All Adjustments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. GET Adjustment By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments/{{adjustmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments",
+                "{{adjustmentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "7. GET Product History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns history array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/1/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "1",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "8. DELETE Adjustment (Reverses Stock)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments/{{adjustmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments",
+                "{{adjustmentId}}"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

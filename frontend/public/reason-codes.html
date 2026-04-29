@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reason Codes | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .type-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent-primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .action-btn {
+      padding: 6px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">Ix</div>
+        <span class="logo-text">Invex</span>
+      </div>
+    </div>
+    
+    <nav class="nav-menu">
+      <a href="/dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+        <span class="nav-label">Products</span>
+      </a>
+      <a href="/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span class="nav-label">Orders</span>
+      </a>
+      <a href="/adjustments.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
+        <span class="nav-label">Adjustments</span>
+      </a>
+      <a href="/reason-codes.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>
+        <span class="nav-label">Reason Codes</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <button class="logout-btn">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Reason Codes</h1>
+        <p>Define reasons for manual stock adjustments.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="new-code-btn">+ New Reason Code</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Allows Type</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="codes-table-body">
+          <!-- Data will be loaded here -->
+        </tbody>
+      </table>
+      <div id="loading-state" class="empty-state">Loading reason codes...</div>
+    </section>
+  </main>
+
+  <!-- New Modal -->
+  <div class="modal" id="code-modal">
+    <div class="modal-content">
+      <div class="modal-header" style="margin-bottom: 24px;">
+        <h2>New Reason Code</h2>
+      </div>
+      <form id="code-form">
+        <div class="form-group">
+          <label for="code">Reason Code (Uppercase)</label>
+          <input type="text" id="code" class="form-control" required placeholder="e.g. DAMAGED" style="text-transform: uppercase;">
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input type="text" id="description" class="form-control" required placeholder="e.g. Product arrived damaged">
+        </div>
+
+        <div class="form-group">
+          <label for="adjustment_type">Allowed Adjustment Type</label>
+          <select id="adjustment_type" class="form-control" required>
+            <option value="BOTH">BOTH (+/-)</option>
+            <option value="INCREASE">INCREASE only (+)</option>
+            <option value="DECREASE">DECREASE only (-)</option>
+          </select>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Reason</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script>
+    const tableBody = document.getElementById('codes-table-body');
+    const loadingState = document.getElementById('loading-state');
+    const modal = document.getElementById('code-modal');
+    const form = document.getElementById('code-form');
+
+    async function loadCodes() {
+      const token = sessionStorage.getItem('token');
+      try {
+        const res = await fetch('/api/reason-codes', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        loadingState.style.display = 'none';
+        if (data.success) {
+          tableBody.innerHTML = '';
+          data.data.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td style="font-weight: 600; color: var(--accent-primary);">${item.code}</td>
+              <td>${item.description}</td>
+              <td><span class="type-badge">${item.adjustment_type}</span></td>
+              <td style="color: var(--text-muted); font-size: 0.85rem;">${new Date(item.created_at).toLocaleDateString()}</td>
+              <td>
+                <button class="action-btn delete-btn" data-id="${item.id}">🗑️</button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+      } catch (err) {
+        loadingState.textContent = 'Failed to load codes.';
+      }
+    }
+
+    document.getElementById('new-code-btn').onclick = () => {
+      form.reset();
+      modal.style.display = 'flex';
+    };
+
+    document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const token = sessionStorage.getItem('token');
+      const payload = {
+        code: document.getElementById('code').value.toUpperCase(),
+        description: document.getElementById('description').value,
+        adjustment_type: document.getElementById('adjustment_type').value
+      };
+
+      try {
+        const res = await fetch('/api/reason-codes', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          modal.style.display = 'none';
+          form.reset();
+          loadCodes();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Network error.');
+      }
+    };
+
+    tableBody.onclick = async (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        if (!confirm('Are you sure? This might fail if the code is in use.')) return;
+        const id = e.target.dataset.id;
+        const token = sessionStorage.getItem('token');
+        const res = await fetch(`/api/reason-codes/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if ((await res.json()).success) loadCodes();
+        else alert('Failed to delete. Code might be linked to adjustments.');
+      }
+    };
+
+    loadCodes();
+  </script>
+</body>
+</html>

@@ -112,40 +112,84 @@
 <body>
 
   <!-- Sidebar -->
-  <aside class="sidebar">
+    <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-container">
-        <div class="logo-icon">Ix</div>
-        <span class="logo-text">Invex</span>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        </div>
+        <div class="logo-text-wrapper">
+          <span class="logo-text">Invex</span>
+          <span class="logo-subtitle">Inventory</span>
+        </div>
       </div>
     </div>
     
     <nav class="nav-menu">
-      <a href="#" class="nav-item active">
+      <a href="/dashboard.html" class="nav-item">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         <span class="nav-label">Dashboard</span>
       </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+      <a href="/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
         <span class="nav-label">Products</span>
       </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <a href="/categories.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        <span class="nav-label">Categories</span>
+      </a>
+      <a href="/suppliers.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1.5-8.5l1.96 2.5H17V10h-.5z"/></svg>
+        <span class="nav-label">Suppliers</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+      <a href="/batches.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM11.99 9.22A3.28 3.28 0 0 0 9 12.5a3.28 3.28 0 0 0 3.28 3.28 3.28 3.28 0 0 0 3.28-3.28 3.28 3.28 0 0 0-3.57-3.28zm0 5.06a1.78 1.78 0 1 1 0-3.56 1.78 1.78 0 0 1 0 3.56z"/></svg>
+        <span class="nav-label">Batches</span>
+        <span class="nav-badge" id="badge-batches" style="display: none;"></span>
+      </a>
+      <a href="/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M16 11V7l5 5-5 5v-4H8v-2h8zM8 13v4l-5-5 5-5v4h8v2H8z"/></svg>
         <span class="nav-label">Orders</span>
       </a>
-      <a href="#" class="nav-item">
+      <a href="/adjustments.html" class="nav-item">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
         <span class="nav-label">Adjustments</span>
       </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span class="nav-label">Locations</span>
+      <a href="/reports.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="/import-export.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        <span class="nav-label">Import/Export</span>
+      </a>
+
+      <div class="nav-divider" id="admin-divider" style="display: none;"></div>
+      <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
+      
+      <a href="/users.html" class="nav-item admin-item" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="nav-label">Users</span>
+        <span class="admin-pill">ADMIN</span>
       </a>
     </nav>
     
     <div class="sidebar-footer">
-      <button class="logout-btn">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="sidebar-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">Staff</div>
+        </div>
+        <svg class="user-chevron" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+      </div>
+      <button class="logout-btn" id="sidebar-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
         Logout
       </button>
     </div>
@@ -161,7 +205,7 @@
         <p>Overview of your inventory across all locations.</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary">+ New Order</button>
+        <button class="btn btn-primary" onclick="window.location.href='/orders.html'">+ New Order</button>
         <div class="user-profile">
           <div class="avatar">LA</div>
         </div>
@@ -224,7 +268,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Recent Stock Movements</div>
-          <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">View All</button>
+          <button class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--bg-hover);" onclick="window.location.href='/adjustments.html'">View All</button>
         </div>
         <div class="table-container">
           <table>
@@ -238,31 +282,8 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>Wireless Mouse M1</td>
-                <td>Stock In</td>
-                <td>WH-MAIN</td>
-                <td style="color: var(--accent-success)">+50</td>
-                <td>Today, 10:42 AM</td>
-                <td><span class="status-badge status-in-stock">Completed</span></td>
-              </tr>
-              <tr>
-                <td>Mechanical Keyboard</td>
-                <td>Transfer</td>
-                <td>WH-MAIN &rarr; Store A</td>
-                <td>20</td>
-                <td>Today, 09:15 AM</td>
-                <td><span class="status-badge status-in-stock">Completed</span></td>
-              </tr>
-              <tr>
-                <td>USB-C Hub</td>
-                <td>Adjustment</td>
-                <td>Store B</td>
-                <td style="color: var(--accent-danger)">-2</td>
-                <td>Yesterday</td>
-                <td><span class="status-badge status-low-stock">Reviewed</span></td>
-              </tr>
+            <tbody id="movements-table-body">
+              <!-- Real data will be injected here -->
             </tbody>
           </table>
         </div>
@@ -273,75 +294,114 @@
         <div class="card-header">
           <div class="card-title">Inventory Alerts</div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="padding: 16px; border-radius: 8px; background: rgba(245, 158, 11, 0.05); border-left: 4px solid var(--accent-warning);">
-            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Low Stock: Monitor Stands</div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">Only 4 units left at Store A. Reorder level is 10.</div>
-          </div>
-          <div style="padding: 16px; border-radius: 8px; background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--accent-danger);">
-            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Out of Stock: HDMI Cables</div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">0 units across all locations. 1 pending order.</div>
-          </div>
-          <div style="padding: 16px; border-radius: 8px; background: rgba(59, 130, 246, 0.05); border-left: 4px solid var(--accent-primary);">
-            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Transfer Request Pending</div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">Store B is requesting 15x Webcams from Main Warehouse.</div>
-          </div>
+        <div id="alerts-container" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.9rem;">Scanning for alerts...</div>
         </div>
       </div>
     </section>
 
   </main>
   
+  <script src="/js/sidebar.js"></script>
   <script>
-    // 1. Session Protection
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/login.html';
-    }
+    async function loadStats() {
+      const token = sessionStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
 
-    // 2. Logout Logic
-    const logoutBtn = document.querySelector('.logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async () => {
-        try {
-          const response = await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          const data = await response.json();
-          
-          if (data.success) {
-            // Clear session and redirect
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-            window.location.href = '/login.html';
-          } else {
-            console.error('Logout failed:', data.message);
-            // Even if API fails, we should clear local session
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-            window.location.href = '/login.html';
-          }
-        } catch (err) {
-          console.error('Error during logout:', err);
-          sessionStorage.clear();
-          window.location.href = '/login.html';
+      try {
+        // 1. Total Products
+        const pRes = await fetch('/api/products', { headers });
+        const pData = await pRes.json();
+        if (pData.success) {
+          document.querySelectorAll('.stat-value')[0].textContent = pData.data.length;
         }
-      });
-    }
 
-    // 3. Optional: Display user info
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-    if (user.full_name) {
-      const avatar = document.querySelector('.avatar');
-      if (avatar) {
-        avatar.textContent = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+        // 2. Pending Orders (using orders count as placeholder)
+        const oRes = await fetch('/api/orders', { headers });
+        const oData = await oRes.json();
+        if (oData.success) {
+          document.querySelectorAll('.stat-value')[2].textContent = oData.data.length;
+        }
+
+        // 3. Active Locations
+        const lRes = await fetch('/api/locations', { headers });
+        const lData = await lRes.json();
+        if (lData.success) {
+          document.querySelectorAll('.stat-value')[3].textContent = lData.data.length;
+        }
+
+        // 4. Low Stock (calculated from products if reorder level hit)
+        // This would be better with a dedicated stats endpoint, but we can count here for now
+        let lowStockCount = 0;
+        for (const p of pData.data) {
+          const sRes = await fetch(`/api/products/${p.id}/stock`, { headers });
+          const sData = await sRes.json();
+          if (sData.success) {
+            const total = sData.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+            if (total <= p.reorder_level) lowStockCount++;
+          }
+        }
+        document.querySelectorAll('.stat-value')[1].textContent = lowStockCount;
+
+        // 5. Recent Movements (using Adjustments as primary source for now)
+        const adjRes = await fetch('/api/adjustments', { headers });
+        const adjData = await adjRes.json();
+        const movementsBody = document.getElementById('movements-table-body');
+        if (adjData.success && adjData.data.length > 0) {
+          movementsBody.innerHTML = '';
+          adjData.data.slice(0, 5).forEach(m => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${m.product_name}</td>
+              <td>Adjustment</td>
+              <td>${m.location_name}</td>
+              <td style="color: ${m.adjustment_type === 'INCREASE' ? 'var(--accent-success)' : 'var(--accent-danger)'}">
+                ${m.adjustment_type === 'INCREASE' ? '+' : '-'}${m.quantity_change}
+              </td>
+              <td style="font-size: 0.85rem;">${new Date(m.adjustment_date).toLocaleDateString()}</td>
+              <td><span class="status-badge status-in-stock">Completed</span></td>
+            `;
+            movementsBody.appendChild(row);
+          });
+        } else {
+          movementsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No recent movements</td></tr>';
+        }
+
+        // 6. Real Alerts
+        const alertsContainer = document.getElementById('alerts-container');
+        alertsContainer.innerHTML = '';
+        let hasAlerts = false;
+
+        for (const p of pData.data) {
+          const sRes = await fetch(`/api/products/${p.id}/stock`, { headers });
+          const sData = await sRes.json();
+          if (sData.success) {
+            const total = sData.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+            if (total <= p.reorder_level) {
+              hasAlerts = true;
+              const alertDiv = document.createElement('div');
+              const isOut = total === 0;
+              alertDiv.style = `padding: 16px; border-radius: 8px; background: rgba(${isOut ? '239, 68, 68' : '245, 158, 11'}, 0.05); border-left: 4px solid var(--accent-${isOut ? 'danger' : 'warning'});`;
+              alertDiv.innerHTML = `
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">${isOut ? 'Out of Stock' : 'Low Stock'}: ${p.name}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">Current: ${total} units. Reorder level: ${p.reorder_level}</div>
+              `;
+              alertsContainer.appendChild(alertDiv);
+            }
+          }
+          if (alertsContainer.children.length >= 3) break; // Limit alerts
+        }
+
+        if (!hasAlerts) {
+          alertsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 0.85rem;">All stock levels healthy ✨</div>';
+        }
+
+      } catch (err) {
+        console.error('Error loading dashboard stats:', err);
       }
     }
+
+    loadStats();
   </script>
 </body>
 </html>

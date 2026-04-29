@@ -26,6 +26,7 @@
 
   /* Layout */
   --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
   --header-height: 70px;
   --transition-speed: 0.3s;
 }
@@ -97,14 +98,22 @@ a {
   transform: translateY(-1px);
 }
 
-/* Main Content Area */
+/* Main Content Area — responds to sidebar */
 .main-content {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-collapsed);
   padding: 30px 40px;
   display: flex;
   flex-direction: column;
   gap: 30px;
+  transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+
+/* When sidebar is hovered, push main content over */
+.sidebar:hover ~ .main-content,
+body:has(.sidebar:hover) .main-content {
+  margin-left: var(--sidebar-width);
 }
 
 /* Top Header */

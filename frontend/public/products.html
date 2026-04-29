@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Products | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .product-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .product-sku {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .stock-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .stock-in { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
+    .stock-low { background: rgba(245, 158, 11, 0.1); color: var(--accent-warning); }
+    .stock-out { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
+
+    .action-btn {
+      padding: 6px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        </div>
+        <div class="logo-text-wrapper">
+          <span class="logo-text">Invex</span>
+          <span class="logo-subtitle">Inventory</span>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="nav-menu">
+      <a href="/dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        <span class="nav-label">Products</span>
+      </a>
+      <a href="/categories.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        <span class="nav-label">Categories</span>
+      </a>
+      <a href="/suppliers.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1.5-8.5l1.96 2.5H17V10h-.5z"/></svg>
+        <span class="nav-label">Suppliers</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+      <a href="/batches.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM11.99 9.22A3.28 3.28 0 0 0 9 12.5a3.28 3.28 0 0 0 3.28 3.28 3.28 3.28 0 0 0 3.28-3.28 3.28 3.28 0 0 0-3.57-3.28zm0 5.06a1.78 1.78 0 1 1 0-3.56 1.78 1.78 0 0 1 0 3.56z"/></svg>
+        <span class="nav-label">Batches</span>
+        <span class="nav-badge" id="badge-batches" style="display: none;"></span>
+      </a>
+      <a href="/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M16 11V7l5 5-5 5v-4H8v-2h8zM8 13v4l-5-5 5-5v4h8v2H8z"/></svg>
+        <span class="nav-label">Orders</span>
+      </a>
+      <a href="/adjustments.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
+        <span class="nav-label">Adjustments</span>
+      </a>
+      <a href="/reports.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="/import-export.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        <span class="nav-label">Import/Export</span>
+      </a>
+
+      <div class="nav-divider" id="admin-divider" style="display: none;"></div>
+      <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
+      
+      <a href="/users.html" class="nav-item admin-item" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="nav-label">Users</span>
+        <span class="admin-pill">ADMIN</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="sidebar-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">Staff</div>
+        </div>
+        <svg class="user-chevron" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+      </div>
+      <button class="logout-btn" id="sidebar-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Products</h1>
+        <p>Manage your inventory catalog.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="new-product-btn">+ Add Product</button>
+      </div>
+    </header>
+
+    <div class="search-bar">
+      <input type="text" id="search-input" class="form-control" style="max-width: 300px;" placeholder="Search name or SKU...">
+      <select id="filter-category" class="form-control" style="max-width: 200px;">
+        <option value="">All Categories</option>
+      </select>
+      <select id="filter-supplier" class="form-control" style="max-width: 200px;">
+        <option value="">All Suppliers</option>
+      </select>
+    </div>
+
+    <section class="card">
+      <table id="products-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="products-table-body">
+          <!-- Data will be loaded here -->
+        </tbody>
+      </table>
+      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading catalog...</div>
+    </section>
+  </main>
+
+  <!-- Product Modal -->
+  <div class="modal" id="product-modal">
+    <div class="modal-content">
+      <div class="modal-header" style="margin-bottom: 24px;">
+        <h2 id="modal-title">Add New Product</h2>
+      </div>
+      <form id="product-form">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label for="name">Product Name</label>
+          <input type="text" id="name" class="form-control" required placeholder="e.g. Wireless Mouse M1">
+        </div>
+        <div class="form-group">
+          <label for="sku">SKU / Item Code</label>
+          <input type="text" id="sku" class="form-control" required placeholder="e.g. WM-001">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="category_id">Category</label>
+            <select id="category_id" class="form-control" required>
+              <option value="">Select Category</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="supplier_id">Supplier</label>
+            <select id="supplier_id" class="form-control" required>
+              <option value="">Select Supplier</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="unit_price">Unit Price ($)</label>
+            <input type="number" id="unit_price" class="form-control" required step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label for="reorder_level">Reorder Level</label>
+            <input type="number" id="reorder_level" class="form-control" required min="0" value="10">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="unit_of_measure">Unit of Measure</label>
+            <input type="text" id="unit_of_measure" class="form-control" required value="pcs">
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px; padding-top: 25px;">
+            <input type="checkbox" id="track_expiry">
+            <label for="track_expiry" style="margin: 0;">Track Expiry Dates</label>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script>
+    const tableBody = document.getElementById('products-table-body');
+    const loadingState = document.getElementById('loading-state');
+    const modal = document.getElementById('product-modal');
+    const form = document.getElementById('product-form');
+    
+    const categoryFilter = document.getElementById('filter-category');
+    const supplierFilter = document.getElementById('filter-supplier');
+    const searchInput = document.getElementById('search-input');
+
+    async function loadProducts() {
+      const token = sessionStorage.getItem('token');
+      const params = new URLSearchParams();
+      if (searchInput.value) params.append('search', searchInput.value);
+      if (categoryFilter.value) params.append('category_id', categoryFilter.value);
+      if (supplierFilter.value) params.append('supplier_id', supplierFilter.value);
+
+      try {
+        const res = await fetch(`/api/products?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        loadingState.style.display = 'none';
+        if (data.success) {
+          tableBody.innerHTML = '';
+          data.data.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>
+                <div class="product-info">
+                  <span class="product-name">${p.name}</span>
+                  <span class="product-sku">${p.sku}</span>
+                </div>
+              </td>
+              <td>${p.category_name}</td>
+              <td>$${parseFloat(p.unit_price).toFixed(2)}</td>
+              <td><span class="stock-badge stock-in">Fetching...</span></td>
+              <td>
+                <button class="action-btn edit-btn" data-id="${p.id}">✏️</button>
+                <button class="action-btn delete-btn" data-id="${p.id}">🗑️</button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+            fetchStock(p.id, row.cells[3].querySelector('.stock-badge'), p.reorder_level);
+          });
+        }
+      } catch (err) {
+        loadingState.textContent = 'Failed to load products.';
+      }
+    }
+
+    async function fetchStock(productId, badge, reorderLevel) {
+      const token = sessionStorage.getItem('token');
+      try {
+        const res = await fetch(`/api/products/${productId}/stock`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          const total = data.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+          badge.textContent = `${total} in stock`;
+          badge.classList.remove('stock-in');
+          if (total === 0) badge.classList.add('stock-out');
+          else if (total <= reorderLevel) badge.classList.add('stock-low');
+          else badge.classList.add('stock-in');
+        }
+      } catch (err) { badge.textContent = 'Error'; }
+    }
+
+    async function loadFilters() {
+      const token = sessionStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      const cRes = await fetch('/api/categories', { headers });
+      const cData = await cRes.json();
+      if (cData.success) {
+        cData.data.forEach(c => {
+          const opt = new Option(c.name, c.id);
+          categoryFilter.add(opt.cloneNode(true));
+          document.getElementById('category_id').add(opt);
+        });
+      }
+
+      const sRes = await fetch('/api/suppliers', { headers });
+      const sData = await sRes.json();
+      if (sData.success) {
+        sData.data.forEach(s => {
+          const opt = new Option(s.name, s.id);
+          supplierFilter.add(opt.cloneNode(true));
+          document.getElementById('supplier_id').add(opt);
+        });
+      }
+    }
+
+    searchInput.oninput = loadProducts;
+    categoryFilter.onchange = loadProducts;
+    supplierFilter.onchange = loadProducts;
+
+    document.getElementById('new-product-btn').onclick = () => {
+      form.reset();
+      document.getElementById('edit-id').value = '';
+      document.getElementById('modal-title').textContent = 'Add New Product';
+      modal.style.display = 'flex';
+    };
+
+    document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const token = sessionStorage.getItem('token');
+      const id = document.getElementById('edit-id').value;
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/products/${id}` : '/api/products';
+
+      const payload = {
+        name: document.getElementById('name').value,
+        sku: document.getElementById('sku').value,
+        category_id: parseInt(document.getElementById('category_id').value),
+        supplier_id: parseInt(document.getElementById('supplier_id').value),
+        unit_price: parseFloat(document.getElementById('unit_price').value),
+        reorder_level: parseInt(document.getElementById('reorder_level').value),
+        unit_of_measure: document.getElementById('unit_of_measure').value,
+        track_expiry: document.getElementById('track_expiry').checked
+      };
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.success) {
+          modal.style.display = 'none';
+          loadProducts();
+        } else {
+          alert('Error: ' + result.message);
+        }
+      } catch (err) { alert('Network error.'); }
+    };
+
+    tableBody.onclick = async (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        if (!confirm('Are you sure you want to delete this product?')) return;
+        const id = e.target.dataset.id;
+        const token = sessionStorage.getItem('token');
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if ((await res.json()).success) loadProducts();
+      }
+
+      if (e.target.classList.contains('edit-btn')) {
+        const id = e.target.dataset.id;
+        const token = sessionStorage.getItem('token');
+        const res = await fetch(`/api/products/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          const p = data.data;
+          document.getElementById('edit-id').value = p.id;
+          document.getElementById('name').value = p.name;
+          document.getElementById('sku').value = p.sku;
+          document.getElementById('category_id').value = p.category_id;
+          document.getElementById('supplier_id').value = p.supplier_id;
+          document.getElementById('unit_price').value = p.unit_price;
+          document.getElementById('reorder_level').value = p.reorder_level;
+          document.getElementById('unit_of_measure').value = p.unit_of_measure;
+          document.getElementById('track_expiry').checked = p.track_expiry;
+          
+          document.getElementById('modal-title').textContent = 'Edit Product';
+          modal.style.display = 'flex';
+        }
+      }
+    }
+
+    loadFilters();
+    loadProducts();
+  </script>
+</body>
+</html>

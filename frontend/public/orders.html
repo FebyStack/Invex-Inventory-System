@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orders | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .order-type-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .type-in { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
+    .type-out { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
+    .type-transfer { background: rgba(59, 130, 246, 0.1); color: var(--accent-primary); }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: end;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    #items-container {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent-danger);
+      cursor: pointer;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        </div>
+        <div class="logo-text-wrapper">
+          <span class="logo-text">Invex</span>
+          <span class="logo-subtitle">Inventory</span>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="nav-menu">
+      <a href="/dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        <span class="nav-label">Products</span>
+      </a>
+      <a href="/categories.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        <span class="nav-label">Categories</span>
+      </a>
+      <a href="/suppliers.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1.5-8.5l1.96 2.5H17V10h-.5z"/></svg>
+        <span class="nav-label">Suppliers</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+      <a href="/batches.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM11.99 9.22A3.28 3.28 0 0 0 9 12.5a3.28 3.28 0 0 0 3.28 3.28 3.28 3.28 0 0 0 3.28-3.28 3.28 3.28 0 0 0-3.57-3.28zm0 5.06a1.78 1.78 0 1 1 0-3.56 1.78 1.78 0 0 1 0 3.56z"/></svg>
+        <span class="nav-label">Batches</span>
+        <span class="nav-badge" id="badge-batches" style="display: none;"></span>
+      </a>
+      <a href="/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M16 11V7l5 5-5 5v-4H8v-2h8zM8 13v4l-5-5 5-5v4h8v2H8z"/></svg>
+        <span class="nav-label">Orders</span>
+      </a>
+      <a href="/adjustments.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
+        <span class="nav-label">Adjustments</span>
+      </a>
+      <a href="/reports.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="/import-export.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        <span class="nav-label">Import/Export</span>
+      </a>
+
+      <div class="nav-divider" id="admin-divider" style="display: none;"></div>
+      <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
+      
+      <a href="/users.html" class="nav-item admin-item" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="nav-label">Users</span>
+        <span class="admin-pill">ADMIN</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="sidebar-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">Staff</div>
+        </div>
+        <svg class="user-chevron" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+      </div>
+      <button class="logout-btn" id="sidebar-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Orders</h1>
+        <p>Inbound, Outbound, and Internal Transfers.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="new-order-btn">+ Create Order</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <table id="orders-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Source / Dest</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="orders-table-body">
+          <!-- Data loaded here -->
+        </tbody>
+      </table>
+      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading orders...</div>
+    </section>
+  </main>
+
+  <!-- Order Modal -->
+  <div class="modal" id="order-modal">
+    <div class="modal-content">
+      <div class="modal-header" style="margin-bottom: 24px;">
+        <h2>Create New Order</h2>
+      </div>
+      <form id="order-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label for="order_type">Order Type</label>
+            <select id="order_type" class="form-control" required>
+              <option value="IN">Stock In (Inbound)</option>
+              <option value="OUT">Stock Out (Outbound)</option>
+              <option value="TRANSFER">Internal Transfer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reference_no">Reference No.</label>
+            <input type="text" id="reference_no" class="form-control" placeholder="PO-12345, SO-12345">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group" id="source-loc-group" style="display: none;">
+            <label for="source_location_id">Source Location</label>
+            <select id="source_location_id" class="form-control">
+              <option value="">Select Source...</option>
+            </select>
+          </div>
+          <div class="form-group" id="dest-loc-group">
+            <label for="destination_location_id">Destination Location</label>
+            <select id="destination_location_id" class="form-control">
+              <option value="">Select Destination...</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="items-container">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 1rem;">Order Items</h3>
+            <button type="button" class="btn" style="padding: 4px 12px; font-size: 0.8rem; background: var(--bg-hover);" id="add-item-btn">+ Add Item</button>
+          </div>
+          <div id="items-list">
+            <!-- Item rows here -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 20px;">
+          <label for="notes">Internal Notes</label>
+          <textarea id="notes" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script>
+    const tableBody = document.getElementById('orders-table-body');
+    const loadingState = document.getElementById('loading-state');
+    const modal = document.getElementById('order-modal');
+    const form = document.getElementById('order-form');
+    const itemsList = document.getElementById('items-list');
+    
+    const typeSelect = document.getElementById('order_type');
+    const sourceGroup = document.getElementById('source-loc-group');
+    const destGroup = document.getElementById('dest-loc-group');
+
+    let productsCache = [];
+    let locationsCache = [];
+
+    async function loadOrders() {
+      const token = sessionStorage.getItem('token');
+      try {
+        const res = await fetch('/api/orders', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        loadingState.style.display = 'none';
+        if (data.success) {
+          tableBody.innerHTML = '';
+          data.data.forEach(o => {
+            const row = document.createElement('tr');
+            const typeClass = o.order_type === 'IN' ? 'type-in' : (o.order_type === 'OUT' ? 'type-out' : 'type-transfer');
+            const locInfo = o.order_type === 'IN' ? `&rarr; ${o.destination_location_name}` : 
+                           (o.order_type === 'OUT' ? `${o.source_location_name} &rarr;` : 
+                           `${o.source_location_name} &rarr; ${o.destination_location_name}`);
+            
+            row.innerHTML = `
+              <td style="font-weight: 600;">ORD-${o.id}</td>
+              <td><span class="order-type-badge ${typeClass}">${o.order_type}</span></td>
+              <td style="color: var(--text-muted);">${o.reference_no || '-'}</td>
+              <td style="font-size: 0.9rem;">${locInfo}</td>
+              <td style="font-size: 0.85rem;">${new Date(o.order_date).toLocaleDateString()}</td>
+              <td style="font-weight: 500;">${o.item_count} items</td>
+              <td><span style="color: var(--accent-success);">● Completed</span></td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+      } catch (err) { loadingState.textContent = 'Failed to load orders.'; }
+    }
+
+    async function loadCache() {
+      const token = sessionStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const [pRes, lRes] = await Promise.all([
+        fetch('/api/products', { headers }),
+        fetch('/api/locations', { headers })
+      ]);
+      productsCache = (await pRes.json()).data || [];
+      locationsCache = (await lRes.json()).data || [];
+      
+      const sourceSelect = document.getElementById('source_location_id');
+      const destSelect = document.getElementById('destination_location_id');
+      locationsCache.forEach(l => {
+        sourceSelect.add(new Option(l.name, l.id));
+        destSelect.add(new Option(l.name, l.id));
+      });
+    }
+
+    typeSelect.onchange = () => {
+      const val = typeSelect.value;
+      sourceGroup.style.display = (val === 'OUT' || val === 'TRANSFER') ? 'block' : 'none';
+      destGroup.style.display = (val === 'IN' || val === 'TRANSFER') ? 'block' : 'none';
+    };
+
+    function addItemRow() {
+      const div = document.createElement('div');
+      div.className = 'item-row';
+      div.innerHTML = `
+        <div class="form-group">
+          <label>Product</label>
+          <select class="form-control product-select" required>
+            <option value="">Select...</option>
+            ${productsCache.map(p => `<option value="${p.id}">${p.name} (${p.sku})</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Qty</label>
+          <input type="number" class="form-control qty-input" required min="1">
+        </div>
+        <div class="form-group">
+          <label>Price</label>
+          <input type="number" class="form-control price-input" required step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <button type="button" class="remove-btn">✕</button>
+        </div>
+      `;
+      div.querySelector('.remove-btn').onclick = () => div.remove();
+      itemsList.appendChild(div);
+    }
+
+    document.getElementById('new-order-btn').onclick = () => {
+      form.reset();
+      itemsList.innerHTML = '';
+      addItemRow();
+      typeSelect.onchange();
+      modal.style.display = 'flex';
+    };
+    document.getElementById('add-item-btn').onclick = addItemRow;
+    document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const token = sessionStorage.getItem('token');
+      const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
+        product_id: parseInt(row.querySelector('.product-select').value),
+        quantity: parseInt(row.querySelector('.qty-input').value),
+        unit_price: parseFloat(row.querySelector('.price-input').value)
+      }));
+
+      const payload = {
+        order_type: typeSelect.value,
+        reference_no: document.getElementById('reference_no').value,
+        source_location_id: parseInt(document.getElementById('source_location_id').value) || null,
+        destination_location_id: parseInt(document.getElementById('destination_location_id').value) || null,
+        notes: document.getElementById('notes').value,
+        items
+      };
+
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if ((await res.json()).success) {
+        modal.style.display = 'none';
+        loadOrders();
+      } else {
+        alert('Failed to create order. Check stock levels or inputs.');
+      }
+    };
+
+    loadCache().then(loadOrders);
+  </script>
+</body>
+</html>

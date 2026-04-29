@@ -1,0 +1,16 @@
+$kind: http-request
+name: GET /api/batches/expiring
+url: "{{baseUrl}}/api/batches/expiring?days=30"
+method: GET
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+    language: text/javascript
+order: 2000

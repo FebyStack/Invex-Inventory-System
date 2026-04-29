@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/users/{{userId}}"
+method: DELETE
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Soft deleted', () => {
+          pm.expect(pm.response.json().success).to.be.true;
+      });
+    language: text/javascript
+order: 8000

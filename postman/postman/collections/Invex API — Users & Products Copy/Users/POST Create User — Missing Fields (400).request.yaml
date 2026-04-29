@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/users"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "username": "incomplete"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 400', () => pm.response.to.have.status(400));
+      pm.test('Has error message', () => {
+          pm.expect(pm.response.json().success).to.be.false;
+      });
+    language: text/javascript
+order: 4000

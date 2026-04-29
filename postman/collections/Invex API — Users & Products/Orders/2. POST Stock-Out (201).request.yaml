@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "order_type": "OUT",
+      "source_location_id": 1,
+      "reference_no": "SO-001",
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 20,
+          "unit_price": 150
+        }
+      ]
+    }
+order: 2000

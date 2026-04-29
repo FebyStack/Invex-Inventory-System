@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/products"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "Should Fail",
+      "sku": "FAIL-001",
+      "category_id": 1,
+      "supplier_id": 1,
+      "unit_price": 50.00
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Status is 403', () => pm.response.to.have.status(403));
+    language: text/javascript
+order: 7000

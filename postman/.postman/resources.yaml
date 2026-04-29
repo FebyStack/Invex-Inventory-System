@@ -16,3 +16,6 @@ cloudResources:
   environments:
     ../environments/New Environment-1.environment.yaml: 286b7b53-5176-5326-be60-8ec031776169
     ../environments/Invex Local.environment.yaml: ba37989a-492d-57a9-809a-8ffa3a642f92
+  collections:
+    ../postman/collections/Invex API — Users & Products: cb00405c-a712-45e6-b508-1b42b69a4d31
+    ../postman/collections/Invex API — Users & Products Copy: f57ea672-7d09-4bdc-81da-693c1a690025

@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "unit_price": 200.00,
+      "reorder_level": 20
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Price updated', () => {
+          pm.expect(pm.response.json().data.unit_price).to.eql('200.00');
+      });
+    language: text/javascript
+order: 10000

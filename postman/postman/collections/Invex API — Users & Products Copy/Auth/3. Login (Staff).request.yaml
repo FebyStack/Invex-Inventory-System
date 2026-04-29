@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "teststaff",
+      "password": "staff123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+      if (res.success && res.token) {
+          pm.environment.set('staffToken', res.token);
+          pm.test('Staff login successful — token saved', () => pm.expect(res.success).to.be.true);
+      } else {
+          pm.test('Staff login failed', () => pm.expect.fail(res.message));
+      }
+    language: text/javascript
+order: 3000

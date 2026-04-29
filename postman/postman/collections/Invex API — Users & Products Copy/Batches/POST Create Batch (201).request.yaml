@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/batches"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "product_id": {{productId}},
+      "location_id": {{locationId}},
+      "batch_no": "BATCH-2026-001",
+      "quantity": 100,
+      "expiry_date": "2026-12-31"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 201', () => pm.response.to.have.status(201));
+      const res = pm.response.json();
+      if (res.data && res.data.id) pm.environment.set('batchId', res.data.id);
+    language: text/javascript
+order: 3000

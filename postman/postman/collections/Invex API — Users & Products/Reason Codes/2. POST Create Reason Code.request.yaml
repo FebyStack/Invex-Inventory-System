@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/reason-codes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "code": "SAMPLE_TEST",
+      "description": "Test reason code",
+      "adjustment_type": "BOTH"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 201', () => pm.response.to.have.status(201));
+      const res = pm.response.json();
+      pm.environment.set('reasonCodeId', res.data.id);
+    language: text/javascript
+order: 2000

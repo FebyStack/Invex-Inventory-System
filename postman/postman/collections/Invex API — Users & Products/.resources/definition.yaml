@@ -1,0 +1,5 @@
+$kind: collection
+description: |-
+  Day 5 — Full CRUD tests for Users and Products modules.
+
+  Setup: Run '1. Login (Admin)' first to populate the adminToken variable.

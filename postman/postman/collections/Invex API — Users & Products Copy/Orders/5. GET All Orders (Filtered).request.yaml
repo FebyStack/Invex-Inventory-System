@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/orders?order_type=IN&location_id=1"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  order_type: IN
+  location_id: "1"
+order: 5000

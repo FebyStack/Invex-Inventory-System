@@ -1,0 +1,32 @@
+$kind: http-request
+name: POST /api/batches
+url: "{{baseUrl}}/api/batches"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_id": {{productId}},
+      "location_id": {{locationId}},
+      "batch_no": "BATCH-TEST-001",
+      "quantity": 50,
+      "expiry_date": "2026-12-31"
+    }
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+      if (res.data && res.data.id) {
+          pm.globals.set('batchId', res.data.id);
+      }
+    language: text/javascript
+order: 3000

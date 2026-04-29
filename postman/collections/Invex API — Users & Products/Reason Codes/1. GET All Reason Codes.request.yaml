@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/reason-codes"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Returns data array', () => pm.expect(pm.response.json().data).to.be.an('array'));
+    language: text/javascript
+order: 1000

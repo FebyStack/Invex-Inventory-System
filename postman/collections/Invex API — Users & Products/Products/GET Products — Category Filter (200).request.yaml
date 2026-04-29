@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/products?category_id=1"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  category_id: "1"
+scripts:
+  - type: afterResponse
+    code: pm.test('Status is 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

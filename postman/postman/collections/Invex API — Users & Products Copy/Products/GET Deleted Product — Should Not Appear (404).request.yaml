@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: pm.test('Status is 404 — soft deleted', () => pm.response.to.have.status(404));
+    language: text/javascript
+order: 13000

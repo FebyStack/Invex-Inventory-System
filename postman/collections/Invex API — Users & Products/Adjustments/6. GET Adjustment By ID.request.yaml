@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/adjustments/{{adjustmentId}}"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 6000

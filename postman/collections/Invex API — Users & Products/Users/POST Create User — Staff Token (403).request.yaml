@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/users"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: text
+  content: |-
+    {
+      "username": "forbidden_user",
+      "full_name": "Should Fail",
+      "password": "pass123",
+      "role": "staff"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Status is 403', () => pm.response.to.have.status(403));
+    language: text/javascript
+order: 5000

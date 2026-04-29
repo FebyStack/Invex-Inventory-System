@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "order_type": "IN",
+      "destination_location_id": 1,
+      "supplier_id": 1,
+      "reference_no": "PO-001",
+      "notes": "Initial stock load",
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 100,
+          "unit_price": 50
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 201', () => pm.response.to.have.status(201));
+      const res = pm.response.json();
+      pm.environment.set('orderId', res.data.id);
+    language: text/javascript
+order: 1000

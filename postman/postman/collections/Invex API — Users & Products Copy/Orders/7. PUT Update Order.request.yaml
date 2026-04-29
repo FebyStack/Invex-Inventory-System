@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/orders/{{orderId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "notes": "Updated order notes",
+      "reference_no": "REF-UPDATED"
+    }
+order: 7000

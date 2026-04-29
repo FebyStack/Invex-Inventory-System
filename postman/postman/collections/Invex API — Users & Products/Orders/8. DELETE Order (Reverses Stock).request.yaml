@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/orders/{{orderId}}"
+method: DELETE
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: pm.test('Status is 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 8000

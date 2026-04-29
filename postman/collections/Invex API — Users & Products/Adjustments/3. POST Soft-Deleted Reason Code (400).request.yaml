@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/adjustments"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "product_id": 1,
+      "location_id": 1,
+      "adjustment_type": "INCREASE",
+      "quantity_change": 5,
+      "reason_code_id": 9999
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 400', () => pm.response.to.have.status(400));
+      pm.test('Error mentions deleted', () => pm.expect(pm.response.json().message).to.include('not found'));
+    language: text/javascript
+order: 3000

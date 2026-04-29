@@ -1,7 +1,7 @@
 name: Globals
 values:
   - key: baseUrl
-    value: ''
+    value: 'http://localhost:3000'
     enabled: true
   - key: token
     value: ''
@@ -21,6 +21,15 @@ values:
   - key: staffUserId
     value: ''
     enabled: true
-  - key: ts
+  - key: reasonCodeId
+    value: ''
+    enabled: true
+  - key: locationId
+    value: ''
+    enabled: true
+  - key: productId
+    value: ''
+    enabled: true
+  - key: batchId
     value: ''
     enabled: true

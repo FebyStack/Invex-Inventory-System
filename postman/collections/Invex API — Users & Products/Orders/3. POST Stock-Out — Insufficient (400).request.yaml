@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "order_type": "OUT",
+      "source_location_id": 1,
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 10000,
+          "unit_price": 150
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 400', () => pm.response.to.have.status(400));
+      pm.test('Error message includes Insufficient', () => {
+          pm.expect(pm.response.json().message).to.include('Insufficient stock');
+      });
+    language: text/javascript
+order: 3000

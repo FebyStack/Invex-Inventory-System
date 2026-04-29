@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "order_type": "TRANSFER",
+      "source_location_id": 1,
+      "destination_location_id": 2,
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 10,
+          "unit_price": 0
+        }
+      ]
+    }
+order: 4000

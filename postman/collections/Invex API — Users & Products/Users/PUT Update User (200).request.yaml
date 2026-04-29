@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/users/{{userId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "full_name": "Updated Name"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Name updated', () => {
+          pm.expect(pm.response.json().data.full_name).to.eql('Updated Name');
+      });
+    language: text/javascript
+order: 7000

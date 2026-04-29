@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/users"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status is 200', () => pm.response.to.have.status(200));
+      pm.test('Returns array', () => {
+          const res = pm.response.json();
+          pm.expect(res.success).to.be.true;
+          pm.expect(res.data).to.be.an('array');
+      });
+    language: text/javascript
+order: 1000

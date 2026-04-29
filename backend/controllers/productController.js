@@ -1,4 +1,5 @@
 const productModel = require('../models/productModel');
+const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
 
 /**
@@ -186,7 +187,7 @@ exports.getProductStock = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    const stock = await productModel.getProductStock(req.params.id);
+    const stock = await stockModel.getStockByProduct(req.params.id);
     return res.json({ success: true, data: stock });
   } catch (err) {
     return next(err);

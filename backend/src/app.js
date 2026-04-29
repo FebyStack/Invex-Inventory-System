@@ -51,7 +51,7 @@ app.use('/api/batches', batchRoutes);
 app.use('/api/adjustments', adjustmentRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/import-export', importExportRoutes);
+app.use('/api', importExportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reason-codes', reasonCodeRoutes);
 

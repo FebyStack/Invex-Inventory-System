@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
-// const { authenticate } = require('../middleware/authMiddleware');
-// const reasonCodeController = require('../controllers/reasonCodeController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
+const reasonCodeController = require('../controllers/reasonCodeController');
+const { asyncHandler } = require('../middleware/errorMiddleware');
 
-// GET    /api/reason-codes
-// POST   /api/reason-codes
-// PUT    /api/reason-codes/:id
-// DELETE /api/reason-codes/:id
+router.use(authenticate);
+
+router.get('/', asyncHandler(reasonCodeController.getAllReasonCodes));
+router.get('/:id', asyncHandler(reasonCodeController.getReasonCodeById));
+router.post('/', authorize('admin'), asyncHandler(reasonCodeController.createReasonCode));
+router.put('/:id', authorize('admin'), asyncHandler(reasonCodeController.updateReasonCode));
+router.delete('/:id', authorize('admin'), asyncHandler(reasonCodeController.deleteReasonCode));
 
 module.exports = router;

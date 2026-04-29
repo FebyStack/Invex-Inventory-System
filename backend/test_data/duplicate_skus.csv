@@ -1,0 +1,4 @@
+sku,name,category_id,supplier_id,unit_price,reorder_level,track_expiry,unit_of_measure
+DUP-001,Valid Product A,1,1,50.00,10,false,pcs
+DUP-002,Valid Product B,1,1,40.00,10,false,pcs
+DUP-001,Duplicate of A,1,1,45.00,10,false,pcs

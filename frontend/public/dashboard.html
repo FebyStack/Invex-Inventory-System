@@ -175,7 +175,7 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
         </div>
         <div class="stat-label">Total Products</div>
-        <div class="stat-value">1,248</div>
+        <div class="stat-value" id="total-products-stat">...</div>
         <div class="trend-up">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
           12% from last month
@@ -187,7 +187,7 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
         </div>
         <div class="stat-label">Low Stock Items</div>
-        <div class="stat-value">34</div>
+        <div class="stat-value" id="low-stock-stat">...</div>
         <div class="trend-down">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>
           4 needing reorder
@@ -198,8 +198,8 @@
         <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-success);">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
         </div>
-        <div class="stat-label">Pending Orders</div>
-        <div class="stat-value">12</div>
+        <div class="stat-label">Total Inventory Value</div>
+        <div class="stat-value" id="total-value-stat">...</div>
         <div class="trend-up">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
           3 fulfilled today
@@ -210,8 +210,8 @@
         <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
         </div>
-        <div class="stat-label">Active Locations</div>
-        <div class="stat-value">6</div>
+        <div class="stat-label">Out of Stock</div>
+        <div class="stat-value" id="out-of-stock-stat">...</div>
         <div class="trend-up" style="color: var(--text-muted)">
           No changes this week
         </div>
@@ -238,31 +238,8 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>Wireless Mouse M1</td>
-                <td>Stock In</td>
-                <td>WH-MAIN</td>
-                <td style="color: var(--accent-success)">+50</td>
-                <td>Today, 10:42 AM</td>
-                <td><span class="status-badge status-in-stock">Completed</span></td>
-              </tr>
-              <tr>
-                <td>Mechanical Keyboard</td>
-                <td>Transfer</td>
-                <td>WH-MAIN &rarr; Store A</td>
-                <td>20</td>
-                <td>Today, 09:15 AM</td>
-                <td><span class="status-badge status-in-stock">Completed</span></td>
-              </tr>
-              <tr>
-                <td>USB-C Hub</td>
-                <td>Adjustment</td>
-                <td>Store B</td>
-                <td style="color: var(--accent-danger)">-2</td>
-                <td>Yesterday</td>
-                <td><span class="status-badge status-low-stock">Reviewed</span></td>
-              </tr>
+            <tbody id="recent-movements-tbody">
+              <!-- Rendered via JS -->
             </tbody>
           </table>
         </div>
@@ -292,5 +269,6 @@
 
   </main>
 
+  <script src="/js/dashboard.js"></script>
 </body>
 </html>

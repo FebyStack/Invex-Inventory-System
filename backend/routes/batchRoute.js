@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
-// const { authenticate } = require('../middleware/authMiddleware');
-// const batchController = require('../controllers/batchController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
+const batchController = require('../controllers/batchController');
+const { asyncHandler } = require('../middleware/errorMiddleware');
 
-// GET    /api/batches
-// POST   /api/batches
-// GET    /api/batches/:id
-// PUT    /api/batches/:id
-// DELETE /api/batches/:id
+router.use(authenticate);
+
+router.get('/', asyncHandler(batchController.getAllBatches));
+router.get('/:id', asyncHandler(batchController.getBatchById));
+router.post('/', authorize('admin'), asyncHandler(batchController.createBatch));
+router.put('/:id', authorize('admin'), asyncHandler(batchController.updateBatch));
 
 module.exports = router;

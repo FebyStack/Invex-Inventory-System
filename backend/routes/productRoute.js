@@ -1,12 +1,29 @@
 const express = require('express');
 const router = express.Router();
-// const { authenticate } = require('../middleware/authMiddleware');
-// const productController = require('../controllers/productController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
+const productController = require('../controllers/productController');
+const { asyncHandler } = require('../middleware/errorMiddleware');
 
-// GET    /api/products
-// POST   /api/products
+// All product routes require authentication
+router.use(authenticate);
+
+// GET    /api/products              (with optional ?search, ?category_id, ?supplier_id)
+router.get('/', asyncHandler(productController.getAllProducts));
+
 // GET    /api/products/:id
+router.get('/:id', asyncHandler(productController.getProductById));
+
+// GET    /api/products/:id/stock    (stock levels per location)
+router.get('/:id/stock', asyncHandler(productController.getProductStock));
+
+// POST   /api/products              (admin only)
+router.post('/', authorize('admin'), asyncHandler(productController.createProduct));
+
 // PUT    /api/products/:id
-// DELETE /api/products/:id
+router.put('/:id', asyncHandler(productController.updateProduct));
+
+// DELETE /api/products/:id          (admin only)
+router.delete('/:id', authorize('admin'), asyncHandler(productController.deleteProduct));
 
 module.exports = router;

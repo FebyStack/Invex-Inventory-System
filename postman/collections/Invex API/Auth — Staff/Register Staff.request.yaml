@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "staff_user",
+      "full_name": "Staff Member",
+      "email": "staff@invex.local",
+      "password": "Staff@123",
+      "role": "staff"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Role is staff', function () {
+          pm.expect(res.user.role).to.eql('staff');
+      });
+
+      if (res.user && res.user.id) {
+          pm.globals.set('staffUserId', res.user.id);
+      }
+    language: text/javascript
+order: 1000

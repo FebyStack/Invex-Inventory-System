@@ -1,0 +1,36 @@
+$kind: http-request
+name: POST /api/categories
+url: "{{baseUrl}}/api/categories"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test Category {{$timestamp}}",
+      "description": "A test category created by Postman"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.category has id and name', function () {
+          pm.expect(res.category).to.have.property('id');
+          pm.expect(res.category).to.have.property('name');
+      });
+
+      if (res.category && res.category.id) {
+          pm.collectionVariables.set('categoryId', res.category.id);
+      }
+    language: text/javascript
+order: 2000

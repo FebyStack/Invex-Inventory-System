@@ -20,10 +20,10 @@ exports.register = async (req, res, next) => {
     const { username, password, full_name, email, role } = req.body;
 
     // 1. Validate input
-    if (!username || !password || !full_name || !role) {
+    if (!username || !password || !full_name || !role || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Username, password, full name, and role are required.',
+        message: 'Username, password, full name, email, and role are required.',
       });
     }
 

@@ -1,0 +1,18 @@
+$kind: http-request
+name: GET /api/auth/me (Admin)
+url: "{{baseUrl}}/api/auth/me"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Logged-in user is admin', function () {
+          pm.expect(res.user.role).to.eql('admin');
+      });
+    language: text/javascript
+order: 3000

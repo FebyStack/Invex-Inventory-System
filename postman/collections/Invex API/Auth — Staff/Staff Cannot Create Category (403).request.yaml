@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/api/categories"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Unauthorized Category",
+      "description": "This should fail with 403"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 403 — Access Denied', function () {
+          pm.response.to.have.status(403);
+      });
+
+      pm.test('res.success === false', function () {
+          pm.expect(res.success).to.be.false;
+      });
+
+      pm.test('Message mentions Access denied', function () {
+          pm.expect(res.message).to.include('Access denied');
+      });
+    language: text/javascript
+order: 3000

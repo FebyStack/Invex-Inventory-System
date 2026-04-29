@@ -1,0 +1,31 @@
+$kind: http-request
+name: PUT /api/categories/:id
+url: "{{baseUrl}}/api/categories/{{categoryId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Category",
+      "description": "Updated description"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.category.name equals Updated Category', function () {
+          pm.expect(res.category.name).to.eql('Updated Category');
+      });
+    language: text/javascript
+order: 4000

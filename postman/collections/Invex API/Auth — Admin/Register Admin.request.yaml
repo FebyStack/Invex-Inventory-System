@@ -1,0 +1,39 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "admin",
+      "full_name": "System Administrator",
+      "email": "admin@invex.local",
+      "password": "Admin@123",
+      "role": "admin"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('Role is admin', function () {
+          pm.expect(res.user.role).to.eql('admin');
+      });
+
+      if (res.user && res.user.id) {
+          pm.globals.set('adminUserId', res.user.id);
+      }
+    language: text/javascript
+order: 1000

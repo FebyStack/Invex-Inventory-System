@@ -1,0 +1,18 @@
+$kind: http-request
+name: DELETE /api/categories/:id
+url: "{{baseUrl}}/api/categories/{{categoryId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+    language: text/javascript
+order: 5000

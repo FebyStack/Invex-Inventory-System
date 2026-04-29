@@ -1,0 +1,28 @@
+$kind: http-request
+name: GET /api/health
+url: "{{baseUrl}}/api/health"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.status === ok', function () {
+          pm.expect(res.status).to.eql('ok');
+      });
+
+      pm.test('res.database === ok', function () {
+          pm.expect(res.database).to.eql('ok');
+      });
+
+      pm.test('res.name === Invex API', function () {
+          pm.expect(res.name).to.eql('Invex API');
+      });
+    language: text/javascript
+order: 1000

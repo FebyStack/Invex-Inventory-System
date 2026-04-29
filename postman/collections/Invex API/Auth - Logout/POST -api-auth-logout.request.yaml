@@ -1,0 +1,26 @@
+$kind: http-request
+name: POST /api/auth/logout
+url: "{{baseUrl}}/api/auth/logout"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.message includes Logout', function () {
+          pm.expect(res.message).to.include('Logout');
+      });
+    language: text/javascript
+order: 1000

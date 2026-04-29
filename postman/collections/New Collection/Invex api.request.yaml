@@ -1,0 +1,12 @@
+$kind: http-request
+name: Invex api
+url: "{{baseUrl}}/api/categories"
+method: POST
+body:
+  type: json
+  content: |
+    {
+      "username": "admin",
+      "password": "Admin@123"
+    }
+order: 1777428465083

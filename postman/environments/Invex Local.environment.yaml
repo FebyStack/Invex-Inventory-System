@@ -1,7 +1,7 @@
-name: Globals
+name: Invex Local
 values:
   - key: baseUrl
-    value: ''
+    value: 'http://localhost:3000'
     enabled: true
   - key: token
     value: ''
@@ -19,8 +19,5 @@ values:
     value: ''
     enabled: true
   - key: staffUserId
-    value: ''
-    enabled: true
-  - key: ts
     value: ''
     enabled: true

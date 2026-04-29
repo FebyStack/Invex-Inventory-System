@@ -1,0 +1,18 @@
+$kind: http-request
+name: GET /api/suppliers/:id (verify deleted — 404)
+url: "{{baseUrl}}/api/suppliers/{{supplierId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 404', function () {
+          pm.response.to.have.status(404);
+      });
+
+      pm.test('res.success === false', function () {
+          pm.expect(res.success).to.be.false;
+      });
+    language: text/javascript
+order: 6000

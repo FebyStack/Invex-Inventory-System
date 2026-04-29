@@ -1,0 +1,38 @@
+$kind: http-request
+name: PUT /api/suppliers/:id
+url: "{{baseUrl}}/api/suppliers/{{supplierId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "TechSource Updated",
+      "contact_person": "Maria Santos",
+      "email": "techsource.updated@example.com",
+      "phone": "09179876543",
+      "address_line": "456 Updated Ave",
+      "barangay": "Barangay 2",
+      "city": "Quezon City",
+      "province": "Metro Manila",
+      "postal_code": "1100"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.supplier.city equals Quezon City', function () {
+          pm.expect(res.supplier.city).to.eql('Quezon City');
+      });
+    language: text/javascript
+order: 4000

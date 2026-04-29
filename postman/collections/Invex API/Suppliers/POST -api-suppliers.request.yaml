@@ -1,0 +1,51 @@
+$kind: http-request
+name: POST /api/suppliers
+url: "{{baseUrl}}/api/suppliers"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "TechSource {{$timestamp}}",
+      "contact_person": "Juan Dela Cruz",
+      "email": "techsource@example.com",
+      "phone": "09171234567",
+      "address_line": "123 Tech Street",
+      "barangay": "Barangay 1",
+      "city": "Manila",
+      "province": "Metro Manila",
+      "postal_code": "1000"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.supplier has id and name', function () {
+          pm.expect(res.supplier).to.have.property('id');
+          pm.expect(res.supplier).to.have.property('name');
+      });
+
+      pm.test('res.supplier has all address fields', function () {
+          pm.expect(res.supplier).to.have.property('address_line');
+          pm.expect(res.supplier).to.have.property('barangay');
+          pm.expect(res.supplier).to.have.property('city');
+          pm.expect(res.supplier).to.have.property('province');
+          pm.expect(res.supplier).to.have.property('postal_code');
+      });
+
+      if (res.supplier && res.supplier.id) {
+          pm.collectionVariables.set('supplierId', res.supplier.id);
+      }
+    language: text/javascript
+order: 2000

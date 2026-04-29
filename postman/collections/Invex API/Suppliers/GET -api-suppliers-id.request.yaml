@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /api/suppliers/:id
+url: "{{baseUrl}}/api/suppliers/{{supplierId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.supplier.id matches supplierId env var', function () {
+          pm.expect(String(res.supplier.id)).to.eql(String(pm.collectionVariables.get('supplierId')));
+      });
+    language: text/javascript
+order: 3000

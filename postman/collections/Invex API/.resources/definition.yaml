@@ -1,0 +1,16 @@
+$kind: collection
+name: Invex API
+description: Complete Postman collection for the Invex API — Auth, Categories, Suppliers, and Health Check.
+variables:
+  categoryId: ""
+  supplierId: ""
+scripts:
+  - type: http:beforeRequest
+    code: pm.globals.set('ts', Date.now());
+    language: text/javascript
+auth:
+  - id: 67108f54-fe11-4e21-b346-ade7c09c53cb
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{token}}"

@@ -1,0 +1,26 @@
+$kind: http-request
+name: GET /api/suppliers
+url: "{{baseUrl}}/api/suppliers"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      pm.test('res.suppliers is an array', function () {
+          pm.expect(res.suppliers).to.be.an('array');
+      });
+
+      pm.test('res.count is a number', function () {
+          pm.expect(res.count).to.be.a('number');
+      });
+    language: text/javascript
+order: 1000

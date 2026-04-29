@@ -39,6 +39,8 @@ app.use('/js', express.static(path.join(__dirname, '..', '..', 'frontend', 'js')
 app.use('/components', express.static(path.join(__dirname, '..', '..', 'frontend', 'components')));
 app.use('/assets', express.static(path.join(__dirname, '..', '..', 'frontend', 'assets')));
 
+const dashboardRoutes = require('../routes/dashboardRoute');
+
 // ---------------------
 // API Routes
 // ---------------------
@@ -54,6 +56,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/import-export', importExportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reason-codes', reasonCodeRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ---------------------
 // Health Check

@@ -31,12 +31,16 @@ const createOrderItem = async (client, { order_id, product_id, batch_id, quantit
 };
 
 /**
- * Create a new product batch (only for IN orders with expiry).
+ * Create or update a product batch (UPSERT) for IN orders.
  */
 const createBatch = async (client, { product_id, location_id, batch_no, quantity, expiry_date }) => {
   const result = await client.query(
     `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
      VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (product_id, location_id, batch_no) 
+     DO UPDATE SET 
+       quantity = invex.product_batches.quantity + EXCLUDED.quantity,
+       expiry_date = EXCLUDED.expiry_date
      RETURNING id, batch_no, expiry_date`,
     [product_id, location_id, batch_no, quantity, expiry_date]
   );

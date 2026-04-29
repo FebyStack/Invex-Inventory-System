@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
-// const { authenticate } = require('../middleware/authMiddleware');
-// const batchController = require('../controllers/batchController');
+const batchController = require('../controllers/batchController');
+const { protect } = require('../middleware/authMiddleware');
 
-// GET    /api/batches
-// POST   /api/batches
-// GET    /api/batches/:id
-// PUT    /api/batches/:id
-// DELETE /api/batches/:id
+// All batch routes are protected
+router.use(protect);
+
+router.get('/', batchController.getAllBatches);
+router.get('/expiring', batchController.getExpiringBatches); // Must be before /:id
+router.get('/:id', batchController.getBatchById);
+router.post('/', batchController.createBatch);
+router.put('/:id', batchController.updateBatch);
+router.delete('/:id', batchController.deleteBatch);
 
 module.exports = router;

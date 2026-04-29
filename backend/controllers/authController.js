@@ -146,7 +146,7 @@ exports.getMe = async (req, res, next) => {
   try {
     const userResult = await query(
       `SELECT id, username, full_name, email, role, created_at
-       FROM users
+       FROM invex.users
        WHERE id = $1 AND is_deleted = FALSE
        LIMIT 1`,
       [req.user.id]

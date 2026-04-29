@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /api/locations
+url: "{{baseUrl}}/api/locations"
+method: GET
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Returns locations array', function () {
+          pm.expect(res).to.be.an('array');
+      });
+    language: text/javascript
+order: 1000

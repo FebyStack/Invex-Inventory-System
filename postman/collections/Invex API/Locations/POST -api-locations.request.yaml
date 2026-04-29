@@ -1,0 +1,37 @@
+$kind: http-request
+name: POST /api/locations
+url: "{{baseUrl}}/api/locations"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Main Warehouse",
+      "code": "WH-MAIN",
+      "address_line": "123 Logistics Way",
+      "barangay": "Industrial Zone",
+      "city": "Quezon City",
+      "province": "Metro Manila",
+      "postal_code": "1100",
+      "type": "warehouse"
+    }
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      if (res.id) {
+          pm.collectionVariables.set('locationId', res.id);
+      }
+    language: text/javascript
+order: 2000

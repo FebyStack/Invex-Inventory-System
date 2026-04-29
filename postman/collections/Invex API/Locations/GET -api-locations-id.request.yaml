@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /api/locations/:id
+url: "{{baseUrl}}/api/locations/{{locationId}}"
+method: GET
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.id matches locationId', function () {
+          pm.expect(String(res.id)).to.eql(String(pm.collectionVariables.get('locationId')));
+      });
+    language: text/javascript
+order: 3000

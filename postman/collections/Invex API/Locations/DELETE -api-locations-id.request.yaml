@@ -1,0 +1,18 @@
+$kind: http-request
+name: DELETE /api/locations/:id
+url: "{{baseUrl}}/api/locations/{{locationId}}"
+method: DELETE
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+    language: text/javascript
+order: 5000

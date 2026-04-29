@@ -4,6 +4,9 @@ description: Complete Postman collection for the Invex API — Auth, Categories,
 variables:
   categoryId: ""
   supplierId: ""
+  locationId: ""
+  productId: ""
+  userId: ""
 scripts:
   - type: http:beforeRequest
     code: pm.globals.set('ts', Date.now());

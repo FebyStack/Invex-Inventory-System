@@ -291,6 +291,57 @@
     </section>
 
   </main>
+  
+  <script>
+    // 1. Session Protection
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login.html';
+    }
 
+    // 2. Logout Logic
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+          
+          if (data.success) {
+            // Clear session and redirect
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = '/login.html';
+          } else {
+            console.error('Logout failed:', data.message);
+            // Even if API fails, we should clear local session
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = '/login.html';
+          }
+        } catch (err) {
+          console.error('Error during logout:', err);
+          sessionStorage.clear();
+          window.location.href = '/login.html';
+        }
+      });
+    }
+
+    // 3. Optional: Display user info
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    if (user.full_name) {
+      const avatar = document.querySelector('.avatar');
+      if (avatar) {
+        avatar.textContent = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+      }
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,11 @@
+# Use this workspace to collaborate
+workspace:
+  id: 08536103-60f1-41a0-8249-51e1ef1d3b7c
+
+localResources:
+  collections:
+    - ../Invex_Collection.json
+  environments:
+    - ../environments/Invex Local.environment.yaml
+    - ../environments/Invex-1.environment.yaml
+    - ../environments/New Environment-1.environment.yaml

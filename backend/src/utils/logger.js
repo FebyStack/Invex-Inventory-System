@@ -14,7 +14,7 @@ const logActivity = async (userId, action, entityType = null, entityId = null, d
 
   return pool
     .query(
-      `INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details)
+      `INSERT INTO invex.activity_logs (user_id, action, entity_type, entity_id, details)
        VALUES ($1, $2, $3, $4, $5)`,
       [userId, action, entityType, entityId, serializedDetails]
     )

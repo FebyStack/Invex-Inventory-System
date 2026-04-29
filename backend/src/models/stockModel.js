@@ -7,8 +7,8 @@ const getStockByProduct = async (productId) => {
   const result = await query(
     `SELECT ps.location_id, l.name AS location_name, l.code AS location_code,
             ps.quantity, ps.last_updated
-     FROM product_stock ps
-     JOIN locations l ON ps.location_id = l.id
+     FROM invex.product_stock ps
+     JOIN invex.locations l ON ps.location_id = l.id
      WHERE ps.product_id = $1 AND l.is_deleted = FALSE
      ORDER BY l.name`,
     [productId]
@@ -23,8 +23,8 @@ const getStockByLocation = async (locationId) => {
   const result = await query(
     `SELECT ps.product_id, p.name AS product_name, p.sku,
             ps.quantity, ps.last_updated
-     FROM product_stock ps
-     JOIN products p ON ps.product_id = p.id
+     FROM invex.product_stock ps
+     JOIN invex.products p ON ps.product_id = p.id
      WHERE ps.location_id = $1 AND p.is_deleted = FALSE
      ORDER BY p.name`,
     [locationId]
@@ -41,10 +41,10 @@ const incrementStock = async (productId, locationId, qty, dbClient) => {
   const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
   
   const result = await executeQuery(
-    `INSERT INTO product_stock (product_id, location_id, quantity)
+    `INSERT INTO invex.product_stock (product_id, location_id, quantity)
      VALUES ($1, $2, $3)
      ON CONFLICT (product_id, location_id)
-     DO UPDATE SET quantity = product_stock.quantity + EXCLUDED.quantity,
+     DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
                    last_updated = CURRENT_TIMESTAMP
      RETURNING quantity`,
     [productId, locationId, qty]
@@ -60,7 +60,7 @@ const decrementStock = async (productId, locationId, qty, dbClient) => {
   const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
   
   const result = await executeQuery(
-    `UPDATE product_stock
+    `UPDATE invex.product_stock
      SET quantity = quantity - $3,
          last_updated = CURRENT_TIMESTAMP
      WHERE product_id = $1 AND location_id = $2
@@ -72,7 +72,12 @@ const decrementStock = async (productId, locationId, qty, dbClient) => {
     throw new Error('Stock record not found for this product and location.');
   }
 
-  return result.rows[0];
+  const updatedStock = result.rows[0];
+  if (updatedStock.quantity < 0) {
+    throw new Error(`Insufficient stock for product ID ${productId} at location ID ${locationId}. Available: ${updatedStock.quantity + qty}`);
+  }
+
+  return updatedStock;
 };
 
 module.exports = {

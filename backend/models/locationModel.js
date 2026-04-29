@@ -6,7 +6,7 @@ const { query } = require('../src/config/db');
 const getAllLocations = async () => {
   const result = await query(
     `SELECT id, name, code, address_line, barangay, city, province, postal_code, type, created_at
-     FROM locations
+     FROM invex.locations
      WHERE is_deleted = FALSE
      ORDER BY created_at DESC`
   );
@@ -19,7 +19,7 @@ const getAllLocations = async () => {
 const getLocationById = async (id) => {
   const result = await query(
     `SELECT id, name, code, address_line, barangay, city, province, postal_code, type, created_at
-     FROM locations
+     FROM invex.locations
      WHERE id = $1 AND is_deleted = FALSE`,
     [id]
   );
@@ -40,7 +40,7 @@ const createLocation = async ({
   type,
 }) => {
   const result = await query(
-    `INSERT INTO locations (name, code, address_line, barangay, city, province, postal_code, type)
+    `INSERT INTO invex.locations (name, code, address_line, barangay, city, province, postal_code, type)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id, name, code, address_line, barangay, city, province, postal_code, type, created_at`,
     [name, code, address_line, barangay, city, province, postal_code, type]
@@ -82,7 +82,7 @@ const updateLocation = async (
   values.push(id);
 
   const result = await query(
-    `UPDATE locations SET ${fields.join(', ')}
+    `UPDATE invex.locations SET ${fields.join(', ')}
      WHERE id = $${idx} AND is_deleted = FALSE
      RETURNING id, name, code, address_line, barangay, city, province, postal_code, type, created_at`,
     values
@@ -95,7 +95,7 @@ const updateLocation = async (
  */
 const softDeleteLocation = async (id) => {
   const result = await query(
-    `UPDATE locations SET is_deleted = TRUE
+    `UPDATE invex.locations SET is_deleted = TRUE
      WHERE id = $1 AND is_deleted = FALSE
      RETURNING id`,
     [id]

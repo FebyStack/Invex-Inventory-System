@@ -10,7 +10,7 @@ const SALT_ROUNDS = 10;
 const getAllUsers = async () => {
   const result = await query(
     `SELECT id, username, full_name, email, role, created_at
-     FROM users
+     FROM invex.users
      WHERE is_deleted = FALSE
      ORDER BY created_at DESC`
   );
@@ -24,7 +24,7 @@ const getAllUsers = async () => {
 const getUserById = async (id) => {
   const result = await query(
     `SELECT id, username, full_name, email, role, created_at
-     FROM users
+     FROM invex.users
      WHERE id = $1 AND is_deleted = FALSE`,
     [id]
   );
@@ -39,7 +39,7 @@ const createUser = async ({ username, full_name, email, password, role }) => {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
   const result = await query(
-    `INSERT INTO users (username, full_name, email, password, role)
+    `INSERT INTO invex.users (username, full_name, email, password, role)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING id, username, full_name, email, role, created_at`,
     [username, full_name, email, hashedPassword, role]
@@ -78,7 +78,7 @@ const updateUser = async (id, { username, full_name, email, password, role }) =>
   values.push(id);
 
   const result = await query(
-    `UPDATE users SET ${fields.join(', ')}
+    `UPDATE invex.users SET ${fields.join(', ')}
      WHERE id = $${idx} AND is_deleted = FALSE
      RETURNING id, username, full_name, email, role, created_at`,
     values
@@ -92,7 +92,7 @@ const updateUser = async (id, { username, full_name, email, password, role }) =>
  */
 const softDeleteUser = async (id) => {
   const result = await query(
-    `UPDATE users SET is_deleted = TRUE
+    `UPDATE invex.users SET is_deleted = TRUE
      WHERE id = $1 AND is_deleted = FALSE
      RETURNING id`,
     [id]

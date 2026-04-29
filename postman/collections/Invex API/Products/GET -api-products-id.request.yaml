@@ -1,0 +1,22 @@
+$kind: http-request
+name: GET /api/products/:id
+url: "{{baseUrl}}/api/products/{{productId}}"
+method: GET
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('res.data.id matches productId', function () {
+          pm.expect(String(res.data.id)).to.eql(String(pm.collectionVariables.get('productId')));
+      });
+    language: text/javascript
+order: 3000

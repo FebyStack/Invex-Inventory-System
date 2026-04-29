@@ -1,0 +1,41 @@
+$kind: http-request
+name: POST /api/products
+url: "{{baseUrl}}/api/products"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Gaming Laptop Pro",
+      "sku": "LAP-001",
+      "category_id": "{{categoryId}}",
+      "supplier_id": "{{supplierId}}",
+      "unit_price": 45000.00,
+      "reorder_level": 5,
+      "track_expiry": false,
+      "unit_of_measure": "unit"
+    }
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('res.success === true', function () {
+          pm.expect(res.success).to.be.true;
+      });
+
+      if (res.data && res.data.id) {
+          pm.collectionVariables.set('productId', res.data.id);
+      }
+    language: text/javascript
+order: 2000

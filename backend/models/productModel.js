@@ -32,9 +32,9 @@ const getAllProducts = async ({ search, category_id, supplier_id } = {}) => {
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
             p.created_at
-     FROM products p
-     LEFT JOIN categories c ON p.category_id = c.id
-     LEFT JOIN suppliers  s ON p.supplier_id = s.id
+     FROM invex.products p
+     LEFT JOIN invex.categories c ON p.category_id = c.id
+     LEFT JOIN invex.suppliers  s ON p.supplier_id = s.id
      ${whereClause}
      ORDER BY p.created_at DESC`,
     values
@@ -52,9 +52,9 @@ const getProductById = async (id) => {
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
             p.created_at
-     FROM products p
-     LEFT JOIN categories c ON p.category_id = c.id
-     LEFT JOIN suppliers  s ON p.supplier_id = s.id
+     FROM invex.products p
+     LEFT JOIN invex.categories c ON p.category_id = c.id
+     LEFT JOIN invex.suppliers  s ON p.supplier_id = s.id
      WHERE p.id = $1 AND p.is_deleted = FALSE`,
     [id]
   );
@@ -76,7 +76,7 @@ const createProduct = async ({
   unit_of_measure,
 }) => {
   const result = await query(
-    `INSERT INTO products (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure)
+    `INSERT INTO invex.products (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id, name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure, created_at`,
     [
@@ -127,7 +127,7 @@ const updateProduct = async (
   values.push(id);
 
   const result = await query(
-    `UPDATE products SET ${fields.join(', ')}
+    `UPDATE invex.products SET ${fields.join(', ')}
      WHERE id = $${idx} AND is_deleted = FALSE
      RETURNING id, name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure, created_at`,
     values
@@ -141,7 +141,7 @@ const updateProduct = async (
  */
 const softDeleteProduct = async (id) => {
   const result = await query(
-    `UPDATE products SET is_deleted = TRUE
+    `UPDATE invex.products SET is_deleted = TRUE
      WHERE id = $1 AND is_deleted = FALSE
      RETURNING id`,
     [id]
@@ -157,8 +157,8 @@ const getProductStock = async (productId) => {
   const result = await query(
     `SELECT ps.location_id, l.name AS location_name, l.code AS location_code,
             ps.quantity, ps.last_updated
-     FROM product_stock ps
-     JOIN locations l ON ps.location_id = l.id
+     FROM invex.product_stock ps
+     JOIN invex.locations l ON ps.location_id = l.id
      WHERE ps.product_id = $1 AND l.is_deleted = FALSE
      ORDER BY l.name`,
     [productId]

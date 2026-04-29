@@ -1,0 +1,18 @@
+$kind: http-request
+name: GET /api/products/:id (verify deleted — 404)
+url: "{{baseUrl}}/api/products/{{productId}}"
+method: GET
+auth:
+  type: bearer
+  bearer:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+
+      pm.test('Status is 404', function () {
+          pm.response.to.have.status(404);
+      });
+    language: text/javascript
+order: 6000

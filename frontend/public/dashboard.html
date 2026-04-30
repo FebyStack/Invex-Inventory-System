@@ -3,116 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Invex Dashboard | Inventory Management</title>
+  <title>Invex — Overview</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
-  
+
   <style>
-    /* Dashboard specific layout */
-    .dashboard-grid {
+    /* Dashboard-specific minimalist layout */
+    .dash-stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
-      margin-bottom: 30px;
+      gap: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
     }
-    
-    .stat-card {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .dash-stats .stat {
+      padding: 24px 24px;
+      border-right: 1px solid var(--border);
+      position: relative;
     }
-    
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--accent-primary);
-    }
-    
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-    
+    .dash-stats .stat:first-child { padding-left: 0; }
+    .dash-stats .stat:last-child { border-right: none; padding-right: 0; }
+
     .stat-label {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
+      font-size: 11px;
       font-weight: 500;
-    }
-    
-    .trend-up { color: var(--accent-success); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; }
-    .trend-down { color: var(--accent-danger); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; }
-    
-    .main-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 24px;
-    }
-    
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-    
-    /* Mock table */
-    .table-container {
-      overflow-x: auto;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    th, td {
-      padding: 14px 16px;
-      text-align: left;
-      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
-    }
-    
-    th {
-      color: var(--text-muted);
-      font-weight: 500;
-      font-size: 0.85rem;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin-bottom: 14px;
     }
-    
-    td {
-      font-size: 0.95rem;
-      color: var(--text-primary);
+    .stat-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
     }
-    
-    .status-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
+    .stat-value {
+      font-size: 34px;
+      font-weight: 400;
+      color: var(--fg-1);
+      letter-spacing: -0.035em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
-    
-    .status-in-stock { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
-    .status-low-stock { background: rgba(245, 158, 11, 0.1); color: var(--accent-warning); }
-    .status-out-of-stock { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
+    .stat-delta {
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+    }
+    .stat-delta.up { color: var(--success); }
+    .stat-delta.down { color: var(--danger); }
+    .stat-delta.neutral { color: var(--fg-4); }
+    .stat-hint { font-size: 11px; color: var(--fg-4); }
+
+    .sparkline { width: 100%; height: 22px; display: block; margin-top: 16px; opacity: 0.9; }
+
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 32px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title { font-size: 13px; font-weight: 500; color: var(--fg-1); margin-bottom: 2px; }
+    .section-sub { font-size: 11px; color: var(--fg-4); }
+
+    .legend-group { display: flex; gap: 14px; align-items: center; }
+    .legend-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--fg-3); }
+    .legend-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .legend-dot.in::before { background: var(--accent); }
+    .legend-dot.out::before { background: var(--fg-4); }
+
+    .range-toggle {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 0;
+    }
+    .range-toggle button {
+      border: none; padding: 4px 10px; border-radius: 4px;
+      font-size: 11px; font-weight: 500;
+      background: transparent; color: var(--fg-3); font-family: inherit;
+    }
+    .range-toggle button.active {
+      background: var(--surface-elev); color: var(--fg-1);
+      border: 1px solid var(--border);
+    }
+
+    .chart-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    /* Low stock list (inside dashboard) */
+    .needs-list {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .needs-row {
+      display: grid;
+      grid-template-columns: 1fr 140px 100px 80px;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .needs-row:last-child { border-bottom: none; }
+    .needs-name { color: var(--fg-1); font-weight: 500; }
+    .needs-sku { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--fg-4); }
+    .needs-qty { font-family: 'DM Mono', monospace; }
+    .needs-qty .max { color: var(--fg-4); }
+
+    /* Activity feed */
+    .activity-list { display: flex; flex-direction: column; }
+    .activity-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--fg-4); margin-top: 8px; flex-shrink: 0;
+    }
+    .activity-dot.in { background: var(--accent); }
+    .activity-dot.warn { background: var(--warning); }
+    .activity-dot.out { background: var(--danger); }
+    .activity-title { font-size: 12px; color: var(--fg-3); margin-bottom: 2px; }
+    .activity-item-name { font-size: 13px; color: var(--fg-1); font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activity-meta { font-size: 11px; color: var(--fg-4); font-family: 'DM Mono', monospace; }
+
+    /* "View all" link */
+    .view-all {
+      font-size: 12px; color: var(--fg-2); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .view-all:hover { color: var(--fg-1); }
+
+    /* Notification bell action */
+    .icon-btn {
+      width: 32px; height: 32px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--fg-3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative;
+    }
+    .icon-btn:hover { background: var(--hover); color: var(--fg-1); }
+    .icon-btn .dot {
+      position: absolute; top: 6px; right: 6px;
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+
+    @media (max-width: 1024px) {
+      .dash-stats { grid-template-columns: repeat(2, 1fr); }
+      .dash-stats .stat:nth-child(2) { border-right: none; }
+      .dash-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .dash-stats { grid-template-columns: 1fr; }
+      .dash-stats .stat { border-right: none !important; padding: 20px 0 !important; border-bottom: 1px solid var(--border); }
+      .dash-stats .stat:last-child { border-bottom: none; }
+      .needs-row { grid-template-columns: 1fr 70px; }
+      .needs-row .needs-sku, .needs-row .needs-status { display: none; }
+    }
   </style>
 </head>
 <body>
 
   <!-- Sidebar -->
-    <aside class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-container">
         <div class="logo-icon">
@@ -120,11 +189,11 @@
         </div>
         <div class="logo-text-wrapper">
           <span class="logo-text">Invex</span>
-          <span class="logo-subtitle">Inventory</span>
+          <span class="logo-subtitle">v2.4</span>
         </div>
       </div>
     </div>
-    
+
     <nav class="nav-menu">
       <a href="/dashboard.html" class="nav-item">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -170,16 +239,15 @@
 
       <div class="nav-divider" id="admin-divider" style="display: none;"></div>
       <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
-      
+
       <a href="/users.html" class="nav-item admin-item" style="display: none;">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         <span class="nav-label">Users</span>
         <span class="admin-pill">ADMIN</span>
       </a>
     </nav>
-    
+
     <div class="sidebar-footer">
-      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
       <div class="user-profile-card">
         <div class="user-avatar" id="sidebar-avatar">--</div>
         <div class="user-info">
@@ -190,215 +258,302 @@
       </div>
       <button class="logout-btn" id="sidebar-logout-btn">
         <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-        Logout
+        <span>Logout</span>
       </button>
     </div>
   </aside>
 
   <!-- Main Content -->
   <main class="main-content">
-    
-    <!-- Header -->
+
+    <!-- Top header (fixed) -->
     <header class="top-header">
       <div class="header-title">
-        <h1>Dashboard</h1>
-        <p>Overview of your inventory across all locations.</p>
+        <h1>Overview</h1>
+        <p id="header-sub">At a glance — your inventory across all locations</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" onclick="window.location.href='/orders.html'">+ New Order</button>
-        <div class="user-profile">
-          <div class="avatar">LA</div>
-        </div>
+        <button class="icon-btn" title="Notifications">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="dot"></span>
+        </button>
+        <button class="btn btn-primary" onclick="window.location.href='/orders.html'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New order
+        </button>
       </div>
     </header>
 
-    <!-- Stats Row -->
-    <section class="dashboard-grid">
-      <div class="card stat-card">
-        <div class="stat-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+    <!-- Dashboard body -->
+    <section>
+      <!-- Stats: 4 minimal columns separated by hairlines -->
+      <div class="dash-stats">
+        <div class="stat">
+          <div class="stat-label">Total products</div>
+          <div class="stat-value-row">
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-delta up" id="stat-total-delta">+12</div>
+          </div>
+          <div class="stat-hint">items tracked</div>
+          <svg class="sparkline" data-points="20,22,24,25,28,30,32,34,36,38,40,42,44,46,48,52" data-color="accent"></svg>
         </div>
-        <div class="stat-label">Total Products</div>
-        <div class="stat-value">1,248</div>
-        <div class="trend-up">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
-          12% from last month
+
+        <div class="stat">
+          <div class="stat-label">Low stock</div>
+          <div class="stat-value-row">
+            <div class="stat-value" id="stat-low">—</div>
+            <div class="stat-delta down" id="stat-low-delta">+4</div>
+          </div>
+          <div class="stat-hint">vs last week</div>
+          <svg class="sparkline" data-points="8,9,10,10,11,12,12,13,13,14,13,14,14,14,14,14" data-color="warning"></svg>
         </div>
-      </div>
-      
-      <div class="card stat-card">
-        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-warning);">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+
+        <div class="stat">
+          <div class="stat-label">Pending orders</div>
+          <div class="stat-value-row">
+            <div class="stat-value" id="stat-orders">—</div>
+            <div class="stat-delta neutral">—</div>
+          </div>
+          <div class="stat-hint">awaiting fulfillment</div>
+          <svg class="sparkline" data-points="1,1,2,2,2,2,3,3,3,3,3,3,3,3,3,3" data-color="danger"></svg>
         </div>
-        <div class="stat-label">Low Stock Items</div>
-        <div class="stat-value">34</div>
-        <div class="trend-down">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>
-          4 needing reorder
+
+        <div class="stat">
+          <div class="stat-label">Active locations</div>
+          <div class="stat-value-row">
+            <div class="stat-value" id="stat-locations">—</div>
+            <div class="stat-delta neutral">—</div>
+          </div>
+          <div class="stat-hint">no change</div>
+          <svg class="sparkline" data-points="8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8" data-color="muted"></svg>
         </div>
       </div>
 
-      <div class="card stat-card">
-        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-success);">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-        </div>
-        <div class="stat-label">Pending Orders</div>
-        <div class="stat-value">12</div>
-        <div class="trend-up">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
-          3 fulfilled today
-        </div>
-      </div>
+      <!-- Two-col: chart + activity -->
+      <div class="dash-grid">
+        <div>
+          <div class="section-head">
+            <div>
+              <div class="section-title">Stock movement</div>
+              <div class="section-sub">Units in / out · last 30 days</div>
+            </div>
+            <div class="legend-group">
+              <span class="legend-dot in">In</span>
+              <span class="legend-dot out">Out</span>
+              <div style="width:1px;height:12px;background:var(--border)"></div>
+              <div class="range-toggle">
+                <button>7d</button>
+                <button class="active">30d</button>
+                <button>90d</button>
+              </div>
+            </div>
+          </div>
 
-      <div class="card stat-card">
-        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        </div>
-        <div class="stat-label">Active Locations</div>
-        <div class="stat-value">6</div>
-        <div class="trend-up" style="color: var(--text-muted)">
-          No changes this week
-        </div>
-      </div>
-    </section>
+          <div class="chart-card">
+            <svg id="area-chart" width="100%" height="200" viewBox="0 0 800 200" preserveAspectRatio="none"></svg>
+          </div>
 
-    <!-- Main Grid -->
-    <section class="main-grid">
-      <!-- Recent Movements -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Recent Stock Movements</div>
-          <button class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--bg-hover);" onclick="window.location.href='/adjustments.html'">View All</button>
+          <!-- Needs attention -->
+          <div style="margin-top: 40px;">
+            <div class="section-head">
+              <div>
+                <div class="section-title">Needs attention</div>
+                <div class="section-sub" id="alerts-sub">Items below minimum stock level</div>
+              </div>
+              <span class="view-all" onclick="window.location.href='/products.html'">
+                View all
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </span>
+            </div>
+            <div class="needs-list" id="alerts-container">
+              <div style="padding:24px;text-align:center;color:var(--fg-4);font-size:13px;">Scanning for alerts…</div>
+            </div>
+          </div>
         </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Qty</th>
-                <th>Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="movements-table-body">
-              <!-- Real data will be injected here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <!-- Quick Actions / Alerts -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Inventory Alerts</div>
-        </div>
-        <div id="alerts-container" style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.9rem;">Scanning for alerts...</div>
+        <!-- Activity feed -->
+        <div>
+          <div style="margin-bottom:18px;">
+            <div class="section-title">Activity</div>
+            <div class="section-sub">Recent changes</div>
+          </div>
+          <div class="activity-list" id="movements-list">
+            <div style="padding:14px 0;color:var(--fg-4);font-size:12px;">Loading…</div>
+          </div>
         </div>
       </div>
     </section>
 
   </main>
-  
+
   <script src="/js/sidebar.js"></script>
   <script>
+    // ── Sparkline rendering ──
+    function renderSparklines() {
+      const colorMap = {
+        accent: 'var(--accent)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        muted: 'var(--fg-4)',
+      };
+      document.querySelectorAll('.sparkline').forEach(svg => {
+        const data = svg.dataset.points.split(',').map(Number);
+        const w = 100, h = 22;
+        const max = Math.max(...data), min = Math.min(...data);
+        const range = (max - min) || 1;
+        const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(' ');
+        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${colorMap[svg.dataset.color] || 'var(--accent)'}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+      });
+    }
+    renderSparklines();
+
+    // ── Area chart (deterministic mock; replaced if data available) ──
+    function renderAreaChart(inData, outData) {
+      const svg = document.getElementById('area-chart');
+      const w = 800, h = 200;
+      const days = inData.length;
+      const all = [...inData, ...outData];
+      const max = Math.max(...all);
+      const min = Math.min(0, ...all);
+      const range = (max - min) || 1;
+      const pad = { t: 12, r: 8, b: 24, l: 32 };
+      const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+      const xy = arr => arr.map((v, i) => [pad.l + (i / (arr.length - 1)) * cw, pad.t + ch - ((v - min) / range) * ch]);
+      const inPts = xy(inData), outPts = xy(outData);
+      const toPath = pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ');
+      const toArea = pts => `${toPath(pts)} L${pts[pts.length - 1][0]},${pad.t + ch} L${pts[0][0]},${pad.t + ch} Z`;
+      const ticks = [max, max * 0.66, max * 0.33, 0].map(v => Math.round(v));
+
+      let html = `<defs>
+        <linearGradient id="inGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>`;
+      ticks.forEach((v, i) => {
+        const y = pad.t + (i / (ticks.length - 1)) * ch;
+        html += `<line x1="${pad.l}" y1="${y}" x2="${w - pad.r}" y2="${y}" stroke="var(--border)" stroke-width="1" ${i === ticks.length - 1 ? '' : 'stroke-dasharray="2,3"'}/>`;
+        html += `<text x="${pad.l - 8}" y="${y + 3}" text-anchor="end" font-size="9" fill="var(--fg-4)" font-family="DM Mono, monospace">${v}</text>`;
+      });
+      [0, 7, 14, 21, 29].forEach(i => {
+        if (i >= days) return;
+        const x = pad.l + (i / (days - 1)) * cw;
+        html += `<text x="${x}" y="${h - 8}" text-anchor="middle" font-size="9" fill="var(--fg-4)" font-family="DM Mono, monospace">d${i + 1}</text>`;
+      });
+      html += `<path d="${toArea(inPts)}" fill="url(#inGrad)"/>`;
+      html += `<path d="${toPath(inPts)}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`;
+      html += `<path d="${toPath(outPts)}" fill="none" stroke="var(--fg-4)" stroke-width="1.2" stroke-dasharray="3,3"/>`;
+      svg.innerHTML = html;
+    }
+    // Initial deterministic mock — gets replaced by real data if available
+    (function initialChart() {
+      const days = 30;
+      const seed = i => 40 + Math.sin(i * 0.5) * 10 + Math.cos(i * 0.3) * 6 + i * 0.5;
+      const inD = Array.from({ length: days }, (_, i) => Math.round(seed(i) + (Math.sin(i * 0.7) + 1) * 6));
+      const outD = Array.from({ length: days }, (_, i) => Math.round(seed(i) * 0.55 + (Math.cos(i * 0.5) + 1) * 4));
+      renderAreaChart(inD, outD);
+    })();
+
+    // ── Load real stats / activity ──
     async function loadStats() {
       const token = sessionStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
       try {
-        // 1. Total Products
-        const pRes = await fetch('/api/products', { headers });
-        const pData = await pRes.json();
-        if (pData.success) {
-          document.querySelectorAll('.stat-value')[0].textContent = pData.data.length;
-        }
+        const [pRes, oRes, lRes] = await Promise.all([
+          fetch('/api/products', { headers }),
+          fetch('/api/orders', { headers }),
+          fetch('/api/locations', { headers }),
+        ]);
+        const [pData, oData, lData] = await Promise.all([pRes.json(), oRes.json(), lRes.json()]);
 
-        // 2. Pending Orders (using orders count as placeholder)
-        const oRes = await fetch('/api/orders', { headers });
-        const oData = await oRes.json();
-        if (oData.success) {
-          document.querySelectorAll('.stat-value')[2].textContent = oData.data.length;
-        }
+        if (pData.success) document.getElementById('stat-total').textContent = pData.data.length.toLocaleString();
+        if (oData.success) document.getElementById('stat-orders').textContent = oData.data.length;
+        if (lData.success) document.getElementById('stat-locations').textContent = lData.data.length;
 
-        // 3. Active Locations
-        const lRes = await fetch('/api/locations', { headers });
-        const lData = await lRes.json();
-        if (lData.success) {
-          document.querySelectorAll('.stat-value')[3].textContent = lData.data.length;
-        }
-
-        // 4. Low Stock (calculated from products if reorder level hit)
-        // This would be better with a dedicated stats endpoint, but we can count here for now
+        // Low stock
         let lowStockCount = 0;
-        for (const p of pData.data) {
-          const sRes = await fetch(`/api/products/${p.id}/stock`, { headers });
-          const sData = await sRes.json();
-          if (sData.success) {
-            const total = sData.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
-            if (total <= p.reorder_level) lowStockCount++;
-          }
-        }
-        document.querySelectorAll('.stat-value')[1].textContent = lowStockCount;
-
-        // 5. Recent Movements (using Adjustments as primary source for now)
-        const adjRes = await fetch('/api/adjustments', { headers });
-        const adjData = await adjRes.json();
-        const movementsBody = document.getElementById('movements-table-body');
-        if (adjData.success && adjData.data.length > 0) {
-          movementsBody.innerHTML = '';
-          adjData.data.slice(0, 5).forEach(m => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${m.product_name}</td>
-              <td>Adjustment</td>
-              <td>${m.location_name}</td>
-              <td style="color: ${m.adjustment_type === 'INCREASE' ? 'var(--accent-success)' : 'var(--accent-danger)'}">
-                ${m.adjustment_type === 'INCREASE' ? '+' : '-'}${m.quantity_change}
-              </td>
-              <td style="font-size: 0.85rem;">${new Date(m.adjustment_date).toLocaleDateString()}</td>
-              <td><span class="status-badge status-in-stock">Completed</span></td>
-            `;
-            movementsBody.appendChild(row);
-          });
-        } else {
-          movementsBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No recent movements</td></tr>';
-        }
-
-        // 6. Real Alerts
-        const alertsContainer = document.getElementById('alerts-container');
-        alertsContainer.innerHTML = '';
-        let hasAlerts = false;
-
-        for (const p of pData.data) {
-          const sRes = await fetch(`/api/products/${p.id}/stock`, { headers });
-          const sData = await sRes.json();
-          if (sData.success) {
-            const total = sData.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
-            if (total <= p.reorder_level) {
-              hasAlerts = true;
-              const alertDiv = document.createElement('div');
-              const isOut = total === 0;
-              alertDiv.style = `padding: 16px; border-radius: 8px; background: rgba(${isOut ? '239, 68, 68' : '245, 158, 11'}, 0.05); border-left: 4px solid var(--accent-${isOut ? 'danger' : 'warning'});`;
-              alertDiv.innerHTML = `
-                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">${isOut ? 'Out of Stock' : 'Low Stock'}: ${p.name}</div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">Current: ${total} units. Reorder level: ${p.reorder_level}</div>
-              `;
-              alertsContainer.appendChild(alertDiv);
+        const lowStockItems = [];
+        if (pData.success) {
+          for (const p of pData.data) {
+            const sRes = await fetch(`/api/products/${p.id}/stock`, { headers });
+            const sData = await sRes.json();
+            if (sData.success) {
+              const total = sData.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+              if (total <= p.reorder_level) {
+                lowStockCount++;
+                lowStockItems.push({ ...p, total });
+              }
             }
           }
-          if (alertsContainer.children.length >= 3) break; // Limit alerts
+        }
+        document.getElementById('stat-low').textContent = lowStockCount;
+
+        // Needs attention list
+        const alertsContainer = document.getElementById('alerts-container');
+        const alertsSub = document.getElementById('alerts-sub');
+        if (lowStockItems.length === 0) {
+          alertsContainer.innerHTML = `<div style="padding:32px;text-align:center;color:var(--fg-4);font-size:13px;">All stock levels healthy</div>`;
+          alertsSub.textContent = 'No items below minimum';
+        } else {
+          alertsSub.textContent = `${lowStockItems.length} item${lowStockItems.length === 1 ? '' : 's'} below minimum stock level`;
+          alertsContainer.innerHTML = lowStockItems.slice(0, 6).map(p => {
+            const isOut = p.total === 0;
+            return `
+              <div class="needs-row">
+                <div class="needs-name">${p.name}</div>
+                <div class="needs-sku">${p.sku}</div>
+                <div class="needs-qty" style="color:${isOut ? 'var(--danger)' : 'var(--warning)'}">
+                  ${p.total} <span class="max">/ ${p.reorder_level}</span>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <span class="status-badge ${isOut ? 'status-out-of-stock' : 'status-low-stock'}">${isOut ? 'OUT' : 'LOW'}</span>
+                </div>
+              </div>`;
+          }).join('');
         }
 
-        if (!hasAlerts) {
-          alertsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 0.85rem;">All stock levels healthy ✨</div>';
+        // Recent activity (from adjustments)
+        const movementsList = document.getElementById('movements-list');
+        try {
+          const adjRes = await fetch('/api/adjustments', { headers });
+          const adjData = await adjRes.json();
+          if (adjData.success && adjData.data.length > 0) {
+            movementsList.innerHTML = adjData.data.slice(0, 6).map(m => {
+              const isIn = m.adjustment_type === 'INCREASE';
+              const dotClass = isIn ? 'in' : 'out';
+              const delta = isIn ? `+${m.quantity_change}` : `-${m.quantity_change}`;
+              const when = new Date(m.adjustment_date);
+              const ago = timeAgo(when);
+              return `
+                <div class="activity-item">
+                  <div class="activity-dot ${dotClass}"></div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="activity-title">${isIn ? 'Stock added' : 'Stock removed'}</div>
+                    <div class="activity-item-name">${m.product_name}</div>
+                    <div class="activity-meta">${delta} · ${ago}</div>
+                  </div>
+                </div>`;
+            }).join('');
+          } else {
+            movementsList.innerHTML = `<div style="padding:14px 0;color:var(--fg-4);font-size:12px;">No recent activity</div>`;
+          }
+        } catch {
+          movementsList.innerHTML = `<div style="padding:14px 0;color:var(--fg-4);font-size:12px;">Unable to load activity</div>`;
         }
-
       } catch (err) {
         console.error('Error loading dashboard stats:', err);
       }
+    }
+
+    function timeAgo(date) {
+      const s = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (s < 60) return `${s}s ago`;
+      if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+      if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+      return `${Math.floor(s / 86400)}d ago`;
     }
 
     loadStats();

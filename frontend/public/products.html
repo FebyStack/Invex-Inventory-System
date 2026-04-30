@@ -7,121 +7,28 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <style>
-    .products-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
-    }
-
-    .search-bar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      outline: none;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .product-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .product-name {
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
+    .product-info { display: flex; flex-direction: column; }
+    .product-name { font-weight: 500; color: var(--fg-1); }
     .product-sku {
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--fg-4);
+      margin-top: 2px;
     }
-
-    .stock-badge {
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
+    .product-thumb {
+      width: 28px; height: 28px; border-radius: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-4); margin-right: 12px;
+      vertical-align: middle;
     }
-
-    .stock-in { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
-    .stock-low { background: rgba(245, 158, 11, 0.1); color: var(--accent-warning); }
-    .stock-out { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
-
-    .action-btn {
-      padding: 6px;
-      border-radius: 6px;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-    }
+    .product-thumb svg { width: 13px; height: 13px; }
   </style>
 </head>
 <body>
@@ -213,99 +120,106 @@
     <header class="top-header">
       <div class="header-title">
         <h1>Products</h1>
-        <p>Manage your inventory catalog.</p>
+        <p>Manage your inventory catalog</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-product-btn">+ Add Product</button>
+        <button class="btn btn-primary" id="new-product-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New product
+        </button>
       </div>
     </header>
 
-    <div class="search-bar">
-      <input type="text" id="search-input" class="form-control" style="max-width: 300px;" placeholder="Search name or SKU...">
-      <select id="filter-category" class="form-control" style="max-width: 200px;">
-        <option value="">All Categories</option>
-      </select>
-      <select id="filter-supplier" class="form-control" style="max-width: 200px;">
-        <option value="">All Suppliers</option>
-      </select>
-    </div>
+    <section style="padding: 0 32px;">
+      <div class="search-bar">
+        <input type="text" id="search-input" class="form-control" style="max-width: 280px;" placeholder="Search by name or SKU…">
+        <select id="filter-category" class="form-control" style="max-width: 180px;">
+          <option value="">All categories</option>
+        </select>
+        <select id="filter-supplier" class="form-control" style="max-width: 180px;">
+          <option value="">All suppliers</option>
+        </select>
+      </div>
 
-    <section class="card">
       <table id="products-table">
         <thead>
           <tr>
             <th>Product</th>
             <th>Category</th>
-            <th>Price</th>
-            <th>Stock Status</th>
-            <th>Actions</th>
+            <th style="text-align: right;">Price</th>
+            <th>Stock</th>
+            <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="products-table-body">
           <!-- Data will be loaded here -->
         </tbody>
       </table>
-      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading catalog...</div>
+      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--fg-4); font-size: 13px;">Loading catalog…</div>
     </section>
   </main>
 
   <!-- Product Modal -->
   <div class="modal" id="product-modal">
     <div class="modal-content">
-      <div class="modal-header" style="margin-bottom: 24px;">
-        <h2 id="modal-title">Add New Product</h2>
+      <div class="modal-header">
+        <h2 id="modal-title">New product</h2>
       </div>
       <form id="product-form">
         <input type="hidden" id="edit-id">
-        <div class="form-group">
-          <label for="name">Product Name</label>
-          <input type="text" id="name" class="form-control" required placeholder="e.g. Wireless Mouse M1">
-        </div>
-        <div class="form-group">
-          <label for="sku">SKU / Item Code</label>
-          <input type="text" id="sku" class="form-control" required placeholder="e.g. WM-001">
+
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-group">
+            <label for="name">Product name</label>
+            <input type="text" id="name" class="form-control" required placeholder="Wireless Mouse M1">
+          </div>
         </div>
 
         <div class="form-grid">
+          <div class="form-group">
+            <label for="sku">SKU</label>
+            <input type="text" id="sku" class="form-control" required placeholder="WM-001">
+          </div>
           <div class="form-group">
             <label for="category_id">Category</label>
             <select id="category_id" class="form-control" required>
-              <option value="">Select Category</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="supplier_id">Supplier</label>
-            <select id="supplier_id" class="form-control" required>
-              <option value="">Select Supplier</option>
+              <option value="">Select category</option>
             </select>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label for="unit_price">Unit Price ($)</label>
-            <input type="number" id="unit_price" class="form-control" required step="0.01" min="0">
+            <label for="supplier_id">Supplier</label>
+            <select id="supplier_id" class="form-control" required>
+              <option value="">Select supplier</option>
+            </select>
           </div>
           <div class="form-group">
-            <label for="reorder_level">Reorder Level</label>
+            <label for="unit_of_measure">Unit</label>
+            <input type="text" id="unit_of_measure" class="form-control" required value="pcs">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="unit_price">Unit price ($)</label>
+            <input type="number" id="unit_price" class="form-control" required step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label for="reorder_level">Reorder level</label>
             <input type="number" id="reorder_level" class="form-control" required min="0" value="10">
           </div>
         </div>
 
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="unit_of_measure">Unit of Measure</label>
-            <input type="text" id="unit_of_measure" class="form-control" required value="pcs">
-          </div>
-          <div class="form-group" style="display: flex; align-items: center; gap: 8px; padding-top: 25px;">
-            <input type="checkbox" id="track_expiry">
-            <label for="track_expiry" style="margin: 0;">Track Expiry Dates</label>
-          </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="track_expiry" style="width:auto;height:auto;cursor:pointer;">
+          <label for="track_expiry" style="margin: 0; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--fg-2); font-weight: 400;">Track expiry dates</label>
         </div>
 
-        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="save-btn">Save Product</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
         </div>
       </form>
     </div>
@@ -342,17 +256,26 @@
             const row = document.createElement('tr');
             row.innerHTML = `
               <td>
-                <div class="product-info">
-                  <span class="product-name">${p.name}</span>
-                  <span class="product-sku">${p.sku}</span>
+                <div style="display:flex;align-items:center;">
+                  <span class="product-thumb">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                  </span>
+                  <div class="product-info">
+                    <span class="product-name">${p.name}</span>
+                    <span class="product-sku">${p.sku}</span>
+                  </div>
                 </div>
               </td>
-              <td>${p.category_name}</td>
-              <td>$${parseFloat(p.unit_price).toFixed(2)}</td>
-              <td><span class="stock-badge stock-in">Fetching...</span></td>
-              <td>
-                <button class="action-btn edit-btn" data-id="${p.id}">✏️</button>
-                <button class="action-btn delete-btn" data-id="${p.id}">🗑️</button>
+              <td style="color:var(--fg-3);">${p.category_name || '—'}</td>
+              <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">$${parseFloat(p.unit_price).toFixed(2)}</td>
+              <td><span class="stock-badge stock-in">Fetching…</span></td>
+              <td style="text-align:right;">
+                <button class="action-btn edit-btn" data-id="${p.id}" title="Edit">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="action-btn delete-btn" data-id="${p.id}" title="Delete">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
               </td>
             `;
             tableBody.appendChild(row);
@@ -414,7 +337,7 @@
     document.getElementById('new-product-btn').onclick = () => {
       form.reset();
       document.getElementById('edit-id').value = '';
-      document.getElementById('modal-title').textContent = 'Add New Product';
+      document.getElementById('modal-title').textContent = 'New product';
       modal.style.display = 'flex';
     };
 
@@ -485,7 +408,7 @@
           document.getElementById('unit_of_measure').value = p.unit_of_measure;
           document.getElementById('track_expiry').checked = p.track_expiry;
           
-          document.getElementById('modal-title').textContent = 'Edit Product';
+          document.getElementById('modal-title').textContent = 'Edit product';
           modal.style.display = 'flex';
         }
       }

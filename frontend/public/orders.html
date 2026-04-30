@@ -7,79 +7,39 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <style>
-    .order-type-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .type-in { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
-    .type-out { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
-    .type-transfer { background: rgba(59, 130, 246, 0.1); color: var(--accent-primary); }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
+    .modal-content { max-width: 720px !important; }
     .item-row {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      grid-template-columns: 2fr 1fr 1fr auto;
       gap: 12px;
       margin-bottom: 12px;
       align-items: end;
     }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      outline: none;
-    }
-
     #items-container {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-color);
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
     }
-
+    #items-container h3 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg-1);
+      margin: 0;
+    }
     .remove-btn {
+      width: 38px;
+      height: 38px;
       background: transparent;
-      border: none;
-      color: var(--accent-danger);
+      border: 1px solid var(--border-strong);
+      color: var(--fg-3);
       cursor: pointer;
-      padding: 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 120ms;
     }
+    .remove-btn:hover { background: var(--hover); color: var(--danger); }
   </style>
 </head>
 <body>
@@ -171,14 +131,17 @@
     <header class="top-header">
       <div class="header-title">
         <h1>Orders</h1>
-        <p>Inbound, Outbound, and Internal Transfers.</p>
+        <p>Inbound, outbound, and internal transfers</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-order-btn">+ Create Order</button>
+        <button class="btn btn-primary" id="new-order-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New order
+        </button>
       </div>
     </header>
 
-    <section class="card">
+    <section style="padding: 0 32px;">
       <table id="orders-table">
         <thead>
           <tr>
@@ -187,7 +150,7 @@
             <th>Reference</th>
             <th>Source / Dest</th>
             <th>Date</th>
-            <th>Items</th>
+            <th style="text-align:right;">Items</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -195,65 +158,66 @@
           <!-- Data loaded here -->
         </tbody>
       </table>
-      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading orders...</div>
+      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--fg-4); font-size: 13px;">Loading orders…</div>
     </section>
   </main>
 
   <!-- Order Modal -->
   <div class="modal" id="order-modal">
     <div class="modal-content">
-      <div class="modal-header" style="margin-bottom: 24px;">
-        <h2>Create New Order</h2>
+      <div class="modal-header">
+        <h2>New order</h2>
       </div>
       <form id="order-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div class="form-group">
-            <label for="order_type">Order Type</label>
+            <label for="order_type">Order type</label>
             <select id="order_type" class="form-control" required>
-              <option value="IN">Stock In (Inbound)</option>
-              <option value="OUT">Stock Out (Outbound)</option>
-              <option value="TRANSFER">Internal Transfer</option>
+              <option value="IN">Stock in (Inbound)</option>
+              <option value="OUT">Stock out (Outbound)</option>
+              <option value="TRANSFER">Internal transfer</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="reference_no">Reference No.</label>
-            <input type="text" id="reference_no" class="form-control" placeholder="PO-12345, SO-12345">
+            <label for="reference_no">Reference</label>
+            <input type="text" id="reference_no" class="form-control" placeholder="PO-12345">
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div class="form-group" id="source-loc-group" style="display: none;">
-            <label for="source_location_id">Source Location</label>
+            <label for="source_location_id">Source</label>
             <select id="source_location_id" class="form-control">
-              <option value="">Select Source...</option>
+              <option value="">Select source…</option>
             </select>
           </div>
           <div class="form-group" id="dest-loc-group">
-            <label for="destination_location_id">Destination Location</label>
+            <label for="destination_location_id">Destination</label>
             <select id="destination_location_id" class="form-control">
-              <option value="">Select Destination...</option>
+              <option value="">Select destination…</option>
             </select>
           </div>
         </div>
 
         <div id="items-container">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="font-size: 1rem;">Order Items</h3>
-            <button type="button" class="btn" style="padding: 4px 12px; font-size: 0.8rem; background: var(--bg-hover);" id="add-item-btn">+ Add Item</button>
+            <h3>Order items</h3>
+            <button type="button" class="btn btn-ghost btn-sm" id="add-item-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add item
+            </button>
           </div>
-          <div id="items-list">
-            <!-- Item rows here -->
-          </div>
+          <div id="items-list"></div>
         </div>
 
-        <div class="form-group" style="margin-top: 20px;">
-          <label for="notes">Internal Notes</label>
+        <div class="form-group" style="margin-top: 18px;">
+          <label for="notes">Internal notes</label>
           <textarea id="notes" class="form-control" rows="2"></textarea>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Submit Order</button>
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit order</button>
         </div>
       </form>
     </div>
@@ -292,13 +256,13 @@
                            `${o.source_location_name} &rarr; ${o.destination_location_name}`);
             
             row.innerHTML = `
-              <td style="font-weight: 600;">ORD-${o.id}</td>
+              <td class="num">ORD-${o.id}</td>
               <td><span class="order-type-badge ${typeClass}">${o.order_type}</span></td>
-              <td style="color: var(--text-muted);">${o.reference_no || '-'}</td>
-              <td style="font-size: 0.9rem;">${locInfo}</td>
-              <td style="font-size: 0.85rem;">${new Date(o.order_date).toLocaleDateString()}</td>
-              <td style="font-weight: 500;">${o.item_count} items</td>
-              <td><span style="color: var(--accent-success);">● Completed</span></td>
+              <td style="color: var(--fg-3);">${o.reference_no || '—'}</td>
+              <td style="color: var(--fg-2);">${locInfo}</td>
+              <td style="color: var(--fg-3);">${new Date(o.order_date).toLocaleDateString()}</td>
+              <td style="text-align: right;" class="num">${o.item_count}</td>
+              <td><span class="status-badge status-in-stock">Completed</span></td>
             `;
             tableBody.appendChild(row);
           });

@@ -7,134 +7,101 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <style>
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 450px;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      outline: none;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .type-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--accent-primary);
-    }
-
     .empty-state {
       text-align: center;
-      padding: 40px;
-      color: var(--text-muted);
+      padding: 60px 20px;
+      color: var(--fg-4);
+      font-size: 13px;
     }
-
-    .action-btn {
-      padding: 6px;
-      border-radius: 6px;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
+    .code-mono {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--fg-1);
+      letter-spacing: 0.02em;
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-container">
-        <div class="logo-icon">Ix</div>
-        <span class="logo-text">Invex</span>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        </div>
+        <div class="logo-text-wrapper">
+          <span class="logo-text">Invex</span>
+          <span class="logo-subtitle">Inventory</span>
+        </div>
       </div>
     </div>
-    
+
     <nav class="nav-menu">
       <a href="/dashboard.html" class="nav-item">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         <span class="nav-label">Dashboard</span>
       </a>
       <a href="/products.html" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
         <span class="nav-label">Products</span>
       </a>
+      <a href="/categories.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        <span class="nav-label">Categories</span>
+      </a>
+      <a href="/suppliers.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1.5-8.5l1.96 2.5H17V10h-.5z"/></svg>
+        <span class="nav-label">Suppliers</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+      <a href="/batches.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM11.99 9.22A3.28 3.28 0 0 0 9 12.5a3.28 3.28 0 0 0 3.28 3.28 3.28 3.28 0 0 0 3.28-3.28 3.28 3.28 0 0 0-3.57-3.28zm0 5.06a1.78 1.78 0 1 1 0-3.56 1.78 1.78 0 0 1 0 3.56z"/></svg>
+        <span class="nav-label">Batches</span>
+        <span class="nav-badge" id="badge-batches" style="display: none;"></span>
+      </a>
       <a href="/orders.html" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M16 11V7l5 5-5 5v-4H8v-2h8zM8 13v4l-5-5 5-5v4h8v2H8z"/></svg>
         <span class="nav-label">Orders</span>
       </a>
       <a href="/adjustments.html" class="nav-item">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
         <span class="nav-label">Adjustments</span>
       </a>
-      <a href="/reason-codes.html" class="nav-item active">
-        <svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>
-        <span class="nav-label">Reason Codes</span>
+      <a href="/reports.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span class="nav-label">Reports</span>
       </a>
-      <a href="/locations.html" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span class="nav-label">Locations</span>
+      <a href="/import-export.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        <span class="nav-label">Import/Export</span>
+      </a>
+
+      <div class="nav-divider" id="admin-divider" style="display: none;"></div>
+      <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
+
+      <a href="/users.html" class="nav-item admin-item" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="nav-label">Users</span>
+        <span class="admin-pill">ADMIN</span>
       </a>
     </nav>
-    
+
     <div class="sidebar-footer">
-      <button class="logout-btn">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-        <span>Logout</span>
+      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="sidebar-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">Staff</div>
+        </div>
+        <svg class="user-chevron" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+      </div>
+      <button class="logout-btn" id="sidebar-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Logout
       </button>
     </div>
   </aside>
@@ -143,62 +110,63 @@
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
-        <h1>Reason Codes</h1>
-        <p>Define reasons for manual stock adjustments.</p>
+        <h1>Reason codes</h1>
+        <p>Define reasons for manual stock adjustments</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-code-btn">+ New Reason Code</button>
+        <button class="btn btn-primary" id="new-code-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New reason
+        </button>
       </div>
     </header>
 
-    <section class="card">
+    <section style="padding: 0 32px;">
       <table>
         <thead>
           <tr>
             <th>Code</th>
             <th>Description</th>
-            <th>Allows Type</th>
-            <th>Created At</th>
-            <th>Actions</th>
+            <th>Allows</th>
+            <th>Created</th>
+            <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
-        <tbody id="codes-table-body">
-          <!-- Data will be loaded here -->
-        </tbody>
+        <tbody id="codes-table-body"></tbody>
       </table>
-      <div id="loading-state" class="empty-state">Loading reason codes...</div>
+      <div id="loading-state" class="empty-state">Loading reason codes…</div>
     </section>
   </main>
 
   <!-- New Modal -->
   <div class="modal" id="code-modal">
     <div class="modal-content">
-      <div class="modal-header" style="margin-bottom: 24px;">
-        <h2>New Reason Code</h2>
+      <div class="modal-header">
+        <h2>New reason code</h2>
       </div>
       <form id="code-form">
         <div class="form-group">
-          <label for="code">Reason Code (Uppercase)</label>
-          <input type="text" id="code" class="form-control" required placeholder="e.g. DAMAGED" style="text-transform: uppercase;">
+          <label for="code">Code</label>
+          <input type="text" id="code" class="form-control" required placeholder="DAMAGED" style="text-transform: uppercase; font-family: 'DM Mono', monospace;">
         </div>
 
         <div class="form-group">
           <label for="description">Description</label>
-          <input type="text" id="description" class="form-control" required placeholder="e.g. Product arrived damaged">
+          <input type="text" id="description" class="form-control" required placeholder="Product arrived damaged">
         </div>
 
         <div class="form-group">
-          <label for="adjustment_type">Allowed Adjustment Type</label>
+          <label for="adjustment_type">Allowed adjustment type</label>
           <select id="adjustment_type" class="form-control" required>
-            <option value="BOTH">BOTH (+/-)</option>
-            <option value="INCREASE">INCREASE only (+)</option>
-            <option value="DECREASE">DECREASE only (-)</option>
+            <option value="BOTH">Both (+/−)</option>
+            <option value="INCREASE">Increase only (+)</option>
+            <option value="DECREASE">Decrease only (−)</option>
           </select>
         </div>
 
-        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
-          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create Reason</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create reason</button>
         </div>
       </form>
     </div>
@@ -224,13 +192,18 @@
           tableBody.innerHTML = '';
           data.data.forEach(item => {
             const row = document.createElement('tr');
+            const allows = item.adjustment_type;
+            const allowsClass = allows === 'INCREASE' ? 'status-in-stock' : (allows === 'DECREASE' ? 'status-out-of-stock' : 'status-low-stock');
+            const allowsLabel = allows === 'BOTH' ? 'Both' : (allows === 'INCREASE' ? 'Increase' : 'Decrease');
             row.innerHTML = `
-              <td style="font-weight: 600; color: var(--accent-primary);">${item.code}</td>
-              <td>${item.description}</td>
-              <td><span class="type-badge">${item.adjustment_type}</span></td>
-              <td style="color: var(--text-muted); font-size: 0.85rem;">${new Date(item.created_at).toLocaleDateString()}</td>
-              <td>
-                <button class="action-btn delete-btn" data-id="${item.id}">🗑️</button>
+              <td><span class="code-mono">${item.code}</span></td>
+              <td style="color: var(--fg-1);">${item.description}</td>
+              <td><span class="status-badge ${allowsClass}">${allowsLabel}</span></td>
+              <td style="color: var(--fg-3);">${new Date(item.created_at).toLocaleDateString()}</td>
+              <td style="text-align: right;">
+                <button class="action-btn delete-btn" data-id="${item.id}" title="Delete">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               </td>
             `;
             tableBody.appendChild(row);
@@ -280,9 +253,11 @@
     };
 
     tableBody.onclick = async (e) => {
-      if (e.target.classList.contains('delete-btn')) {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      if (btn.classList.contains('delete-btn')) {
         if (!confirm('Are you sure? This might fail if the code is in use.')) return;
-        const id = e.target.dataset.id;
+        const id = btn.dataset.id;
         const token = sessionStorage.getItem('token');
         const res = await fetch(`/api/reason-codes/${id}`, {
           method: 'DELETE',

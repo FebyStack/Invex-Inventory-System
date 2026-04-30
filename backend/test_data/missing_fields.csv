@@ -1,0 +1,5 @@
+sku,name,category_id,supplier_id,unit_price,reorder_level,track_expiry,unit_of_measure
+MISSING-001,Product Without Category,,1,10.00,5,false,pcs
+,Product Without SKU,1,1,20.00,5,false,pcs
+MISSING-003,Product Negative Price,1,1,-5.00,5,false,pcs
+MISSING-004,,1,1,15.00,5,false,pcs

@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
 const batchController = require('../controllers/batchController');
-const { protect } = require('../middleware/authMiddleware');
+const { asyncHandler } = require('../middleware/errorMiddleware');
 
-// All batch routes are protected
-router.use(protect);
+router.use(authenticate);
 
-router.get('/', batchController.getAllBatches);
-router.get('/expiring', batchController.getExpiringBatches); // Must be before /:id
-router.get('/:id', batchController.getBatchById);
-router.post('/', batchController.createBatch);
-router.put('/:id', batchController.updateBatch);
-router.delete('/:id', batchController.deleteBatch);
+router.get('/', asyncHandler(batchController.getAllBatches));
+router.get('/expiring', asyncHandler(batchController.getExpiringBatches));
+router.get('/:id', asyncHandler(batchController.getBatchById));
+router.post('/', authorize('admin'), asyncHandler(batchController.createBatch));
+router.put('/:id', authorize('admin'), asyncHandler(batchController.updateBatch));
+router.delete('/:id', authorize('admin'), asyncHandler(batchController.deleteBatch));
 
 module.exports = router;

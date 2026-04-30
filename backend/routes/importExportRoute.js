@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
-// const { authenticate } = require('../middleware/authMiddleware');
-// const importExportController = require('../controllers/importExportController');
+const importExportController = require('../controllers/importExportController');
+const upload = require('../src/middleware/uploadMiddleware');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
 
-// POST /api/import-export/import
-// GET  /api/import-export/export
+// Protect all routes
+router.use(authenticate);
+
+// Import Products
+router.post('/import/products', authorize('admin'), upload.single('file'), importExportController.importProducts);
+
+// Export Routes
+router.get('/export/products', importExportController.exportProducts);
+router.get('/export/stock-report', importExportController.exportStockReport);
+router.get('/export/movement-log', importExportController.exportMovementLog);
 
 module.exports = router;

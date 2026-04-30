@@ -1202,154 +1202,43 @@
       ]
     },
     {
-      "name": "Orders",
-      "description": "Stock-In, Stock-Out, and Transfer transactions",
+      "name": "Import/Export",
+      "description": "Bulk data operations",
       "item": [
         {
-          "name": "1. POST Stock-In (201)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.environment.set('orderId', res.data.id);"
-                ]
-              }
-            }
-          ],
+          "name": "POST Import Products",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_type\": \"IN\",\n  \"destination_location_id\": 1,\n  \"supplier_id\": 1,\n  \"reference_no\": \"PO-001\",\n  \"notes\": \"Initial stock load\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 100,\n      \"unit_price\": 50\n    }\n  ]\n}"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
             },
             "url": {
-              "raw": "{{baseUrl}}/orders",
+              "raw": "{{baseUrl}}/import/products",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders"
+                "import",
+                "products"
               ]
             }
           }
         },
         {
-          "name": "2. POST Stock-Out (201)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_type\": \"OUT\",\n  \"source_location_id\": 1,\n  \"reference_no\": \"SO-001\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 20,\n      \"unit_price\": 150\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            }
-          }
-        },
-        {
-          "name": "3. POST Stock-Out — Insufficient (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Error message includes Insufficient', () => {",
-                  "    pm.expect(pm.response.json().message).to.include('Insufficient stock');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_type\": \"OUT\",\n  \"source_location_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10000,\n      \"unit_price\": 150\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            }
-          }
-        },
-        {
-          "name": "4. POST Transfer (201)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_type\": \"TRANSFER\",\n  \"source_location_id\": 1,\n  \"destination_location_id\": 2,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10,\n      \"unit_price\": 0\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            }
-          }
-        },
-        {
-          "name": "5. GET All Orders (Filtered)",
+          "name": "GET Export Products (CSV)",
           "request": {
             "method": "GET",
             "header": [
@@ -1359,28 +1248,25 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders?order_type=IN&location_id=1",
+              "raw": "{{baseUrl}}/export/products?format=csv",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders"
+                "export",
+                "products"
               ],
               "query": [
                 {
-                  "key": "order_type",
-                  "value": "IN"
-                },
-                {
-                  "key": "location_id",
-                  "value": "1"
+                  "key": "format",
+                  "value": "csv"
                 }
               ]
             }
           }
         },
         {
-          "name": "6. GET Order By ID",
+          "name": "GET Export Stock Report",
           "request": {
             "method": "GET",
             "header": [
@@ -1390,62 +1276,27 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders/{{orderId}}",
+              "raw": "{{baseUrl}}/export/stock-report?format=csv",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "{{orderId}}"
+                "export",
+                "stock-report"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
               ]
             }
           }
         },
         {
-          "name": "7. PUT Update Order",
+          "name": "GET Export Movement Log",
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"notes\": \"Updated order notes\",\n  \"reference_no\": \"REF-UPDATED\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders/{{orderId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders",
-                "{{orderId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "8. DELETE Order (Reverses Stock)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
               {
                 "key": "Authorization",
@@ -1453,13 +1304,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders/{{orderId}}",
+              "raw": "{{baseUrl}}/export/movement-log?format=csv",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "{{orderId}}"
+                "export",
+                "movement-log"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
               ]
             }
           }
@@ -1467,23 +1324,11 @@
       ]
     },
     {
-      "name": "Reason Codes",
-      "description": "Manage reason codes for stock adjustments",
+      "name": "Reports",
+      "description": "Dashboard and Analytics endpoints",
       "item": [
         {
-          "name": "1. GET All Reason Codes",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns data array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
-                ]
-              }
-            }
-          ],
+          "name": "GET Dashboard Data",
           "request": {
             "method": "GET",
             "header": [
@@ -1493,275 +1338,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reason-codes",
+              "raw": "{{baseUrl}}/reports/dashboard",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reason-codes"
+                "reports",
+                "dashboard"
               ]
             }
           }
         },
         {
-          "name": "2. POST Create Reason Code",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.environment.set('reasonCodeId', res.data.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"code\": \"SAMPLE_TEST\",\n  \"description\": \"Test reason code\",\n  \"adjustment_type\": \"BOTH\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/reason-codes",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reason-codes"
-              ]
-            }
-          }
-        },
-        {
-          "name": "3. DELETE Reason Code",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reason-codes/{{reasonCodeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reason-codes",
-                "{{reasonCodeId}}"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Adjustments",
-      "description": "Manual stock corrections with reason codes",
-      "item": [
-        {
-          "name": "1. POST Valid Adjustment (INCREASE)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.environment.set('adjustmentId', res.data.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 6,\n  \"notes\": \"Found items during recount\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/adjustments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments"
-              ]
-            }
-          }
-        },
-        {
-          "name": "2. POST Without Reason Code (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Error mentions required fields', () => pm.expect(pm.response.json().message).to.include('required'));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/adjustments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments"
-              ]
-            }
-          }
-        },
-        {
-          "name": "3. POST Soft-Deleted Reason Code (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Error mentions deleted', () => pm.expect(pm.response.json().message).to.include('not found'));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 9999\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/adjustments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments"
-              ]
-            }
-          }
-        },
-        {
-          "name": "4. POST INCREASE with DAMAGED Code (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Error mentions type mismatch', () => pm.expect(pm.response.json().message).to.include('only allows'));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 1,\n  \"notes\": \"Trying to INCREASE with DAMAGED (DECREASE only)\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/adjustments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments"
-              ]
-            }
-          }
-        },
-        {
-          "name": "5. GET All Adjustments",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "GET Low Stock Report",
           "request": {
             "method": "GET",
             "header": [
@@ -1771,18 +1360,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/adjustments",
+              "raw": "{{baseUrl}}/reports/low-stock",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "adjustments"
+                "reports",
+                "low-stock"
               ]
             }
           }
         },
         {
-          "name": "6. GET Adjustment By ID",
+          "name": "GET Expiring Batches",
           "request": {
             "method": "GET",
             "header": [
@@ -1792,151 +1382,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/adjustments/{{adjustmentId}}",
+              "raw": "{{baseUrl}}/reports/expiring?days=30",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "adjustments",
-                "{{adjustmentId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "7. GET Product History",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns history array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/products/1/history",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products",
-                "1",
-                "history"
-              ]
-            }
-          }
-        },
-        {
-          "name": "8. DELETE Adjustment (Reverses Stock)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/adjustments/{{adjustmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments",
-                "{{adjustmentId}}"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Batches",
-      "description": "CRUD operations and queries for Product Batches",
-      "item": [
-        {
-          "name": "GET All Batches (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/batches",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "batches"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Expiring Batches (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/batches/expiring?days=30",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "batches",
+                "reports",
                 "expiring"
               ],
               "query": [
@@ -1949,36 +1400,467 @@
           }
         },
         {
-          "name": "POST Create Batch (201)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "if (res.data && res.data.id) pm.environment.set('batchId', res.data.id);"
-                ]
-              }
-            }
-          ],
+          "name": "GET Stock Summary",
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/stock-summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "stock-summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Movement Log (Report)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/movement-log?limit=100&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "movement-log"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "GET All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product_id\": {{productId}},\n  \"location_id\": {{locationId}},\n  \"batch_no\": \"BATCH-2026-001\",\n  \"quantity\": 100,\n  \"expiry_date\": \"2026-12-31\"\n}"
+              "raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Gadgets and devices\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET Category By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
             },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Electronics\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "item": [
+        {
+          "name": "GET All Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Global Tech\",\n  \"contact_person\": \"John Doe\",\n  \"email\": \"john@tech.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET Supplier By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Supplier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Global Tech\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE Supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reason Codes",
+      "item": [
+        {
+          "name": "GET All Reason Codes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Reason Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"DAMAGED\",\n  \"description\": \"Damaged on arrival\",\n  \"adjustment_type\": \"DECREASE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET Reason Code By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Reason Code",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE Reason Code",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batches",
+      "item": [
+        {
+          "name": "GET All Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/batches",
               "host": [
@@ -1991,18 +1873,37 @@
           }
         },
         {
-          "name": "GET Batch By ID (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
+          "name": "POST Create Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"batch_number\": \"B-001\",\n  \"expiry_date\": \"2026-12-31\",\n  \"initial_quantity\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
             }
-          ],
+          }
+        },
+        {
+          "name": "GET Batch By ID",
           "request": {
             "method": "GET",
             "header": [
@@ -2012,73 +1913,57 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "raw": "{{baseUrl}}/batches/1",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "batches",
-                "{{batchId}}"
+                "1"
               ]
             }
           }
         },
         {
-          "name": "PUT Update Batch (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "PUT Update Batch",
           "request": {
             "method": "PUT",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quantity\": 90\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "raw": "{{baseUrl}}/batches/1",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "batches",
-                "{{batchId}}"
+                "1"
               ]
-            }
-          }
-        },
-        {
-          "name": "DELETE Batch (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"batch_number\": \"B-001-UPDATED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
             }
-          ],
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "GET All Orders",
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
               {
                 "key": "Authorization",
@@ -2086,13 +1971,142 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "raw": "{{baseUrl}}/orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "batches",
-                "{{batchId}}"
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Order (IN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_type\": \"IN\",\n  \"destination_location_id\": 1,\n  \"supplier_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 50,\n      \"unit_price\": 100\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET Order By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Adjustments",
+      "item": [
+        {
+          "name": "GET All Adjustments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Adjustment (DECREASE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"DECREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 1,\n  \"notes\": \"Spoilage\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET Adjustment By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments",
+                "1"
               ]
             }
           }

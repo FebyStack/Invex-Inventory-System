@@ -1,0 +1,11 @@
+sku,name,category_id,supplier_id,unit_price,reorder_level,track_expiry,unit_of_measure
+TEST-001,Premium Keyboard,1,1,120.50,10,false,pcs
+TEST-002,Gaming Mouse,1,1,45.99,15,false,pcs
+TEST-003,27-inch Monitor,1,1,250.00,5,false,pcs
+TEST-004,USB-C Hub,1,1,25.00,20,false,pcs
+TEST-005,Ergonomic Chair,1,1,199.99,5,false,pcs
+TEST-006,Wireless Earbuds,1,1,89.99,30,false,pcs
+TEST-007,Laptop Stand,1,1,35.50,25,false,pcs
+TEST-008,HDMI Cable 2m,1,1,12.00,50,false,pcs
+TEST-009,Mechanical Switch Set,1,1,40.00,10,false,set
+TEST-010,Desk Mat,1,1,22.00,15,false,pcs

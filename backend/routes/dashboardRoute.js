@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
-const { protect } = require('../middleware/authMiddleware');
+const { authenticate } = require('../middleware/authMiddleware');
 
-router.use(protect);
+router.use(authenticate);
 
 router.get('/urgent-batches', dashboardController.getUrgentBatches);
 

@@ -1,5 +1,5 @@
-const app = require('./src/app');
-const config = require('./src/config/env');
+const app = require('./backend/src/app');
+const config = require('./backend/src/config/env');
 
 const PORT = config.port || 3000;
 

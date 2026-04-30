@@ -3,195 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invex — Login</title>
+    <title>Invex — Sign in</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg-dark: #0f172a;
-            --surface: rgba(30, 41, 59, 0.7);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --error: #ef4444;
+          --bg: #0A0A0B;
+          --surface: #121214;
+          --surface-elev: #17171A;
+          --border: rgba(255,255,255,0.06);
+          --border-strong: rgba(255,255,255,0.10);
+          --fg-1: #F5F5F7;
+          --fg-2: #B4B4B8;
+          --fg-3: #8A8A8E;
+          --fg-4: #5A5A5F;
+          --hover: rgba(255,255,255,0.03);
+          --danger: #F87171;
+        }
+        body.light {
+          --bg: #FAFAF7;
+          --surface: #FFFFFF;
+          --surface-elev: #FFFFFF;
+          --border: rgba(0,0,0,0.06);
+          --border-strong: rgba(0,0,0,0.10);
+          --fg-1: #0A0A0B;
+          --fg-2: #3A3A3F;
+          --fg-3: #6A6A6F;
+          --fg-4: #9A9A9F;
+          --hover: rgba(0,0,0,0.025);
+          --danger: #DC2626;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
-            height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg-1);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text);
-            overflow: hidden;
+            padding: 16px;
+            -webkit-font-smoothing: antialiased;
+            transition: background 200ms ease, color 200ms ease;
+            letter-spacing: -0.005em;
         }
 
         .login-card {
             width: 100%;
-            max-width: 400px;
-            background: var(--surface);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.6s ease-out;
+            max-width: 360px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 40px;
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
+        .logo-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: var(--fg-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
-        .header h1 {
-            font-size: 2rem;
+        .logo-icon::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--bg);
+            border-radius: 2px;
+        }
+        .brand span {
+            font-size: 17px;
             font-weight: 600;
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+            color: var(--fg-1);
         }
 
-        .header p {
-            color: var(--text-muted);
-            font-size: 0.875rem;
+        h1 {
+            font-size: 26px;
+            font-weight: 400;
+            color: var(--fg-1);
+            letter-spacing: -0.035em;
+            margin-bottom: 6px;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        .sub {
+            color: var(--fg-3);
+            font-size: 13px;
+            margin-bottom: 32px;
         }
+
+        .form-group { margin-bottom: 14px; }
 
         .form-group label {
             display: block;
-            font-size: 0.875rem;
-            font-weight: 400;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--fg-3);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin-bottom: 6px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem;
-            color: var(--text);
+            height: 38px;
+            padding: 0 12px;
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            color: var(--fg-1);
             font-family: inherit;
-            transition: all 0.2s;
+            font-size: 13px;
+            transition: border-color 150ms ease;
             outline: none;
         }
-
-        .form-group input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            background: rgba(15, 23, 42, 0.8);
-        }
+        .form-group input:focus { border-color: var(--fg-2); }
 
         .btn {
             width: 100%;
-            padding: 0.75rem;
-            background: var(--primary);
-            color: white;
+            height: 42px;
+            background: var(--fg-1);
+            color: var(--bg);
             border: none;
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 1rem;
+            transition: opacity 150ms ease;
+            margin-top: 16px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
-        .btn:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         #error-msg {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: var(--error);
-            padding: 0.75rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            margin-bottom: 1.5rem;
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            color: var(--danger);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 14px;
             display: none;
-            text-align: center;
         }
+
+        .footer {
+            margin-top: 28px;
+            font-size: 11px;
+            color: var(--fg-4);
+            text-align: left;
+        }
+        .footer a {
+            color: var(--fg-2);
+            text-decoration: none;
+            transition: color 150ms;
+        }
+        .footer a:hover { color: var(--fg-1); }
 
         .loader {
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid rgba(0,0,0,0.2);
             border-radius: 50%;
-            border-top-color: #fff;
+            border-top-color: var(--bg);
             animation: spin 0.8s linear infinite;
             display: none;
-            margin: 0 auto;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .theme-mini {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .theme-mini button {
+            border: none;
+            background: transparent;
+            color: var(--fg-3);
+            border-radius: 5px;
+            padding: 6px 8px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .theme-mini button.active {
+            background: var(--surface-elev);
+            color: var(--fg-1);
+            border: 1px solid var(--border);
+        }
+        .theme-mini svg {
+            width: 12px;
+            height: 12px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
     </style>
 </head>
 <body>
+    <div class="theme-mini" id="theme-mini">
+        <button data-theme="dark" title="Dark">
+            <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button data-theme="light" title="Light">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+    </div>
+
     <div class="login-card">
-        <div class="header">
-            <h1>INVEX</h1>
-            <p>Inventory Management System</p>
+        <div class="brand">
+            <div class="logo-icon"></div>
+            <span>Invex</span>
         </div>
+
+        <h1>Sign in</h1>
+        <p class="sub">Welcome back. Let's get your stock under control.</p>
 
         <div id="error-msg"></div>
 
         <form id="login-form">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" required autocomplete="username" placeholder="Enter your username">
+                <input type="text" id="username" required autocomplete="username" placeholder="jane">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
             </div>
             <button type="submit" class="btn" id="submit-btn">
-                <span id="btn-text">Sign In</span>
+                <span id="btn-text">Sign in</span>
                 <div class="loader" id="btn-loader"></div>
             </button>
         </form>
 
-        <div style="margin-top: 2rem; text-align: center; font-size: 0.875rem; color: #94a3b8;">
-            Don't have an account? <a href="register.html" style="color: #6366f1; text-decoration: none; font-weight: 600;">Create Account</a>
+        <div class="footer">
+            Don't have an account? <a href="register.html">Create one</a>
         </div>
     </div>
 
     <script>
+        // Theme persistence
+        const applyTheme = (t) => {
+            if (t === 'light') document.body.classList.add('light');
+            else document.body.classList.remove('light');
+            try { localStorage.setItem('invex_theme', t); } catch {}
+            document.querySelectorAll('#theme-mini button').forEach(b => {
+                b.classList.toggle('active', b.dataset.theme === t);
+            });
+        };
+        const stored = (() => { try { return localStorage.getItem('invex_theme'); } catch { return null; } })();
+        applyTheme(stored || 'dark');
+        document.querySelectorAll('#theme-mini button').forEach(b => {
+            b.addEventListener('click', () => applyTheme(b.dataset.theme));
+        });
+
         const form = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
         const submitBtn = document.getElementById('submit-btn');
@@ -200,11 +287,10 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Reset UI
             errorMsg.style.display = 'none';
             submitBtn.disabled = true;
             btnText.style.display = 'none';
@@ -220,13 +306,11 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Success: Save token and redirect
                     sessionStorage.setItem('token', data.token);
                     sessionStorage.setItem('user', JSON.stringify(data.user));
                     window.location.href = '/dashboard.html';
                 } else {
-                    // Error
-                    errorMsg.textContent = data.message || 'Login failed. Please try again.';
+                    errorMsg.textContent = data.message || 'Sign-in failed. Please try again.';
                     errorMsg.style.display = 'block';
                 }
             } catch (err) {

@@ -1,13 +1,11 @@
 /* ============================================
-   SIDEBAR — Collapsible on hover (Restored Style)
+   SIDEBAR — Minimalist, collapse-on-hover preserved
    ============================================ */
 
 .sidebar {
   width: var(--sidebar-collapsed);
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-right: 1px solid var(--border-color);
+  background: var(--bg);
+  border-right: 1px solid var(--border);
   position: fixed;
   height: 100vh;
   left: 0;
@@ -15,24 +13,26 @@
   display: flex;
   flex-direction: column;
   z-index: 100;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
-  transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+  transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1),
+              background var(--transition-speed) ease;
   overflow: hidden;
+  padding: 14px 8px;
 }
 
-/* Expand on hover */
 .sidebar:hover {
   width: var(--sidebar-width);
-  background: rgba(30, 41, 59, 0.95);
+  background: var(--bg);
+  padding: 14px;
 }
 
-/* ---- Header ---- */
+/* ---- Header / Logo ---- */
 .sidebar-header {
-  height: var(--header-height);
+  height: auto;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 6px 6px 22px 6px;
+  border-bottom: none;
   width: 100%;
   overflow: hidden;
 }
@@ -41,215 +41,264 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
 .logo-icon {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 8px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  background: var(--fg-1);
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: white;
+  position: relative;
 }
-.logo-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: white;
+.logo-icon::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 1.5px;
 }
+.logo-icon svg { display: none; }
 
 .logo-text-wrapper {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
   white-space: nowrap;
 }
-
-.sidebar:hover .logo-text-wrapper {
-  opacity: 1;
-  visibility: visible;
-}
+.sidebar:hover .logo-text-wrapper { opacity: 1; visibility: visible; }
 
 .logo-text {
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  background: linear-gradient(to right, #ffffff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.1;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--fg-1);
+  background: none;
+  -webkit-text-fill-color: var(--fg-1);
 }
 
 .logo-subtitle {
-  font-size: 0.65rem;
-  color: var(--text-secondary);
+  font-size: 10px;
+  color: var(--fg-4);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
+  font-family: 'DM Mono', monospace;
+  margin-left: auto;
 }
 
-/* ---- Navigation ---- */
+/* ---- Nav menu ---- */
 .nav-menu {
-  padding: 24px 12px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
 }
-
-/* Hide scrollbar for a cleaner look */
-.nav-menu::-webkit-scrollbar {
-  width: 4px;
-}
-.nav-menu::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
-  border-radius: 4px;
-}
+.nav-menu::-webkit-scrollbar { width: 0; }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: all var(--transition-speed) ease;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--fg-3);
+  font-weight: 400;
+  font-size: 13px;
+  transition: all 120ms ease;
   position: relative;
   white-space: nowrap;
   overflow: hidden;
   width: 100%;
-}
-
-.sidebar:hover .nav-item {
-  padding: 12px 16px;
+  cursor: pointer;
 }
 
 .nav-item:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+  background: var(--hover);
+  color: var(--fg-2);
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%);
-  color: #6366f1; /* Purple/Indigo accent matching login */
+  background: var(--hover);
+  color: var(--fg-1);
+  font-weight: 500;
 }
 
-/* Active indicator dot (visible when collapsed) */
 .nav-item.active::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 24px;
-  background: #6366f1;
-  border-radius: 0 4px 4px 0;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--fg-1);
+  border-radius: 0;
 }
+.sidebar:hover .nav-item.active::before { left: -14px; }
 
 .nav-item svg {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Older pages have filled SVGs — re-color via fill */
+.nav-item svg path,
+.nav-item svg circle,
+.nav-item svg rect,
+.nav-item svg line,
+.nav-item svg polyline,
+.nav-item svg polygon {
   fill: currentColor;
-  transition: transform var(--transition-speed);
+  stroke: none;
 }
 
-.nav-item:hover svg {
-  transform: scale(1.1);
-}
+.nav-item:hover svg { transform: none; }
 
-/* Nav labels: hidden when collapsed, shown on hover */
+/* Labels — fade in on hover */
 .nav-label {
-  font-size: 0.95rem;
+  font-size: 13px;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
 }
+.sidebar:hover .nav-label { opacity: 1; visibility: visible; }
 
-.sidebar:hover .nav-label {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* ---- Badges ---- */
+/* Badges */
 .nav-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 18px;
+  height: 16px;
   padding: 0 6px;
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 9px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--warning);
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+  border-radius: 4px;
   margin-left: auto;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .nav-badge {
-  opacity: 1;
-  visibility: visible;
-}
+.sidebar:hover .nav-badge { opacity: 1; visibility: visible; }
 
-/* ---- Dividers & Admin Section ---- */
+/* Dividers & Admin section */
 .nav-divider {
   height: 1px;
-  background: var(--border-color);
-  margin: 16px 0;
+  background: var(--border);
+  margin: 14px 0;
   width: 100%;
 }
 
 .nav-section-label {
-  font-size: 0.7rem;
-  color: var(--text-muted);
+  font-size: 10px;
+  color: var(--fg-4);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 0 12px;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  padding: 0 10px;
+  margin-bottom: 6px;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
+  font-weight: 500;
 }
-.sidebar:hover .nav-section-label {
-  opacity: 1;
-  visibility: visible;
-}
+.sidebar:hover .nav-section-label { opacity: 1; visibility: visible; }
 
 .admin-pill {
   display: inline-flex;
   align-items: center;
-  height: 16px;
-  padding: 0 4px;
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-  font-size: 0.6rem;
-  font-weight: 700;
-  border-radius: 4px;
-  margin-left: 8px;
+  height: 14px;
+  padding: 0 5px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--fg-3);
+  font-size: 9px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+  border-radius: 3px;
+  margin-left: auto;
   opacity: 0;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .admin-pill {
-  opacity: 1;
-}
+.sidebar:hover .admin-pill { opacity: 1; }
 
-/* ---- Footer / User Profile ---- */
+/* ---- Theme toggle (injected at runtime by sidebar.js) ---- */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  margin: 12px 0;
+  width: 100%;
+}
+.theme-toggle button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--fg-3);
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 150ms ease;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.theme-toggle button.active {
+  background: var(--surface-elev);
+  color: var(--fg-1);
+  border: 1px solid var(--border);
+}
+.theme-toggle button svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+/* Hide labels when collapsed */
+.theme-toggle .toggle-label {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-speed) ease;
+}
+.sidebar:hover .theme-toggle .toggle-label { opacity: 1; visibility: visible; }
+
+/* ---- Footer / User profile ---- */
 .sidebar-footer {
-  padding: 16px 0;
-  border-top: 1px solid var(--border-color);
+  padding: 0;
+  border-top: 1px solid var(--border);
   margin-top: auto;
+  padding-top: 10px;
   display: flex;
   flex-direction: column;
 }
@@ -257,33 +306,31 @@
 .user-profile-card {
   display: flex;
   align-items: center;
-  padding: 12px;
-  margin: 0 12px 8px 12px;
-  border-radius: 8px;
-  transition: background-color var(--transition-speed);
+  gap: 10px;
+  padding: 8px;
+  margin: 0;
+  border-radius: 6px;
+  transition: background var(--transition-speed) ease;
   cursor: pointer;
 }
-.user-profile-card:hover {
-  background-color: var(--bg-hover);
-}
+.user-profile-card:hover { background: var(--hover); }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
   border-radius: 50%;
-  background: #6366f1;
-  color: #FFFFFF;
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 10px;
   font-weight: 600;
-  transition: transform var(--transition-speed);
+  transition: none;
 }
-.sidebar:hover .user-avatar {
-  margin-right: 12px;
-}
+.sidebar:hover .user-avatar { margin-right: 0; }
 
 .user-info {
   display: flex;
@@ -302,71 +349,80 @@
 }
 
 .user-name {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--fg-1);
+  font-size: 12px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-role {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  margin-top: 2px;
+  color: var(--fg-4);
+  font-size: 10px;
+  margin-top: 1px;
 }
 
 .user-chevron {
-  color: var(--text-muted);
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
+  color: var(--fg-4);
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
   opacity: 0;
 }
-.sidebar:hover .user-chevron {
-  opacity: 1;
-}
+.user-chevron path,
+.user-chevron polyline,
+.user-chevron line { fill: currentColor; stroke: none; }
+.sidebar:hover .user-chevron { opacity: 1; }
 
-/* ---- Logout Button ---- */
+/* ---- Logout button ---- */
 .logout-btn {
-  width: calc(100% - 24px);
-  margin: 0 12px;
+  width: 100%;
+  margin: 4px 0 0 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 8px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--text-secondary);
+  border-radius: 6px;
+  color: var(--fg-3);
   cursor: pointer;
-  transition: all var(--transition-speed) ease;
-  font-size: 0.95rem;
-  font-weight: 500;
+  transition: all 120ms ease;
+  font-size: 13px;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
+  font-family: inherit;
 }
 
 .logout-btn svg {
-  min-width: 24px;
-  height: 24px;
-  transition: transform 0.2s;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  fill: currentColor;
+  stroke: none;
+  transition: none;
 }
 
 .logout-btn:hover {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  color: var(--accent-danger) !important;
-  border-color: var(--accent-danger) !important;
-  padding-left: 16px;
+  background: var(--hover) !important;
+  color: var(--danger) !important;
+  border-color: transparent !important;
+  padding-left: 8px;
 }
 
-/* Hide Logout text when collapsed */
 .logout-btn span {
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .logout-btn span {
-  opacity: 1;
-  visibility: visible;
+.sidebar:hover .logout-btn span { opacity: 1; visibility: visible; }
+
+/* When sidebar is collapsed, slightly nudge content to stay aligned */
+.sidebar:not(:hover) .nav-item,
+.sidebar:not(:hover) .user-profile-card,
+.sidebar:not(:hover) .logout-btn,
+.sidebar:not(:hover) .theme-toggle {
+  justify-content: flex-start;
 }

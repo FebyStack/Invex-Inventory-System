@@ -7,124 +7,14 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <style>
-    .adjustments-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 500px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-header {
-      margin-bottom: 24px;
-    }
-
-    .modal-header h2 {
-      font-size: 1.5rem;
-      color: var(--text-primary);
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .form-control:focus {
-      border-color: var(--accent-primary);
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 32px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    th {
-      color: var(--text-muted);
-      font-weight: 500;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .type-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .type-increase { background: rgba(16, 185, 129, 0.1); color: var(--accent-success); }
-    .type-decrease { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
-
-    #adjustments-table-body tr:hover {
-      background-color: var(--bg-hover);
-    }
-
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: var(--text-muted);
+      color: var(--fg-4);
+      font-size: 13px;
     }
+    .qty-up { color: var(--success); }
+    .qty-down { color: var(--danger); }
   </style>
 </head>
 <body>
@@ -217,35 +107,34 @@
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
-        <h1>Stock Adjustments</h1>
-        <p>Manual inventory corrections and recounts.</p>
+        <h1>Adjustments</h1>
+        <p>Manual inventory corrections and recounts</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-adjustment-btn">+ New Adjustment</button>
+        <button class="btn btn-primary" id="new-adjustment-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New adjustment
+        </button>
       </div>
     </header>
 
-    <section class="card">
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Product</th>
-              <th>Location</th>
-              <th>Type</th>
-              <th>Qty</th>
-              <th>Reason</th>
-              <th>Adjusted By</th>
-            </tr>
-          </thead>
-          <tbody id="adjustments-table-body">
-            <!-- Data will be loaded here -->
-          </tbody>
-        </table>
-        <div id="loading-state" class="empty-state">Loading adjustments...</div>
-        <div id="no-data-state" class="empty-state" style="display: none;">No adjustments found.</div>
-      </div>
+    <section style="padding: 0 32px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th style="text-align:right;">Qty</th>
+            <th>Reason</th>
+            <th>By</th>
+          </tr>
+        </thead>
+        <tbody id="adjustments-table-body"></tbody>
+      </table>
+      <div id="loading-state" class="empty-state">Loading adjustments…</div>
+      <div id="no-data-state" class="empty-state" style="display: none;">No adjustments found.</div>
     </section>
   </main>
 
@@ -253,51 +142,53 @@
   <div class="modal" id="adjustment-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>New Stock Adjustment</h2>
+        <h2>New adjustment</h2>
       </div>
       <form id="adjustment-form">
         <div class="form-group">
           <label for="product_id">Product</label>
           <select id="product_id" class="form-control" required>
-            <option value="">Select a product...</option>
+            <option value="">Select a product…</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="location_id">Location</label>
-          <select id="location_id" class="form-control" required>
-            <option value="">Select a location...</option>
-          </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label for="location_id">Location</label>
+            <select id="location_id" class="form-control" required>
+              <option value="">Select a location…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="adjustment_type">Type</label>
+            <select id="adjustment_type" class="form-control" required>
+              <option value="INCREASE">Increase (+)</option>
+              <option value="DECREASE">Decrease (−)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label for="quantity_change">Quantity</label>
+            <input type="number" id="quantity_change" class="form-control" min="1" required placeholder="10">
+          </div>
+          <div class="form-group">
+            <label for="reason_code_id">Reason</label>
+            <select id="reason_code_id" class="form-control" required>
+              <option value="">Select a reason…</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="adjustment_type">Adjustment Type</label>
-          <select id="adjustment_type" class="form-control" required>
-            <option value="INCREASE">INCREASE (+)</option>
-            <option value="DECREASE">DECREASE (-)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="quantity_change">Quantity Change</label>
-          <input type="number" id="quantity_change" class="form-control" min="1" required placeholder="e.g. 10">
-        </div>
-
-        <div class="form-group">
-          <label for="reason_code_id">Reason Code</label>
-          <select id="reason_code_id" class="form-control" required>
-            <option value="">Select a reason...</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="notes">Notes (Optional)</label>
-          <textarea id="notes" class="form-control" rows="3" placeholder="Explain the reason for adjustment..."></textarea>
+          <label for="notes">Notes</label>
+          <textarea id="notes" class="form-control" rows="2" placeholder="Optional context"></textarea>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Adjustment</button>
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save adjustment</button>
         </div>
       </form>
     </div>
@@ -333,20 +224,21 @@
             const row = document.createElement('tr');
             const date = new Date(adj.adjustment_date).toLocaleDateString() + ' ' + new Date(adj.adjustment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            const isUp = adj.adjustment_type === 'INCREASE';
             row.innerHTML = `
-              <td>${date}</td>
+              <td style="color: var(--fg-3);">${date}</td>
               <td>
-                <div style="font-weight: 600;">${adj.product_name}</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">${adj.sku}</div>
+                <div style="font-weight: 500; color: var(--fg-1);">${adj.product_name}</div>
+                <div style="font-size: 11px; color: var(--fg-4); font-family: 'DM Mono', monospace;">${adj.sku}</div>
               </td>
-              <td>${adj.location_name}</td>
-              <td><span class="type-badge ${adj.adjustment_type === 'INCREASE' ? 'type-increase' : 'type-decrease'}">${adj.adjustment_type}</span></td>
-              <td style="font-weight: 700; color: ${adj.adjustment_type === 'INCREASE' ? 'var(--accent-success)' : 'var(--accent-danger)'}">${adj.adjustment_type === 'INCREASE' ? '+' : '-'}${adj.quantity_change}</td>
+              <td style="color: var(--fg-2);">${adj.location_name}</td>
+              <td><span class="status-badge ${isUp ? 'status-in-stock' : 'status-out-of-stock'}">${isUp ? 'Increase' : 'Decrease'}</span></td>
+              <td class="num ${isUp ? 'qty-up' : 'qty-down'}" style="text-align: right;">${isUp ? '+' : '−'}${adj.quantity_change}</td>
               <td>
-                <div style="font-weight: 500;">${adj.reason_code}</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">${adj.reason_description}</div>
+                <div style="color: var(--fg-1);">${adj.reason_code}</div>
+                <div style="font-size: 11px; color: var(--fg-4);">${adj.reason_description}</div>
               </td>
-              <td>${adj.adjusted_by}</td>
+              <td style="color: var(--fg-3);">${adj.adjusted_by}</td>
             `;
             tableBody.appendChild(row);
           });

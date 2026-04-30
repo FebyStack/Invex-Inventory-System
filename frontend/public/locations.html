@@ -7,83 +7,17 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <style>
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--fg-4);
+      font-size: 13px;
     }
-
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 450px;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      outline: none;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .status-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--accent-success);
-    }
-
-    .action-btn {
-      padding: 6px;
-      border-radius: 6px;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
+    .type-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
     }
   </style>
 </head>
@@ -176,14 +110,17 @@
     <header class="top-header">
       <div class="header-title">
         <h1>Locations</h1>
-        <p>Manage warehouses and stores.</p>
+        <p>Warehouses, stores, and transit points</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-loc-btn">+ Add Location</button>
+        <button class="btn btn-primary" id="new-loc-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add location
+        </button>
       </div>
     </header>
 
-    <section class="card">
+    <section style="padding: 0 32px;">
       <table id="locations-table">
         <thead>
           <tr>
@@ -191,45 +128,43 @@
             <th>Type</th>
             <th>Address</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
-        <tbody id="locations-table-body">
-          <!-- Data loaded here -->
-        </tbody>
+        <tbody id="locations-table-body"></tbody>
       </table>
-      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading locations...</div>
+      <div id="loading-state" class="empty-state">Loading locations…</div>
     </section>
   </main>
 
   <!-- Location Modal -->
   <div class="modal" id="location-modal">
     <div class="modal-content">
-      <div class="modal-header" style="margin-bottom: 24px;">
-        <h2 id="modal-title">Add Location</h2>
+      <div class="modal-header">
+        <h2 id="modal-title">Add location</h2>
       </div>
       <form id="location-form">
         <input type="hidden" id="edit-id">
         <div class="form-group">
-          <label for="name">Location Name</label>
-          <input type="text" id="name" class="form-control" required placeholder="e.g. Warehouse A">
+          <label for="name">Name</label>
+          <input type="text" id="name" class="form-control" required placeholder="Warehouse A">
         </div>
         <div class="form-group">
-          <label for="type">Location Type</label>
+          <label for="type">Type</label>
           <select id="type" class="form-control" required>
             <option value="WAREHOUSE">Warehouse</option>
-            <option value="STORE">Retail Store</option>
-            <option value="VIRTUAL">Virtual / Transit</option>
+            <option value="STORE">Retail store</option>
+            <option value="VIRTUAL">Virtual / transit</option>
           </select>
         </div>
         <div class="form-group">
           <label for="address">Address</label>
-          <textarea id="address" class="form-control" rows="3" placeholder="Full street address..."></textarea>
+          <textarea id="address" class="form-control" rows="3" placeholder="Full street address"></textarea>
         </div>
 
-        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-          <button type="button" class="btn" style="background: var(--bg-hover);" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Location</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save location</button>
         </div>
       </form>
     </div>
@@ -255,13 +190,17 @@
           data.data.forEach(l => {
             const row = document.createElement('tr');
             row.innerHTML = `
-              <td style="font-weight: 600;">${l.name}</td>
-              <td><span style="font-size: 0.8rem; color: var(--text-secondary);">${l.type}</span></td>
-              <td style="color: var(--text-muted); font-size: 0.85rem;">${l.address || 'N/A'}</td>
-              <td><span class="status-badge">Active</span></td>
-              <td>
-                <button class="action-btn edit-btn" data-id="${l.id}">✏️</button>
-                <button class="action-btn delete-btn" data-id="${l.id}">🗑️</button>
+              <td style="font-weight: 500; color: var(--fg-1);">${l.name}</td>
+              <td><span class="type-pill">${l.type}</span></td>
+              <td style="color: var(--fg-3);">${l.address || '—'}</td>
+              <td><span class="status-badge status-in-stock">Active</span></td>
+              <td style="text-align: right;">
+                <button class="action-btn edit-btn" data-id="${l.id}" title="Edit">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+                </button>
+                <button class="action-btn delete-btn" data-id="${l.id}" title="Delete">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               </td>
             `;
             tableBody.appendChild(row);
@@ -273,7 +212,7 @@
     document.getElementById('new-loc-btn').onclick = () => {
       form.reset();
       document.getElementById('edit-id').value = '';
-      document.getElementById('modal-title').textContent = 'Add Location';
+      document.getElementById('modal-title').textContent = 'Add location';
       modal.style.display = 'flex';
     };
 
@@ -306,10 +245,12 @@
     };
 
     tableBody.onclick = async (e) => {
-      const id = e.target.dataset.id;
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      const id = btn.dataset.id;
       const token = sessionStorage.getItem('token');
 
-      if (e.target.classList.contains('delete-btn')) {
+      if (btn.classList.contains('delete-btn')) {
         if (!confirm('Delete this location? This might fail if items are stored here.')) return;
         const res = await fetch(`/api/locations/${id}`, {
           method: 'DELETE',
@@ -319,7 +260,7 @@
         else alert('Could not delete location.');
       }
 
-      if (e.target.classList.contains('edit-btn')) {
+      if (btn.classList.contains('edit-btn')) {
         const res = await fetch(`/api/locations/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -330,7 +271,7 @@
           document.getElementById('name').value = l.name;
           document.getElementById('type').value = l.type;
           document.getElementById('address').value = l.address || '';
-          document.getElementById('modal-title').textContent = 'Edit Location';
+          document.getElementById('modal-title').textContent = 'Edit location';
           modal.style.display = 'flex';
         }
       }

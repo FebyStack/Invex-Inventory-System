@@ -11,6 +11,11 @@
   --hover: rgba(255,255,255,0.03);
   --danger: #F87171;
   --success: #4ADE80;
+  --grid-dot: rgba(255,255,255,1);
+  --grid-opacity: 0.045;
+  --orb-warm: rgba(248,113,113,0.10);
+  --orb-cool: rgba(140,160,255,0.07);
+  --orb-soft: rgba(255,255,255,0.04);
 }
 body.light {
   --bg: #FAFAF7;
@@ -25,6 +30,11 @@ body.light {
   --hover: rgba(0,0,0,0.025);
   --danger: #DC2626;
   --success: #059669;
+  --grid-dot: rgba(0,0,0,1);
+  --grid-opacity: 0.04;
+  --orb-warm: rgba(255,154,139,0.22);
+  --orb-cool: rgba(160,140,255,0.18);
+  --orb-soft: rgba(130,230,200,0.14);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,7 +52,74 @@ body {
     -webkit-font-smoothing: antialiased;
     transition: background 200ms ease, color 200ms ease;
     letter-spacing: -0.005em;
+    position: relative;
+    overflow: hidden;
 }
+
+/* Subtle dotted grid */
+.bg-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 0);
+    background-size: 28px 28px;
+    opacity: var(--grid-opacity);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at center, black 40%, transparent 90%);
+            mask-image: radial-gradient(ellipse 70% 60% at center, black 40%, transparent 90%);
+    transition: opacity 200ms ease;
+}
+
+/* Drifting glow orbs */
+.bg-orbs {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.bg-orbs .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    will-change: transform;
+}
+.orb-1 {
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, var(--orb-warm), transparent 70%);
+    top: -160px; left: -180px;
+    animation: drift-1 28s ease-in-out infinite;
+}
+.orb-2 {
+    width: 580px; height: 580px;
+    background: radial-gradient(circle, var(--orb-cool), transparent 70%);
+    bottom: -200px; right: -200px;
+    animation: drift-2 36s ease-in-out infinite;
+}
+.orb-3 {
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, var(--orb-soft), transparent 70%);
+    top: 50%; left: 50%;
+    animation: drift-3 44s ease-in-out infinite;
+}
+@keyframes drift-1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%     { transform: translate(140px, 90px) scale(1.08); }
+}
+@keyframes drift-2 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%     { transform: translate(-120px, -70px) scale(1.05); }
+}
+@keyframes drift-3 {
+    0%,100% { transform: translate(-50%,-50%) scale(1); }
+    50%     { transform: translate(-30%,-70%) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bg-orbs .orb { animation: none; }
+}
+
+.card,
+.theme-mini { position: relative; z-index: 1; }
 
 .card { width: 100%; max-width: 400px; }
 

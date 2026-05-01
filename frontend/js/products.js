@@ -6,10 +6,80 @@ const form = document.getElementById('product-form');
 const categoryFilter = document.getElementById('filter-category');
 const supplierFilter = document.getElementById('filter-supplier');
 const searchInput = document.getElementById('search-input');
-const locationSelect = document.getElementById('location_id');
 const skuPreview = document.getElementById('sku-preview');
-let locationsCache = [];
+const trackExpiryCheckbox = document.getElementById('track_expiry');
+const expiryDateGroup = document.getElementById('expiry-date-group');
+const expiryDateInput = document.getElementById('expiry_date');
 
+// Multi-location picker state
+let locationsCache = [];
+let selectedLocationIds = [];
+const pickerBtn = document.getElementById('location-picker-btn');
+const pickerLabel = document.getElementById('location-picker-label');
+const pickerDropdown = document.getElementById('location-dropdown');
+const pickerOptions = document.getElementById('location-options');
+
+// ── Location multi-select ────────────────────────────────
+function renderLocationOptions() {
+  pickerOptions.innerHTML = locationsCache.map(l => {
+    const checked = selectedLocationIds.includes(String(l.id)) ? 'checked' : '';
+    const color = l.color || '#6c757d';
+    return `
+      <label class="multi-select-option">
+        <input type="checkbox" value="${l.id}" ${checked}>
+        <span class="loc-dot" style="background:${color}"></span>
+        <span class="loc-label">${l.name}</span>
+        <span class="loc-code">${l.code}</span>
+      </label>`;
+  }).join('');
+
+  pickerOptions.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.onchange = () => {
+      if (cb.checked) {
+        if (!selectedLocationIds.includes(cb.value)) selectedLocationIds.push(cb.value);
+      } else {
+        selectedLocationIds = selectedLocationIds.filter(id => id !== cb.value);
+      }
+      updatePickerLabel();
+      updateSkuPreview();
+    };
+  });
+}
+
+function updatePickerLabel() {
+  if (selectedLocationIds.length === 0) {
+    pickerLabel.textContent = 'Select locations';
+  } else if (selectedLocationIds.length === 1) {
+    const loc = locationsCache.find(l => String(l.id) === selectedLocationIds[0]);
+    pickerLabel.textContent = loc ? `${loc.name} (${loc.code})` : '1 location';
+  } else {
+    pickerLabel.textContent = `${selectedLocationIds.length} locations selected`;
+  }
+}
+
+pickerBtn.onclick = (e) => {
+  e.stopPropagation();
+  const open = pickerDropdown.style.display !== 'none';
+  pickerDropdown.style.display = open ? 'none' : 'block';
+};
+
+// ── Expiry toggle ────────────────────────────────────────
+function toggleExpiryDate() {
+  const show = trackExpiryCheckbox.checked;
+  expiryDateGroup.style.display = show ? '' : 'none';
+  if (!show) expiryDateInput.value = '';
+}
+trackExpiryCheckbox.onchange = toggleExpiryDate;
+toggleExpiryDate();
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('location-picker').contains(e.target)) {
+    pickerDropdown.style.display = 'none';
+  }
+});
+
+// ── Load products ────────────────────────────────────────
 async function loadProducts() {
   const token = sessionStorage.getItem('token');
   const params = new URLSearchParams();
@@ -79,6 +149,7 @@ async function fetchStock(productId, badge, reorderLevel) {
   } catch (err) { badge.textContent = 'Error'; }
 }
 
+// ── Load filters ─────────────────────────────────────────
 async function loadFilters() {
   const token = sessionStorage.getItem('token');
   const headers = { 'Authorization': `Bearer ${token}` };
@@ -107,12 +178,11 @@ async function loadFilters() {
   const lData = await lRes.json();
   if (lData.success) {
     locationsCache = lData.data || [];
-    locationsCache.forEach(l => {
-      locationSelect.add(new Option(`${l.name} (${l.code})`, l.id));
-    });
+    renderLocationOptions();
   }
 }
 
+// ── SKU preview ──────────────────────────────────────────
 function locationFromSku(sku) {
   return locationsCache.find(l => String(sku || '').startsWith(`${l.code}-`));
 }
@@ -123,15 +193,15 @@ async function updateSkuPreview(currentSku) {
     return;
   }
 
-  const locationId = locationSelect.value;
-  if (!locationId) {
-    skuPreview.textContent = 'SKU will be generated from the selected location.';
+  const primaryLocationId = selectedLocationIds[0];
+  if (!primaryLocationId) {
+    skuPreview.textContent = 'SKU will be generated from the first selected location.';
     return;
   }
 
   const token = sessionStorage.getItem('token');
   try {
-    const res = await fetch(`/api/products/next-sku?location_id=${encodeURIComponent(locationId)}`, {
+    const res = await fetch(`/api/products/next-sku?location_id=${encodeURIComponent(primaryLocationId)}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -141,6 +211,7 @@ async function updateSkuPreview(currentSku) {
   }
 }
 
+// ── Event listeners ──────────────────────────────────────
 searchInput.oninput = loadProducts;
 categoryFilter.onchange = loadProducts;
 supplierFilter.onchange = loadProducts;
@@ -149,48 +220,89 @@ document.getElementById('new-product-btn').onclick = () => {
   form.reset();
   document.getElementById('edit-id').value = '';
   document.getElementById('modal-title').textContent = 'New product';
-  locationSelect.disabled = false;
+  selectedLocationIds = [];
+  document.getElementById('location-picker').style.display = '';
+  trackExpiryCheckbox.checked = true;
+  expiryDateInput.value = '';
+  toggleExpiryDate();
+  updatePickerLabel();
+  renderLocationOptions();
   updateSkuPreview();
   modal.style.display = 'flex';
 };
 
-document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
-locationSelect.onchange = () => updateSkuPreview();
+document.getElementById('cancel-btn').onclick = () => {
+  modal.style.display = 'none';
+  pickerDropdown.style.display = 'none';
+};
 
+// ── Form submit ──────────────────────────────────────────
 form.onsubmit = async (e) => {
   e.preventDefault();
   const token = sessionStorage.getItem('token');
   const id = document.getElementById('edit-id').value;
-  const method = id ? 'PUT' : 'POST';
-  const url = id ? `/api/products/${id}` : '/api/products';
+  const isEdit = Boolean(id);
 
-  const payload = {
+  if (!isEdit && selectedLocationIds.length === 0) {
+    alert('Please select at least one location.');
+    return;
+  }
+
+  const trackExpiry = trackExpiryCheckbox.checked;
+  const basePayload = {
     name: document.getElementById('name').value,
     category_id: parseInt(document.getElementById('category_id').value),
     supplier_id: parseInt(document.getElementById('supplier_id').value),
     unit_price: parseFloat(document.getElementById('unit_price').value),
     reorder_level: parseInt(document.getElementById('reorder_level').value),
     unit_of_measure: document.getElementById('unit_of_measure').value,
-    track_expiry: document.getElementById('track_expiry').checked
+    track_expiry: trackExpiry
   };
-  if (!id) payload.location_id = parseInt(locationSelect.value);
+  if (trackExpiry && expiryDateInput.value) {
+    basePayload.expiry_date = expiryDateInput.value;
+  }
 
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
-    if (result.success) {
-      modal.style.display = 'none';
-      loadProducts();
-    } else {
-      alert('Error: ' + result.message);
-    }
-  } catch (err) { alert('Network error.'); }
+  if (isEdit) {
+    // Edit mode — single PUT, no location change
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(basePayload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        modal.style.display = 'none';
+        loadProducts();
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (err) { alert('Network error.'); }
+  } else {
+    // Create mode — POST once per selected location
+    // The first location is the "primary" that determines the SKU prefix.
+    // Since product_stock auto-seeds for ALL locations via DB trigger,
+    // we create the product once with the first location for SKU generation.
+    const payload = { ...basePayload, location_id: parseInt(selectedLocationIds[0]) };
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        modal.style.display = 'none';
+        pickerDropdown.style.display = 'none';
+        loadProducts();
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (err) { alert('Network error.'); }
+  }
 };
 
+// ── Table actions (edit / delete) ────────────────────────
 tableBody.onclick = async (e) => {
   if (e.target.classList.contains('delete-btn')) {
     if (!confirm('Are you sure you want to delete this product?')) return;
@@ -212,11 +324,10 @@ tableBody.onclick = async (e) => {
     const data = await res.json();
     if (data.success) {
       const p = data.data;
-      const location = locationFromSku(p.sku);
       document.getElementById('edit-id').value = p.id;
       document.getElementById('name').value = p.name;
-      locationSelect.value = location ? location.id : '';
-      locationSelect.disabled = true;
+      // Hide location picker on edit — SKU/location can't change
+      document.getElementById('location-picker').style.display = 'none';
       updateSkuPreview(p.sku);
       document.getElementById('category_id').value = p.category_id;
       document.getElementById('supplier_id').value = p.supplier_id;
@@ -224,6 +335,10 @@ tableBody.onclick = async (e) => {
       document.getElementById('reorder_level').value = p.reorder_level;
       document.getElementById('unit_of_measure').value = p.unit_of_measure;
       document.getElementById('track_expiry').checked = p.track_expiry;
+      expiryDateInput.value = '';
+      toggleExpiryDate();
+      // On edit, hide the expiry date input — expiry is managed per-batch
+      expiryDateGroup.style.display = 'none';
 
       document.getElementById('modal-title').textContent = 'Edit product';
       modal.style.display = 'flex';

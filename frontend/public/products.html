@@ -88,7 +88,7 @@
       </div>
       <button class="logout-btn" id="sidebar-logout-btn">
         <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-        Logout
+        <span>Logout</span>
       </button>
     </div>
   </aside>
@@ -154,11 +154,17 @@
 
         <div class="form-grid">
           <div class="form-group">
-            <label for="location_id">Location</label>
-            <select id="location_id" class="form-control" required>
-              <option value="">Select location</option>
-            </select>
-            <div class="sku-preview" id="sku-preview">SKU will be generated from the selected location.</div>
+            <label>Locations</label>
+            <div class="multi-select-wrap" id="location-picker">
+              <button type="button" class="form-control multi-select-btn" id="location-picker-btn">
+                <span id="location-picker-label">Select locations</span>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l4 4 4-4"/></svg>
+              </button>
+              <div class="multi-select-dropdown" id="location-dropdown" style="display:none;">
+                <div id="location-options"></div>
+              </div>
+            </div>
+            <div class="sku-preview" id="sku-preview">SKU will be generated from the first selected location.</div>
           </div>
           <div class="form-group">
             <label for="category_id">Category</label>
@@ -193,8 +199,14 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
-          <input type="checkbox" id="track_expiry" style="width:auto;height:auto;cursor:pointer;">
+          <input type="checkbox" id="track_expiry" checked style="width:auto;height:auto;cursor:pointer;">
           <label for="track_expiry" style="margin: 0; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--fg-2); font-weight: 400;">Track expiry dates</label>
+        </div>
+
+        <div class="form-group" id="expiry-date-group" style="margin-top: -4px;">
+          <label for="expiry_date">Expiry date <span style="color: var(--fg-4); font-weight: 400; text-transform: none; letter-spacing: 0;">(optional)</span></label>
+          <input type="date" id="expiry_date" class="form-control">
+          <div style="margin-top: 4px; font-size: 11px; color: var(--fg-4);">Leave blank if unknown — you can add expiry via batches later.</div>
         </div>
 
         <div class="modal-footer">

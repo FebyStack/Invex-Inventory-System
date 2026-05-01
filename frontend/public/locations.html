@@ -160,27 +160,39 @@
         <div class="form-grid">
           <div class="form-group span-2">
             <label for="al-name">Location name</label>
-            <input type="text" id="al-name" class="form-control" placeholder="Lab 1" required>
+            <input type="text" id="al-name" class="form-control" placeholder="Main Warehouse" required>
           </div>
           <div class="form-group">
-            <label for="al-code">SKU</label>
-            <input type="text" id="al-code" class="form-control" placeholder="BW-01" readonly>
+            <label for="al-code">Code</label>
+            <input type="text" id="al-code" class="form-control" placeholder="MW-01" readonly>
           </div>
           <div class="form-group">
-            <label for="al-region">Location</label>
-            <input type="text" id="al-region" class="form-control" placeholder="JRMSU">
-          </div>
-          <div class="form-group span-2">
-            <label for="al-city">Address</label>
-            <input type="text" id="al-city" class="form-control" placeholder="Friedrichstraße 200">
-          </div>
-          <div class="form-group span-2">
             <label for="al-type">Type</label>
             <select id="al-type" class="form-control">
               <option value="warehouse">Warehouse</option>
               <option value="store">Retail store</option>
               <option value="storeroom">Storeroom</option>
             </select>
+          </div>
+          <div class="form-group span-2">
+            <label for="al-address">Address line</label>
+            <input type="text" id="al-address" class="form-control" placeholder="123 Main Street">
+          </div>
+          <div class="form-group">
+            <label for="al-barangay">Barangay</label>
+            <input type="text" id="al-barangay" class="form-control" placeholder="San Jose">
+          </div>
+          <div class="form-group">
+            <label for="al-city">City</label>
+            <input type="text" id="al-city" class="form-control" placeholder="Zamboanga City">
+          </div>
+          <div class="form-group">
+            <label for="al-province">Province</label>
+            <input type="text" id="al-province" class="form-control" placeholder="Zamboanga del Sur">
+          </div>
+          <div class="form-group">
+            <label for="al-postal">Postal code</label>
+            <input type="text" id="al-postal" class="form-control" placeholder="7000" maxlength="10">
           </div>
           <div class="form-group span-2">
             <label>Color</label>

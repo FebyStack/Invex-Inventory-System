@@ -137,7 +137,7 @@ function renderActive() {
     : `Single location · ${loc.code}`;
   $('loc-title-dot').style.background = dot;
   $('loc-title-name').textContent = loc.name;
-  $('loc-title-meta').textContent = `${loc.city || '—'} · ${loc.region || '—'}`;
+  $('loc-title-meta').textContent = `${loc.city || '—'} · ${loc.province || '—'}`;
   $('header-sub').textContent = isAll
     ? 'At a glance — your inventory across every location'
     : `Stock physically held at ${loc.name}`;
@@ -382,8 +382,11 @@ $('add-loc-form').onsubmit = async (e) => {
     name: $('al-name').value.trim(),
     code: $('al-code').value.trim().toUpperCase(),
     type: $('al-type').value,
-    address_line: $('al-city').value.trim() || null,
-    province: $('al-region').value.trim() || null,
+    address_line: $('al-address').value.trim() || null,
+    barangay: $('al-barangay').value.trim() || null,
+    city: $('al-city').value.trim() || null,
+    province: $('al-province').value.trim() || null,
+    postal_code: $('al-postal').value.trim() || null,
     color: addColor,
   };
   if (!payload.name) return;

@@ -29,10 +29,10 @@ body.light {
   --hover: rgba(0,0,0,0.025);
   --danger: #DC2626;
   --grid-dot: rgba(0,0,0,1);
-  --grid-opacity: 0.055;
-  --orb-warm: rgba(220,38,38,0.08);
-  --orb-cool: rgba(80,100,200,0.06);
-  --orb-soft: rgba(0,0,0,0.03);
+  --grid-opacity: 0.04;
+  --orb-warm: rgba(255,154,139,0.22);
+  --orb-cool: rgba(160,140,255,0.18);
+  --orb-soft: rgba(130,230,200,0.14);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Batches | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/products.css" />
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        </div>
+        <div class="logo-text-wrapper">
+          <span class="logo-text">Invex</span>
+          <span class="logo-subtitle">Inventory</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <a href="/dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.38v6.71l6-3.38z"/></svg>
+        <span class="nav-label">Products</span>
+      </a>
+      <a href="/categories.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+        <span class="nav-label">Categories</span>
+      </a>
+      <a href="/suppliers.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1.5-8.5l1.96 2.5H17V10h-.5z"/></svg>
+        <span class="nav-label">Suppliers</span>
+      </a>
+      <a href="/locations.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span class="nav-label">Locations</span>
+      </a>
+      <a href="/batches.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM11.99 9.22A3.28 3.28 0 0 0 9 12.5a3.28 3.28 0 0 0 3.28 3.28 3.28 3.28 0 0 0 3.28-3.28 3.28 3.28 0 0 0-3.57-3.28zm0 5.06a1.78 1.78 0 1 1 0-3.56 1.78 1.78 0 0 1 0 3.56z"/></svg>
+        <span class="nav-label">Batches</span>
+        <span class="nav-badge" id="badge-batches" style="display: none;"></span>
+      </a>
+      <a href="/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M16 11V7l5 5-5 5v-4H8v-2h8zM8 13v4l-5-5 5-5v4h8v2H8z"/></svg>
+        <span class="nav-label">Orders</span>
+      </a>
+      <a href="/adjustments.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8zM11 10h2v5h-2v-5zm0 6h2v2h-2v-2z"/></svg>
+        <span class="nav-label">Adjustments</span>
+      </a>
+      <a href="/reports.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="/import-export.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        <span class="nav-label">Import/Export</span>
+      </a>
+
+      <div class="nav-divider" id="admin-divider" style="display: none;"></div>
+      <div class="nav-section-label" id="admin-label" style="display: none;">ADMIN</div>
+
+      <a href="/users.html" class="nav-item admin-item" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="nav-label">Users</span>
+        <span class="admin-pill">ADMIN</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="nav-divider" style="margin: 0; width: 100%;"></div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="sidebar-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-role" id="sidebar-role">Staff</div>
+        </div>
+        <svg class="user-chevron" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+      </div>
+      <button class="logout-btn" id="sidebar-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Batches</h1>
+        <p>Track product batches and expiry dates</p>
+      </div>
+      <div class="header-actions">
+        <!-- Batches is read-only view -->
+      </div>
+    </header>
+
+    <section style="padding: 0 32px;">
+      <div class="search-bar">
+        <input type="text" id="search-input" class="form-control" style="max-width: 280px;" placeholder="Search by product name or SKU…">
+        <select id="filter-status" class="form-control" style="max-width: 180px;">
+          <option value="">All batches</option>
+          <option value="expired">Expired</option>
+          <option value="urgent">Expiring (< 30 days)</option>
+          <option value="warning">Expiring (30-90 days)</option>
+          <option value="ok">Healthy (90+ days)</option>
+        </select>
+      </div>
+
+      <table id="batches-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Batch #</th>
+            <th>Quantity</th>
+            <th>Expires</th>
+            <th>Status</th>
+            <th style="text-align: right;">Days left</th>
+          </tr>
+        </thead>
+        <tbody id="batches-table-body">
+          <!-- Data will be loaded here -->
+        </tbody>
+      </table>
+      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--fg-4); font-size: 13px;">Loading batches…</div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/batches.js"></script>
+</body>
+</html>

@@ -18,6 +18,7 @@
               background var(--transition-speed) ease;
   overflow: hidden;
   padding: 14px 8px;
+  isolation: isolate;
 }
 
 .sidebar:hover {
@@ -25,6 +26,46 @@
   background: var(--bg);
   padding: 14px;
 }
+
+/* ---- Ambient gradient orbs (soft drifting glow) ---- */
+.sidebar::before,
+.sidebar::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  z-index: -1;
+  will-change: transform;
+}
+.sidebar::before {
+  width: 320px; height: 320px;
+  top: -120px; left: -140px;
+  background: radial-gradient(circle, var(--orb-warm), transparent 70%);
+  animation: sidebar-drift-1 26s ease-in-out infinite;
+}
+.sidebar::after {
+  width: 360px; height: 360px;
+  bottom: -160px; left: -120px;
+  background: radial-gradient(circle, var(--orb-cool), transparent 70%);
+  animation: sidebar-drift-2 32s ease-in-out infinite;
+}
+@keyframes sidebar-drift-1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(40px, 100px) scale(1.1); }
+}
+@keyframes sidebar-drift-2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(60px, -80px) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar::before, .sidebar::after { animation: none; }
+}
+
+/* Keep child layers above the orbs */
+.sidebar-header,
+.nav-menu,
+.sidebar-footer { position: relative; z-index: 1; }
 
 /* ---- Header / Logo ---- */
 .sidebar-header {
@@ -109,12 +150,12 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 7px;
   color: var(--fg-3);
   font-weight: 400;
-  font-size: 13px;
+  font-size: 14px;
   transition: all 120ms ease;
   position: relative;
   white-space: nowrap;
@@ -138,8 +179,8 @@
   content: '';
   position: absolute;
   left: -8px;
-  top: 8px;
-  bottom: 8px;
+  top: 10px;
+  bottom: 10px;
   width: 2px;
   background: var(--fg-1);
   border-radius: 0;
@@ -147,9 +188,9 @@
 .sidebar:hover .nav-item.active::before { left: -14px; }
 
 .nav-item svg {
-  width: 15px;
-  height: 15px;
-  min-width: 15px;
+  width: 17px;
+  height: 17px;
+  min-width: 17px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -171,7 +212,7 @@
 
 /* Labels — fade in on hover */
 .nav-label {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
@@ -381,25 +422,27 @@
   margin: 4px 0 0 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
+  gap: 12px;
+  padding: 10px 12px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 7px;
   color: var(--fg-3);
   cursor: pointer;
   transition: all 120ms ease;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   font-family: inherit;
+  position: relative;
+  z-index: 1;
 }
 
 .logout-btn svg {
-  width: 15px;
-  height: 15px;
-  min-width: 15px;
+  width: 17px;
+  height: 17px;
+  min-width: 17px;
   fill: currentColor;
   stroke: none;
   transition: none;
@@ -409,7 +452,7 @@
   background: var(--hover) !important;
   color: var(--danger) !important;
   border-color: transparent !important;
-  padding-left: 8px;
+  padding-left: 12px;
 }
 
 .logout-btn span {

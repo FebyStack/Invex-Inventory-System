@@ -2,7 +2,7 @@
    Locations page — multi-location inventory
    ============================================ */
 
-.loc-shell { padding: 32px; max-width: 1320px; }
+.loc-shell { padding: 32px; }
 
 /* Selector chips row */
 .loc-selector {

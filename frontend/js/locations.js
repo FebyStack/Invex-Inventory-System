@@ -10,8 +10,8 @@ const state = {
   matrix: [],      // products with by_location stock map
 };
 
-const SWATCHES = ['#7C7CFF','#5EEAD4','#FBBF24','#F472B6','#A78BFA','#F87171','#4ADE80','#60A5FA'];
-const FALLBACK_DOTS = ['#7C7CFF','#F472B6','#FBBF24','#A78BFA','#F87171','#5EEAD4','#4ADE80','#60A5FA'];
+const SWATCHES = ['#7C7CFF', '#5EEAD4', '#FBBF24', '#F472B6', '#A78BFA', '#F87171', '#4ADE80', '#60A5FA'];
+const FALLBACK_DOTS = ['#7C7CFF', '#F472B6', '#FBBF24', '#A78BFA', '#F87171', '#5EEAD4', '#4ADE80', '#60A5FA'];
 
 const token = sessionStorage.getItem('token');
 const authHeaders = { 'Authorization': `Bearer ${token}` };
@@ -248,8 +248,8 @@ function renderInventoryMatrix() {
     const status = total === 0
       ? { type: 'out-of-stock', label: 'OUT' }
       : total <= (p.reorder_level || 0)
-      ? { type: 'low-stock', label: 'LOW' }
-      : { type: 'in-stock', label: 'IN' };
+        ? { type: 'low-stock', label: 'LOW' }
+        : { type: 'in-stock', label: 'IN' };
     return `
       <div class="inv-table-row" data-product-id="${p.id}">
         <div class="inv-prod">${escapeHtml(p.name)}</div>
@@ -283,8 +283,8 @@ function renderSingleView(loc) {
     const status = qty === 0
       ? { type: 'out-of-stock', label: 'OUT', tone: 'danger' }
       : qty <= (p.reorder_level || 0)
-      ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
-      : { type: 'in-stock', label: 'IN', tone: '' };
+        ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
+        : { type: 'in-stock', label: 'IN', tone: '' };
     return { ...p, qty, status, belongsHere };
   }).filter((p) => p.qty > 0 || p.belongsHere);
 
@@ -292,8 +292,8 @@ function renderSingleView(loc) {
     const qtyColor = p.status.tone === 'danger'
       ? 'var(--danger)'
       : p.status.tone === 'warn'
-      ? 'var(--warning)'
-      : 'var(--fg-1)';
+        ? 'var(--warning)'
+        : 'var(--fg-1)';
     return `
       <div class="inv-table-row" data-product-id="${p.id}">
         <div class="inv-prod">${escapeHtml(p.name)}</div>

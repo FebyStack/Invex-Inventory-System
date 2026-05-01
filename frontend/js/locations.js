@@ -18,7 +18,7 @@ const authHeaders = { 'Authorization': `Bearer ${token}` };
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Number(n).toLocaleString();
-const fmtMoney = (n) => '$' + fmt(Math.round(Number(n) || 0));
+const fmtMoney = (n) => '₱' + fmt(Math.round(Number(n) || 0));
 const locationCodeBase = (name) => {
   const words = String(name || '').trim().toUpperCase().match(/[A-Z0-9]+/g) || [];
   if (words.length > 1) return words.map((word) => word[0]).join('').slice(0, 6);
@@ -276,15 +276,17 @@ function renderInventoryMatrix() {
 }
 
 function renderSingleView(loc) {
+  const locCode = (loc.code || '').toUpperCase();
   const items = state.matrix.map((p) => {
     const qty = Number(p.by_location[loc.id] || 0);
+    const belongsHere = locCode && p.sku && p.sku.toUpperCase().startsWith(locCode);
     const status = qty === 0
       ? { type: 'out-of-stock', label: 'OUT', tone: 'danger' }
       : qty <= (p.reorder_level || 0)
       ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
       : { type: 'in-stock', label: 'IN', tone: '' };
-    return { ...p, qty, status };
-  });
+    return { ...p, qty, status, belongsHere };
+  }).filter((p) => p.qty > 0 || p.belongsHere);
 
   const rows = items.map((p) => {
     const qtyColor = p.status.tone === 'danger'
@@ -299,7 +301,7 @@ function renderSingleView(loc) {
         <div class="inv-cat">${escapeHtml(p.category_name || '—')}</div>
         <div class="inv-num ${p.status.tone}" style="font-weight:500;color:${qtyColor}">${fmt(p.qty)}</div>
         <div class="inv-num muted">${fmt(p.reorder_level || 0)}</div>
-        <div class="inv-num regular">$${Number(p.unit_price).toFixed(2)}</div>
+        <div class="inv-num regular">₱${Number(p.unit_price).toFixed(2)}</div>
         <div class="inv-total">${fmt(p.qty)}</div>
         <div><span class="status-badge status-${p.status.type}">${p.status.label}</span></div>
       </div>`;
@@ -439,8 +441,13 @@ function openImportStock() {
 
   setImportMode('single');
   renderMultiList();
+  importCurrentStock = 0;
   updateImportTotal();
   importModal.style.display = 'flex';
+
+  // Fetch current stock for the initially selected product
+  const initialProductId = Number(prodSel.value);
+  if (initialProductId) fetchProductStock(initialProductId);
 }
 function closeImportStock() { importModal.style.display = 'none'; }
 
@@ -488,15 +495,39 @@ function renderMultiList() {
   });
 }
 
+let importCurrentStock = 0;
+
 function updateImportTotal() {
-  let total = 0;
-  if (importMode === 'single') total = Number($('im-qty').value) || 0;
-  else total = Object.values(multiQtys).reduce((s, v) => s + (Number(v) || 0), 0);
-  $('im-total').textContent = fmt(total);
+  let addQty = 0;
+  if (importMode === 'single') addQty = Number($('im-qty').value) || 0;
+  else addQty = Object.values(multiQtys).reduce((s, v) => s + (Number(v) || 0), 0);
+
+  $('im-current-stock').textContent = fmt(importCurrentStock);
+  $('im-total').textContent = addQty > 0 ? `+${fmt(addQty)}` : '+0';
+  $('im-new-total').textContent = fmt(importCurrentStock + addQty);
+
   const btn = $('import-submit');
-  btn.disabled = total <= 0;
-  btn.textContent = `Import ${fmt(total)} units`;
+  btn.disabled = addQty <= 0;
+  btn.textContent = `Import ${fmt(addQty)} units`;
 }
+
+async function fetchProductStock(productId) {
+  try {
+    const res = await fetch(`/api/products/${productId}/stock`, { headers: authHeaders });
+    const data = await res.json();
+    if (data.success) {
+      importCurrentStock = data.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+    } else {
+      importCurrentStock = 0;
+    }
+  } catch {
+    importCurrentStock = 0;
+  }
+  updateImportTotal();
+}
+
+// When product selection changes, fetch its current stock
+$('im-product').onchange = () => fetchProductStock(Number($('im-product').value));
 
 $('im-mode').onclick = (e) => {
   const btn = e.target.closest('button[data-mode]');

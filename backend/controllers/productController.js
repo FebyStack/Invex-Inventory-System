@@ -81,14 +81,16 @@ exports.createProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
+      expiry_date, // Added optional expiry date for the initial batch
+      initial_quantity, // Optional initial stock quantity
     } = req.body;
     const locationId = parseInt(location_id, 10);
 
-    // Validate required fields
-    if (!name || !location_id || !Number.isInteger(locationId) || !category_id || !supplier_id || unit_price === undefined) {
+    // Validate required fields (supplier_id is now optional)
+    if (!name || !location_id || !Number.isInteger(locationId) || !category_id || unit_price === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'name, location_id, category_id, supplier_id, and unit_price are required.',
+        message: 'name, location_id, category_id, and unit_price are required.',
       });
     }
 
@@ -107,12 +109,35 @@ exports.createProduct = async (req, res, next) => {
       name,
       sku,
       category_id,
-      supplier_id,
+      supplier_id: supplier_id || null,
       unit_price,
       reorder_level,
       track_expiry,
       unit_of_measure,
     }, client);
+
+    // If an expiry date was provided, create an initial batch (with 0 quantity)
+    // to "auto-track" that specific expiry date for this product at this location.
+    if (track_expiry && expiry_date) {
+      await client.query(
+        `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [product.id, locationId, 'INIT-' + sku, 0, expiry_date]
+      );
+    }
+
+    // Seed initial stock quantity at the selected location
+    const initQty = parseInt(initial_quantity, 10) || 0;
+    if (initQty > 0) {
+      await client.query(
+        `INSERT INTO invex.product_stock (product_id, location_id, quantity)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (product_id, location_id)
+         DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
+                       last_updated = CURRENT_TIMESTAMP`,
+        [product.id, locationId, initQty]
+      );
+    }
 
     await client.query('COMMIT');
     transactionStarted = false;
@@ -121,6 +146,7 @@ exports.createProduct = async (req, res, next) => {
     void logActivity(req.user.id, 'CREATE_PRODUCT', 'products', product.id, {
       name: product.name,
       sku: product.sku,
+      initial_quantity: initQty,
     }, locationId);
 
     return res.status(201).json({ success: true, data: product });

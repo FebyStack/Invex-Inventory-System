@@ -1,0 +1,235 @@
+/* ============================================
+   Categories — card grid layout (per Invex Dark spec)
+   ============================================ */
+
+.cat-shell { padding: 32px; max-width: 1200px; }
+
+.cat-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.cat-toolbar .search {
+  position: relative;
+  width: 280px;
+}
+.cat-toolbar .search input {
+  width: 100%;
+  height: 32px;
+  padding: 0 12px 0 30px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg-1);
+  font-size: 12px;
+  font-family: inherit;
+  transition: border-color 150ms ease;
+}
+.cat-toolbar .search input:focus { border-color: var(--border-strong); outline: none; }
+.cat-toolbar .search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-4);
+}
+.cat-toolbar .spacer { flex: 1; }
+.cat-toolbar .count {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.cat-toolbar .count strong {
+  color: var(--fg-1);
+  font-weight: 500;
+}
+
+/* Card grid */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.cat-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.cat-card:hover { border-color: var(--border-strong); }
+.cat-card:hover .cat-actions { opacity: 1; }
+
+.cat-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.cat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cat-icon svg { width: 14px; height: 14px; }
+
+.cat-sku {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--fg-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cat-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg-1);
+  margin-bottom: 4px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.cat-desc {
+  font-size: 12px;
+  color: var(--fg-4);
+  margin-bottom: 18px;
+  line-height: 1.45;
+  min-height: 17px;
+}
+
+.cat-stats {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.cat-stat-label {
+  font-size: 10px;
+  color: var(--fg-4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cat-stat-value {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--fg-1);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.cat-stat.right { text-align: right; }
+
+/* Hover row actions (top-right of card) */
+.cat-actions {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  background: var(--bg);
+  border-radius: 5px;
+  padding: 2px;
+}
+.cat-actions .action-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--fg-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.cat-actions .action-btn:hover {
+  background: var(--hover);
+  color: var(--fg-1);
+  border-color: var(--border-strong);
+}
+.cat-actions .action-btn.danger:hover { color: var(--danger); }
+
+/* "+ New category" dashed placeholder card */
+.cat-card.add {
+  border: 1px dashed var(--border-strong);
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-3);
+  min-height: 200px;
+  gap: 8px;
+  padding: 20px 22px;
+}
+.cat-card.add:hover {
+  border-color: var(--fg-3);
+  color: var(--fg-1);
+}
+.cat-card.add svg { width: 20px; height: 20px; }
+.cat-card.add .label {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Empty state */
+.cat-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--fg-4);
+  font-size: 13px;
+}
+.cat-empty svg { opacity: 0.3; margin-bottom: 12px; }
+.cat-empty .title { font-size: 14px; font-weight: 500; color: var(--fg-2); margin-bottom: 4px; }
+
+/* Loading skeleton */
+.cat-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--fg-4);
+  font-size: 13px;
+}
+
+/* ── Modal additions (color picker) ──────────────── */
+.cat-modal .modal-content { max-width: 460px; }
+
+.color-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.color-picker .swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  outline: none;
+  box-shadow: none;
+  transition: transform 120ms ease;
+}
+.color-picker .swatch:hover { transform: scale(1.1); }
+.color-picker .swatch.selected {
+  border-color: var(--fg-1);
+  outline: 1px solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .cat-shell { padding: 16px; }
+  .cat-grid { grid-template-columns: 1fr; }
+  .cat-toolbar .search { width: 100%; }
+}

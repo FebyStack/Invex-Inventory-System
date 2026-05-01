@@ -83,7 +83,7 @@ function addItemRow() {
       <input type="number" class="form-control qty-input" required min="1">
     </div>
     <div class="form-group">
-      <label>Price</label>
+      <label>Price (₱)</label>
       <input type="number" class="form-control price-input" required step="0.01" min="0">
     </div>
     <div class="form-group">

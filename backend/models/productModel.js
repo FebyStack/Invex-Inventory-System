@@ -70,6 +70,7 @@ const getProductById = async (id) => {
             p.reorder_level, p.track_expiry,
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
+            COALESCE((SELECT SUM(ps.quantity) FROM invex.product_stock ps WHERE ps.product_id = p.id), 0) AS total_stock,
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id

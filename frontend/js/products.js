@@ -111,7 +111,7 @@ async function loadProducts() {
             </div>
           </td>
           <td style="color:var(--fg-3);">${p.category_name || '—'}</td>
-          <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">$${parseFloat(p.unit_price).toFixed(2)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">₱${parseFloat(p.unit_price).toFixed(2)}</td>
           <td><span class="stock-badge stock-in">Fetching…</span></td>
           <td style="text-align:right;">
             <button class="action-btn edit-btn" data-id="${p.id}" title="Edit">
@@ -222,6 +222,14 @@ document.getElementById('new-product-btn').onclick = () => {
   document.getElementById('modal-title').textContent = 'New product';
   selectedLocationIds = [];
   document.getElementById('location-picker').style.display = '';
+  const qtyRow = document.getElementById('initial-qty-row');
+  const qtyInput = document.getElementById('initial_quantity');
+  const qtyLabel = qtyRow.querySelector('label');
+  qtyRow.style.display = '';
+  qtyLabel.textContent = 'Initial quantity';
+  qtyInput.value = '0';
+  qtyInput.readOnly = false;
+  qtyInput.style.opacity = '1';
   trackExpiryCheckbox.checked = true;
   expiryDateInput.value = '';
   toggleExpiryDate();
@@ -252,7 +260,7 @@ form.onsubmit = async (e) => {
   const basePayload = {
     name: document.getElementById('name').value,
     category_id: parseInt(document.getElementById('category_id').value),
-    supplier_id: parseInt(document.getElementById('supplier_id').value),
+    supplier_id: document.getElementById('supplier_id').value ? parseInt(document.getElementById('supplier_id').value) : null,
     unit_price: parseFloat(document.getElementById('unit_price').value),
     reorder_level: parseInt(document.getElementById('reorder_level').value),
     unit_of_measure: document.getElementById('unit_of_measure').value,
@@ -283,7 +291,8 @@ form.onsubmit = async (e) => {
     // The first location is the "primary" that determines the SKU prefix.
     // Since product_stock auto-seeds for ALL locations via DB trigger,
     // we create the product once with the first location for SKU generation.
-    const payload = { ...basePayload, location_id: parseInt(selectedLocationIds[0]) };
+    const initialQty = parseInt(document.getElementById('initial_quantity').value) || 0;
+    const payload = { ...basePayload, location_id: parseInt(selectedLocationIds[0]), initial_quantity: initialQty };
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -326,14 +335,22 @@ tableBody.onclick = async (e) => {
       const p = data.data;
       document.getElementById('edit-id').value = p.id;
       document.getElementById('name').value = p.name;
-      // Hide location picker on edit — SKU/location can't change
-      document.getElementById('location-picker').style.display = 'none';
+      // Show stock row but make it read-only for editing (since it's a sum)
+      const qtyRow = document.getElementById('initial-qty-row');
+      const qtyInput = document.getElementById('initial_quantity');
+      const qtyLabel = qtyRow.querySelector('label');
+      qtyRow.style.display = '';
+      qtyLabel.textContent = 'Current stock';
+      qtyInput.value = p.total_stock || 0;
+      qtyInput.readOnly = true;
+      qtyInput.style.opacity = '0.7';
+
       updateSkuPreview(p.sku);
       document.getElementById('category_id').value = p.category_id;
-      document.getElementById('supplier_id').value = p.supplier_id;
+      document.getElementById('supplier_id').value = p.supplier_id || '';
       document.getElementById('unit_price').value = p.unit_price;
       document.getElementById('reorder_level').value = p.reorder_level;
-      document.getElementById('unit_of_measure').value = p.unit_of_measure;
+      document.getElementById('unit_of_measure').value = p.unit_of_measure || 'pcs';
       document.getElementById('track_expiry').checked = p.track_expiry;
       expiryDateInput.value = '';
       toggleExpiryDate();

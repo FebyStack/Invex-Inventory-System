@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Categories | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/categories.css" />
+</head>
+<body>
+  <!-- Sidebar (loaded dynamically) -->
+  <div id="sidebar-placeholder"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Categories</h1>
+        <p>Organize products by type</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="new-category-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New category
+        </button>
+      </div>
+    </header>
+
+    <section class="cat-shell">
+      <!-- Toolbar -->
+      <div class="cat-toolbar">
+        <div class="search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="Search categories…">
+        </div>
+        <div class="spacer"></div>
+        <span class="count"><strong id="cat-count">0</strong> categories</span>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading-state" class="cat-loading">Loading categories…</div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="cat-empty" style="display:none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42z"/></svg>
+        <div class="title">No categories yet</div>
+        <div>Create your first category to organize products.</div>
+      </div>
+
+      <!-- Card grid -->
+      <div class="cat-grid" id="cat-grid" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal cat-modal" id="category-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">New category</h2>
+      </div>
+      <form id="category-form">
+        <div class="modal-body">
+          <input type="hidden" id="edit-id">
+
+          <div class="form-group">
+            <label for="cat-name">Category name</label>
+            <input type="text" id="cat-name" class="form-control" required maxlength="80" placeholder="e.g. Electronics, Furniture, Office">
+          </div>
+
+          <div class="form-group">
+            <label for="cat-description">Description <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <textarea id="cat-description" class="form-control" rows="3" placeholder="Devices, peripherals, cables…"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Color</label>
+            <div class="color-picker" id="color-picker"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/categories.js"></script>
+</body>
+</html>

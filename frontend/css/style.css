@@ -191,9 +191,8 @@ button { cursor: pointer; }
   background: var(--bg);
 }
 
-/* Push main content when sidebar is hovered */
-.sidebar:hover ~ .main-content,
-body:has(.sidebar:hover) .main-content {
+/* Push main content when sidebar is expanded */
+body.sidebar-expanded .main-content {
   margin-left: var(--sidebar-width);
 }
 

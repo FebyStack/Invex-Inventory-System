@@ -15,7 +15,7 @@
   z-index: 100;
   box-shadow: none;
   transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1),
-              background var(--transition-speed) ease;
+    background var(--transition-speed) ease;
   overflow: hidden;
   padding: 14px 8px;
   isolation: isolate;
@@ -38,34 +38,64 @@
   z-index: -1;
   will-change: transform;
 }
+
 .sidebar::before {
-  width: 320px; height: 320px;
-  top: -120px; left: -140px;
+  width: 320px;
+  height: 320px;
+  top: -120px;
+  left: -140px;
   background: radial-gradient(circle, var(--orb-warm), transparent 70%);
   animation: sidebar-drift-1 26s ease-in-out infinite;
 }
+
 .sidebar::after {
-  width: 360px; height: 360px;
-  bottom: -160px; left: -120px;
+  width: 360px;
+  height: 360px;
+  bottom: -160px;
+  left: -120px;
   background: radial-gradient(circle, var(--orb-cool), transparent 70%);
   animation: sidebar-drift-2 32s ease-in-out infinite;
 }
+
 @keyframes sidebar-drift-1 {
-  0%,100% { transform: translate(0,0) scale(1); }
-  50%     { transform: translate(40px, 100px) scale(1.1); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(40px, 100px) scale(1.1);
+  }
 }
+
 @keyframes sidebar-drift-2 {
-  0%,100% { transform: translate(0,0) scale(1); }
-  50%     { transform: translate(60px, -80px) scale(1.08); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(60px, -80px) scale(1.08);
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .sidebar::before, .sidebar::after { animation: none; }
+
+  .sidebar::before,
+  .sidebar::after {
+    animation: none;
+  }
 }
 
 /* Keep child layers above the orbs */
 .sidebar-header,
 .nav-menu,
-.sidebar-footer { position: relative; z-index: 1; }
+.sidebar-footer {
+  position: relative;
+  z-index: 1;
+}
 
 /* ---- Header / Logo ---- */
 .sidebar-header {
@@ -85,17 +115,21 @@
   width: 100%;
 }
 
-.logo-icon {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  background: var(--fg-1);
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+.logo-image {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-elev);
+  box-shadow: var(--shadow-glow);
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.15));
 }
+
+.logo-icon {
+  display: none;
+}
+
 .logo-icon::after {
   content: '';
   width: 8px;
@@ -103,7 +137,10 @@
   background: var(--bg);
   border-radius: 1.5px;
 }
-.logo-icon svg { display: none; }
+
+.logo-icon svg {
+  display: none;
+}
 
 .logo-text-wrapper {
   display: flex;
@@ -115,7 +152,11 @@
   transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
   white-space: nowrap;
 }
-.sidebar:hover .logo-text-wrapper { opacity: 1; visibility: visible; }
+
+.sidebar:hover .logo-text-wrapper {
+  opacity: 1;
+  visibility: visible;
+}
 
 .logo-text {
   font-size: 15px;
@@ -145,7 +186,10 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
-.nav-menu::-webkit-scrollbar { width: 0; }
+
+.nav-menu::-webkit-scrollbar {
+  width: 0;
+}
 
 .nav-item {
   display: flex;
@@ -185,7 +229,10 @@
   background: var(--fg-1);
   border-radius: 0;
 }
-.sidebar:hover .nav-item.active::before { left: -14px; }
+
+.sidebar:hover .nav-item.active::before {
+  left: -14px;
+}
 
 .nav-item svg {
   width: 17px;
@@ -197,6 +244,7 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
 /* Older pages have filled SVGs — re-color via fill */
 .nav-item svg path,
 .nav-item svg circle,
@@ -208,7 +256,9 @@
   stroke: none;
 }
 
-.nav-item:hover svg { transform: none; }
+.nav-item:hover svg {
+  transform: none;
+}
 
 /* Labels — fade in on hover */
 .nav-label {
@@ -217,7 +267,11 @@
   visibility: hidden;
   transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
 }
-.sidebar:hover .nav-label { opacity: 1; visibility: visible; }
+
+.sidebar:hover .nav-label {
+  opacity: 1;
+  visibility: visible;
+}
 
 /* Badges */
 .nav-badge {
@@ -238,7 +292,11 @@
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .nav-badge { opacity: 1; visibility: visible; }
+
+.sidebar:hover .nav-badge {
+  opacity: 1;
+  visibility: visible;
+}
 
 /* Dividers & Admin section */
 .nav-divider {
@@ -260,7 +318,11 @@
   transition: opacity var(--transition-speed) ease;
   font-weight: 500;
 }
-.sidebar:hover .nav-section-label { opacity: 1; visibility: visible; }
+
+.sidebar:hover .nav-section-label {
+  opacity: 1;
+  visibility: visible;
+}
 
 .admin-pill {
   display: inline-flex;
@@ -278,7 +340,10 @@
   opacity: 0;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .admin-pill { opacity: 1; }
+
+.sidebar:hover .admin-pill {
+  opacity: 1;
+}
 
 /* ---- Theme toggle (injected at runtime by sidebar.js) ---- */
 .theme-toggle {
@@ -292,6 +357,7 @@
   margin: 12px 0;
   width: 100%;
 }
+
 .theme-toggle button {
   flex: 1;
   border: none;
@@ -311,11 +377,13 @@
   white-space: nowrap;
   overflow: hidden;
 }
+
 .theme-toggle button.active {
   background: var(--surface-elev);
   color: var(--fg-1);
   border: 1px solid var(--border);
 }
+
 .theme-toggle button svg {
   width: 12px;
   height: 12px;
@@ -326,13 +394,18 @@
   stroke-linejoin: round;
   flex-shrink: 0;
 }
+
 /* Hide labels when collapsed */
 .theme-toggle .toggle-label {
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .theme-toggle .toggle-label { opacity: 1; visibility: visible; }
+
+.sidebar:hover .theme-toggle .toggle-label {
+  opacity: 1;
+  visibility: visible;
+}
 
 /* ---- Footer / User profile ---- */
 .sidebar-footer {
@@ -354,7 +427,10 @@
   transition: background var(--transition-speed) ease;
   cursor: pointer;
 }
-.user-profile-card:hover { background: var(--hover); }
+
+.user-profile-card:hover {
+  background: var(--hover);
+}
 
 .user-avatar {
   width: 26px;
@@ -371,7 +447,10 @@
   font-weight: 600;
   transition: none;
 }
-.sidebar:hover .user-avatar { margin-right: 0; }
+
+.sidebar:hover .user-avatar {
+  margin-right: 0;
+}
 
 .user-info {
   display: flex;
@@ -383,6 +462,7 @@
   width: 0;
   transition: opacity var(--transition-speed) ease, width var(--transition-speed);
 }
+
 .sidebar:hover .user-info {
   opacity: 1;
   visibility: visible;
@@ -411,10 +491,17 @@
   min-width: 14px;
   opacity: 0;
 }
+
 .user-chevron path,
 .user-chevron polyline,
-.user-chevron line { fill: currentColor; stroke: none; }
-.sidebar:hover .user-chevron { opacity: 1; }
+.user-chevron line {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sidebar:hover .user-chevron {
+  opacity: 1;
+}
 
 /* ---- Logout button ---- */
 .logout-btn {
@@ -460,7 +547,11 @@
   visibility: hidden;
   transition: opacity var(--transition-speed) ease;
 }
-.sidebar:hover .logout-btn span { opacity: 1; visibility: visible; }
+
+.sidebar:hover .logout-btn span {
+  opacity: 1;
+  visibility: visible;
+}
 
 /* When sidebar is collapsed, slightly nudge content to stay aligned */
 .sidebar:not(:hover) .nav-item,

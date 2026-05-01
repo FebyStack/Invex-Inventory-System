@@ -84,7 +84,7 @@ CREATE TABLE invex.products (
     name             VARCHAR(100)   NOT NULL,
     sku              VARCHAR(50)    NOT NULL UNIQUE,
     category_id      INTEGER        NOT NULL REFERENCES invex.categories(id),
-    supplier_id      INTEGER        NOT NULL REFERENCES invex.suppliers(id),
+    supplier_id      INTEGER        REFERENCES invex.suppliers(id),
     unit_price       DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0),
     reorder_level    INTEGER        NOT NULL DEFAULT 0 CHECK (reorder_level >= 0),
     track_expiry     BOOLEAN        NOT NULL DEFAULT FALSE,

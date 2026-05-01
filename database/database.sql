@@ -665,3 +665,316 @@ SELECT
     sa.notes
 FROM invex.stock_adjustments sa
 WHERE sa.is_deleted = FALSE;
+
+
+
+
+--new added feature for locations to support multi locations--
+
+-- ============================================================
+-- 1. COLUMN ADDITIONS TO EXISTING TABLES
+-- ============================================================
+
+-- Add color to locations for UI badge distinction
+ALTER TABLE invex.locations
+    ADD COLUMN IF NOT EXISTS color VARCHAR(7) NOT NULL DEFAULT '#6c757d';
+
+-- Add location context to activity logs
+ALTER TABLE invex.activity_logs
+    ADD COLUMN IF NOT EXISTS location_id INTEGER
+        REFERENCES invex.locations(id) ON DELETE SET NULL;
+
+-- ============================================================
+-- 2. NEW TABLE: location_transfer_logs
+--    Records completed stock transfers between locations.
+--    No approval workflow — transfers execute immediately.
+-- ============================================================
+
+CREATE TABLE invex.location_transfer_logs (
+    id                  SERIAL      PRIMARY KEY,
+    from_location_id    INTEGER     NOT NULL
+                            REFERENCES invex.locations(id) ON DELETE RESTRICT,
+    to_location_id      INTEGER     NOT NULL
+                            REFERENCES invex.locations(id) ON DELETE RESTRICT,
+    product_id          INTEGER     NOT NULL
+                            REFERENCES invex.products(id)  ON DELETE RESTRICT,
+    batch_id            INTEGER
+                            REFERENCES invex.product_batches(id) ON DELETE SET NULL,
+    quantity            INTEGER     NOT NULL CHECK (quantity > 0),
+    transferred_by      INTEGER     NOT NULL
+                            REFERENCES invex.users(id) ON DELETE RESTRICT,
+    notes               TEXT,
+    is_deleted          BOOLEAN     NOT NULL DEFAULT FALSE,
+    deleted_at          TIMESTAMP,
+    transferred_at      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT different_locations CHECK (from_location_id <> to_location_id)
+);
+
+-- ============================================================
+-- 3. INDEXES
+-- ============================================================
+
+-- Transfer log lookups
+CREATE INDEX idx_invex_transfer_logs_product
+    ON invex.location_transfer_logs(product_id);
+
+CREATE INDEX idx_invex_transfer_logs_from_location
+    ON invex.location_transfer_logs(from_location_id);
+
+CREATE INDEX idx_invex_transfer_logs_to_location
+    ON invex.location_transfer_logs(to_location_id);
+
+CREATE INDEX idx_invex_transfer_logs_transferred_by
+    ON invex.location_transfer_logs(transferred_by);
+
+CREATE INDEX idx_invex_transfer_logs_transferred_at
+    ON invex.location_transfer_logs(transferred_at DESC);
+
+
+-- ============================================================
+-- 4. VIEWS
+-- ============================================================
+
+-- Location stock summary — powers dashboard location widget
+-- Returns pure numbers, rendered as stat cards on the frontend
+CREATE VIEW invex.location_stock_summary AS
+SELECT
+    l.id                                        AS location_id,
+    l.name                                      AS location_name,
+    l.code                                      AS location_code,
+    l.type                                      AS location_type,
+    l.color                                     AS location_color,
+    COUNT(DISTINCT ps.product_id)               AS total_products,
+    COALESCE(SUM(ps.quantity), 0)               AS total_units,
+    COUNT(DISTINCT CASE
+        WHEN ps.quantity = 0
+        THEN ps.product_id
+    END)                                        AS out_of_stock_count,
+    COUNT(DISTINCT CASE
+        WHEN pb.expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+         AND pb.expiry_date >= CURRENT_DATE
+         AND pb.is_deleted = FALSE
+        THEN pb.id
+    END)                                        AS expiring_soon_count,
+    COUNT(DISTINCT CASE
+        WHEN pb.expiry_date < CURRENT_DATE
+         AND pb.is_deleted = FALSE
+        THEN pb.id
+    END)                                        AS expired_count
+FROM invex.locations l
+LEFT JOIN invex.product_stock ps
+    ON ps.location_id = l.id
+LEFT JOIN invex.product_batches pb
+    ON pb.location_id = l.id
+   AND pb.product_id  = ps.product_id
+WHERE l.is_deleted = FALSE
+GROUP BY l.id, l.name, l.code, l.type, l.color;
+
+-- ============================================================
+
+-- Transfer log view — fully joined for the transfers history page
+CREATE VIEW invex.transfer_log_details AS
+SELECT
+    t.id,
+    t.quantity,
+    t.notes,
+    t.transferred_at,
+
+    -- Product
+    p.id                AS product_id,
+    p.name              AS product_name,
+    p.sku               AS product_sku,
+    p.unit_of_measure,
+
+    -- From location
+    fl.id               AS from_location_id,
+    fl.name             AS from_location_name,
+    fl.code             AS from_location_code,
+    fl.color            AS from_location_color,
+
+    -- To location
+    tl.id               AS to_location_id,
+    tl.name             AS to_location_name,
+    tl.code             AS to_location_code,
+    tl.color            AS to_location_color,
+
+    -- User who performed the transfer
+    u.id                AS transferred_by_id,
+    u.full_name         AS transferred_by_name,
+
+    -- Batch info (nullable)
+    pb.batch_no,
+    pb.expiry_date      AS batch_expiry_date,
+
+    -- Stock levels at both locations at time of query
+    ps_from.quantity    AS current_stock_at_source,
+    ps_to.quantity      AS current_stock_at_destination
+
+FROM invex.location_transfer_logs t
+JOIN invex.products p               ON p.id  = t.product_id
+JOIN invex.locations fl             ON fl.id = t.from_location_id
+JOIN invex.locations tl             ON tl.id = t.to_location_id
+JOIN invex.users u                  ON u.id  = t.transferred_by
+LEFT JOIN invex.product_batches pb  ON pb.id = t.batch_id
+LEFT JOIN invex.product_stock ps_from
+    ON ps_from.product_id  = t.product_id
+   AND ps_from.location_id = t.from_location_id
+LEFT JOIN invex.product_stock ps_to
+    ON ps_to.product_id  = t.product_id
+   AND ps_to.location_id = t.to_location_id
+WHERE t.is_deleted = FALSE;
+
+-- ============================================================
+
+-- Active transfer logs filter wrapper
+CREATE VIEW invex.active_transfer_logs AS
+SELECT * FROM invex.location_transfer_logs
+WHERE is_deleted = FALSE;
+
+-- ============================================================
+
+-- Updated stock_movements — adds transfer legs to existing view
+CREATE OR REPLACE VIEW invex.stock_movements AS
+
+-- Existing: orders
+SELECT
+    oi.id                                                       AS movement_id,
+    o.order_date                                                AS movement_date,
+    CASE o.order_type
+        WHEN 'IN'  THEN  oi.quantity
+        WHEN 'OUT' THEN -oi.quantity
+        ELSE 0
+    END                                                         AS quantity_change,
+    oi.product_id,
+    oi.batch_id,
+    COALESCE(o.destination_location_id,
+             o.source_location_id)                              AS location_id,
+    o.user_id,
+    NULL::INTEGER                                               AS reason_code_id,
+    'ORDER'::TEXT                                               AS source_type,
+    o.id                                                        AS source_id,
+    o.notes
+FROM invex.order_items oi
+JOIN invex.orders o ON oi.order_id = o.id
+WHERE o.is_deleted = FALSE
+  AND (oi.is_deleted = FALSE OR oi.is_deleted IS NULL)
+
+UNION ALL
+
+-- Existing: adjustments
+SELECT
+    sa.id,
+    sa.adjustment_date,
+    CASE sa.adjustment_type
+        WHEN 'INCREASE' THEN  sa.quantity_change
+        WHEN 'DECREASE' THEN -sa.quantity_change
+    END,
+    sa.product_id,
+    sa.batch_id,
+    sa.location_id,
+    sa.user_id,
+    sa.reason_code_id,
+    'ADJUSTMENT'::TEXT,
+    sa.id,
+    sa.notes
+FROM invex.stock_adjustments sa
+WHERE sa.is_deleted = FALSE
+
+UNION ALL
+
+-- New: transfer deduction from source location
+SELECT
+    t.id                        AS movement_id,
+    t.transferred_at            AS movement_date,
+    -(t.quantity)               AS quantity_change,
+    t.product_id,
+    t.batch_id,
+    t.from_location_id          AS location_id,
+    t.transferred_by            AS user_id,
+    NULL::INTEGER               AS reason_code_id,
+    'TRANSFER_OUT'::TEXT        AS source_type,
+    t.id                        AS source_id,
+    t.notes
+FROM invex.location_transfer_logs t
+WHERE t.is_deleted = FALSE
+
+UNION ALL
+
+-- New: transfer addition to destination location
+SELECT
+    t.id                        AS movement_id,
+    t.transferred_at            AS movement_date,
+    t.quantity                  AS quantity_change,
+    t.product_id,
+    t.batch_id,
+    t.to_location_id            AS location_id,
+    t.transferred_by            AS user_id,
+    NULL::INTEGER               AS reason_code_id,
+    'TRANSFER_IN'::TEXT         AS source_type,
+    t.id                        AS source_id,
+    t.notes
+FROM invex.location_transfer_logs t
+WHERE t.is_deleted = FALSE;
+
+-- ============================================================
+-- 5. FUNCTIONS AND TRIGGERS
+-- ============================================================
+
+-- Soft delete sync for location_transfer_logs
+-- Reuses existing invex.set_deleted_at() function
+CREATE TRIGGER trg_transfer_logs_soft_delete
+BEFORE UPDATE ON invex.location_transfer_logs
+FOR EACH ROW EXECUTE FUNCTION invex.set_deleted_at();
+
+-- ============================================================
+
+-- Auto-seed product_stock rows when a new location is created
+CREATE OR REPLACE FUNCTION invex.seed_stock_for_new_location()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO invex.product_stock (product_id, location_id, quantity)
+    SELECT id, NEW.id, 0
+    FROM invex.products
+    WHERE is_deleted = FALSE
+    ON CONFLICT (product_id, location_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_seed_stock_on_location_insert
+AFTER INSERT ON invex.locations
+FOR EACH ROW
+EXECUTE FUNCTION invex.seed_stock_for_new_location();
+
+-- ============================================================
+
+-- Auto-seed product_stock rows when a new product is created
+CREATE OR REPLACE FUNCTION invex.seed_stock_for_new_product()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO invex.product_stock (product_id, location_id, quantity)
+    SELECT NEW.id, id, 0
+    FROM invex.locations
+    WHERE is_deleted = FALSE
+    ON CONFLICT (product_id, location_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_seed_stock_on_product_insert
+AFTER INSERT ON invex.products
+FOR EACH ROW
+EXECUTE FUNCTION invex.seed_stock_for_new_product();
+
+-- ============================================================
+-- 6. NEW REASON CODES
+-- ============================================================
+
+INSERT INTO invex.reason_codes (code, description, adjustment_type) VALUES
+    ('TRANSFER_OUT',  'Stock deducted due to outbound location transfer',  'DECREASE'),
+    ('TRANSFER_IN',   'Stock added due to inbound location transfer',      'INCREASE'),
+    ('GLOBAL_ADJUST', 'Stock updated globally across all locations',       'BOTH')
+ON CONFLICT (code) DO NOTHING;

@@ -19,6 +19,22 @@ const authHeaders = { 'Authorization': `Bearer ${token}` };
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Number(n).toLocaleString();
 const fmtMoney = (n) => '$' + fmt(Math.round(Number(n) || 0));
+const locationCodeBase = (name) => {
+  const words = String(name || '').trim().toUpperCase().match(/[A-Z0-9]+/g) || [];
+  if (words.length > 1) return words.map((word) => word[0]).join('').slice(0, 6);
+  return (words[0] || '').slice(0, 6);
+};
+const locationCodeFromName = (name) => {
+  const base = locationCodeBase(name);
+  if (!base) return '';
+
+  const usedNumbers = state.locations
+    .map((loc) => String(loc.code || '').match(new RegExp(`^${base}-(\\d+)$`)))
+    .filter(Boolean)
+    .map((match) => Number(match[1]));
+  const next = usedNumbers.length ? Math.max(...usedNumbers) + 1 : 1;
+  return `${base}-${String(next).padStart(2, '0')}`;
+};
 
 function escapeHtml(s) {
   return String(s == null ? '' : s)
@@ -117,8 +133,8 @@ function renderActive() {
   $('loc-headline').style.display = 'flex';
   $('loc-stats').style.display = 'grid';
   $('loc-eyebrow').textContent = isAll
-    ? 'Aggregate · all warehouses'
-    : `Single warehouse · ${loc.code}`;
+    ? 'Aggregate · all locations'
+    : `Single location · ${loc.code}`;
   $('loc-title-dot').style.background = dot;
   $('loc-title-name').textContent = loc.name;
   $('loc-title-meta').textContent = `${loc.city || '—'} · ${loc.region || '—'}`;
@@ -293,7 +309,7 @@ function renderSingleView(loc) {
     <div class="loc-section-head">
       <div>
         <div class="loc-section-title">Inventory · ${escapeHtml(loc.name)}</div>
-        <div class="loc-section-sub">Stock physically held at this warehouse</div>
+        <div class="loc-section-sub">Stock physically held at this location</div>
       </div>
       <span class="loc-link" id="see-all-link">
         See all locations
@@ -332,6 +348,7 @@ let addColor = SWATCHES[0];
 function openAddLocation() {
   addColor = SWATCHES[0];
   $('add-loc-form').reset();
+  $('al-code').value = '';
   $('add-loc-form').style.display = 'block';
   $('add-loc-success').style.display = 'none';
   renderColorPicker();
@@ -355,6 +372,9 @@ function renderColorPicker() {
 $('add-loc-close').onclick = closeAddLocation;
 $('add-loc-cancel').onclick = closeAddLocation;
 addModal.onclick = (e) => { if (e.target === addModal) closeAddLocation(); };
+$('al-name').oninput = () => {
+  $('al-code').value = locationCodeFromName($('al-name').value);
+};
 
 $('add-loc-form').onsubmit = async (e) => {
   e.preventDefault();
@@ -366,7 +386,7 @@ $('add-loc-form').onsubmit = async (e) => {
     province: $('al-region').value.trim() || null,
     color: addColor,
   };
-  if (!payload.name || !payload.code) return;
+  if (!payload.name) return;
   try {
     const res = await fetch('/api/locations', {
       method: 'POST',

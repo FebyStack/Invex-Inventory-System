@@ -1,5 +1,6 @@
 const productModel = require('../models/productModel');
 const stockModel = require('../src/models/stockModel');
+const { pool } = require('../src/config/db');
 const { logActivity } = require('../src/utils/logger');
 
 /**
@@ -8,11 +9,12 @@ const { logActivity } = require('../src/utils/logger');
  *   ?search=keyword   — matches name or SKU
  *   ?category_id=N    — filter by category
  *   ?supplier_id=N    — filter by supplier
+ *   ?location_id=N    — returns stock for one location
  */
 exports.getAllProducts = async (req, res, next) => {
   try {
-    const { search, category_id, supplier_id } = req.query;
-    const products = await productModel.getAllProducts({ search, category_id, supplier_id });
+    const { search, category_id, supplier_id, location_id } = req.query;
+    const products = await productModel.getAllProducts({ search, category_id, supplier_id, location_id });
     return res.json({ success: true, data: products });
   } catch (err) {
     return next(err);
@@ -38,14 +40,41 @@ exports.getProductById = async (req, res, next) => {
 };
 
 /**
+ * GET /api/products/next-sku?location_id=N
+ * Returns the next generated SKU for a selected location.
+ */
+exports.getNextSku = async (req, res, next) => {
+  try {
+    const { location_id } = req.query;
+    const locationId = parseInt(location_id, 10);
+
+    if (!location_id || !Number.isInteger(locationId)) {
+      return res.status(400).json({ success: false, message: 'location_id is required.' });
+    }
+
+    const sku = await productModel.getNextSkuForLocation(locationId);
+    if (!sku) {
+      return res.status(404).json({ success: false, message: 'Location not found.' });
+    }
+
+    return res.json({ success: true, data: { sku } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/**
  * POST /api/products
  * Creates a new product. Requires admin role.
  */
 exports.createProduct = async (req, res, next) => {
+  const client = await pool.connect();
+  let transactionStarted = false;
+
   try {
     const {
       name,
-      sku,
+      location_id,
       category_id,
       supplier_id,
       unit_price,
@@ -53,13 +82,25 @@ exports.createProduct = async (req, res, next) => {
       track_expiry,
       unit_of_measure,
     } = req.body;
+    const locationId = parseInt(location_id, 10);
 
     // Validate required fields
-    if (!name || !sku || !category_id || !supplier_id || unit_price === undefined) {
+    if (!name || !location_id || !Number.isInteger(locationId) || !category_id || !supplier_id || unit_price === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'name, sku, category_id, supplier_id, and unit_price are required.',
+        message: 'name, location_id, category_id, supplier_id, and unit_price are required.',
       });
+    }
+
+    await client.query('BEGIN');
+    transactionStarted = true;
+    await client.query('SELECT pg_advisory_xact_lock($1)', [locationId]);
+
+    const sku = await productModel.getNextSkuForLocation(locationId, client);
+    if (!sku) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(404).json({ success: false, message: 'Location not found.' });
     }
 
     const product = await productModel.createProduct({
@@ -71,16 +112,23 @@ exports.createProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
-    });
+    }, client);
+
+    await client.query('COMMIT');
+    transactionStarted = false;
 
     // Log activity (fire-and-forget)
     void logActivity(req.user.id, 'CREATE_PRODUCT', 'products', product.id, {
       name: product.name,
       sku: product.sku,
-    });
+    }, locationId);
 
     return res.status(201).json({ success: true, data: product });
   } catch (err) {
+    if (transactionStarted) {
+      await client.query('ROLLBACK');
+    }
+
     // Handle unique constraint violation (duplicate SKU)
     if (err.code === '23505') {
       return res.status(409).json({
@@ -96,6 +144,8 @@ exports.createProduct = async (req, res, next) => {
       });
     }
     return next(err);
+  } finally {
+    client.release();
   }
 };
 

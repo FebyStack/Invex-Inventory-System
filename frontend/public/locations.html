@@ -97,7 +97,7 @@
     <header class="top-header">
       <div class="header-title">
         <h1>Locations</h1>
-        <p id="header-sub">Warehouses, stores, and transit points</p>
+        <p id="header-sub">Warehouses, stores, and inventory points</p>
       </div>
       <div class="header-actions">
         <button class="btn" id="export-btn" title="Export inventory">
@@ -143,7 +143,7 @@
       <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
           <h2>New location</h2>
-          <p style="font-size: 11px; color: var(--fg-4); margin-top: 2px;">Add a warehouse, store, or fulfillment center</p>
+          <p style="font-size: 11px; color: var(--fg-4); margin-top: 2px;">Add a warehouse, store, or storeroom</p>
         </div>
         <button type="button" class="action-btn" id="add-loc-close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -160,15 +160,15 @@
         <div class="form-grid">
           <div class="form-group span-2">
             <label for="al-name">Location name</label>
-            <input type="text" id="al-name" class="form-control" placeholder="Berlin Warehouse" required>
+            <input type="text" id="al-name" class="form-control" placeholder="Lab 1" required>
           </div>
           <div class="form-group">
-            <label for="al-code">Code</label>
-            <input type="text" id="al-code" class="form-control" placeholder="BR-01" required>
+            <label for="al-code">SKU</label>
+            <input type="text" id="al-code" class="form-control" placeholder="BW-01" readonly>
           </div>
           <div class="form-group">
-            <label for="al-region">Region</label>
-            <input type="text" id="al-region" class="form-control" placeholder="Germany">
+            <label for="al-region">Location</label>
+            <input type="text" id="al-region" class="form-control" placeholder="JRMSU">
           </div>
           <div class="form-group span-2">
             <label for="al-city">Address</label>
@@ -177,9 +177,9 @@
           <div class="form-group span-2">
             <label for="al-type">Type</label>
             <select id="al-type" class="form-control">
-              <option value="WAREHOUSE">Warehouse</option>
-              <option value="STORE">Retail store</option>
-              <option value="VIRTUAL">Virtual / transit</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="store">Retail store</option>
+              <option value="storeroom">Storeroom</option>
             </select>
           </div>
           <div class="form-group span-2">

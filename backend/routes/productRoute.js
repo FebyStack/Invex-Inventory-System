@@ -12,6 +12,9 @@ router.use(authenticate);
 // GET    /api/products              (with optional ?search, ?category_id, ?supplier_id)
 router.get('/', asyncHandler(productController.getAllProducts));
 
+// GET    /api/products/next-sku     (generated SKU for a location)
+router.get('/next-sku', asyncHandler(productController.getNextSku));
+
 // GET    /api/products/:id
 router.get('/:id', asyncHandler(productController.getProductById));
 

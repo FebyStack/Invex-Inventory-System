@@ -170,7 +170,7 @@ exports.deleteAdjustment = async (req, res, next) => {
  */
 exports.getProductHistory = async (req, res, next) => {
   try {
-    const history = await adjustmentModel.getProductHistory(req.params.id);
+    const history = await adjustmentModel.getProductHistory(req.params.id, req.query.location_id);
     return res.json({ success: true, count: history.length, data: history });
   } catch (error) {
     return next(error);

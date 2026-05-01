@@ -50,6 +50,20 @@ const createLocation = async ({
 };
 
 /**
+ * Check whether a location code already exists.
+ */
+const locationCodeExists = async (code) => {
+  const result = await query(
+    `SELECT id
+     FROM invex.locations
+     WHERE code = $1
+     LIMIT 1`,
+    [code]
+  );
+  return result.rowCount > 0;
+};
+
+/**
  * Update an existing active location.
  */
 const updateLocation = async (
@@ -225,6 +239,7 @@ module.exports = {
   getAllLocations,
   getLocationById,
   createLocation,
+  locationCodeExists,
   updateLocation,
   softDeleteLocation,
   getLocationSummary,

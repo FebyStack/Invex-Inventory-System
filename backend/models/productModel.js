@@ -1,11 +1,14 @@
 const { query } = require('../src/config/db');
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeLike = (value) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
+
 /**
  * Get all active products with optional filters.
  * Joins category and supplier names for display.
- * @param {object} filters - { search, category_id, supplier_id }
+ * @param {object} filters - { search, category_id, supplier_id, location_id }
  */
-const getAllProducts = async ({ search, category_id, supplier_id } = {}) => {
+const getAllProducts = async ({ search, category_id, supplier_id, location_id } = {}) => {
   const conditions = ['p.is_deleted = FALSE'];
   const values = [];
   let idx = 1;
@@ -24,6 +27,21 @@ const getAllProducts = async ({ search, category_id, supplier_id } = {}) => {
     values.push(supplier_id);
   }
 
+  let stockSelect = `COALESCE((
+              SELECT SUM(ps.quantity)
+              FROM invex.product_stock ps
+              WHERE ps.product_id = p.id
+            ), 0) AS total_stock`;
+
+  if (location_id) {
+    stockSelect = `COALESCE((
+              SELECT ps.quantity
+              FROM invex.product_stock ps
+              WHERE ps.product_id = p.id AND ps.location_id = $${idx++}
+            ), 0) AS location_stock`;
+    values.push(location_id);
+  }
+
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const result = await query(
@@ -31,6 +49,7 @@ const getAllProducts = async ({ search, category_id, supplier_id } = {}) => {
             p.reorder_level, p.track_expiry,
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
+            ${stockSelect},
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id
@@ -62,6 +81,40 @@ const getProductById = async (id) => {
 };
 
 /**
+ * Generate the next product SKU for a location code.
+ */
+const getNextSkuForLocation = async (locationId, dbClient) => {
+  const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+
+  const locationResult = await executeQuery(
+    `SELECT id, code
+     FROM invex.locations
+     WHERE id = $1 AND is_deleted = FALSE`,
+    [locationId]
+  );
+
+  const location = locationResult.rows[0];
+  if (!location) return null;
+
+  const prefix = `${location.code}-`;
+  const result = await executeQuery(
+    `SELECT sku
+     FROM invex.products
+     WHERE sku LIKE $1 ESCAPE '\\'`,
+    [`${escapeLike(prefix)}%`]
+  );
+
+  const skuPattern = new RegExp(`^${escapeRegExp(prefix)}(\\d+)$`);
+  const maxNumber = result.rows.reduce((max, row) => {
+    const match = String(row.sku || '').match(skuPattern);
+    if (!match) return max;
+    return Math.max(max, parseInt(match[1], 10));
+  }, 0);
+
+  return `${prefix}${String(maxNumber + 1).padStart(3, '0')}`;
+};
+
+/**
  * Create a new product.
  * @param {object} data - { name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure }
  */
@@ -74,8 +127,10 @@ const createProduct = async ({
   reorder_level,
   track_expiry,
   unit_of_measure,
-}) => {
-  const result = await query(
+}, dbClient) => {
+  const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+
+  const result = await executeQuery(
     `INSERT INTO invex.products (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id, name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure, created_at`,
@@ -169,6 +224,7 @@ const getProductStock = async (productId) => {
 module.exports = {
   getAllProducts,
   getProductById,
+  getNextSkuForLocation,
   createProduct,
   updateProduct,
   softDeleteProduct,

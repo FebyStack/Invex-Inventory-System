@@ -90,8 +90,8 @@ const softDeleteAdjustment = async (id, client) => {
 /**
  * Get product movement history from the stock_movements view.
  */
-const getProductHistory = async (productId) => {
-  const result = await query(
+const getProductHistory = async (productId, locationId) => {
+  let sql =
     `SELECT sm.movement_id, sm.movement_date, sm.quantity_change,
             sm.source_type, sm.source_id, sm.notes,
             l.name AS location_name, l.code AS location_code,
@@ -103,10 +103,17 @@ const getProductHistory = async (productId) => {
      LEFT JOIN invex.users u ON sm.user_id = u.id
      LEFT JOIN invex.reason_codes rc ON sm.reason_code_id = rc.id
      LEFT JOIN invex.product_batches pb ON sm.batch_id = pb.id
-     WHERE sm.product_id = $1
-     ORDER BY sm.movement_date DESC`,
-    [productId]
-  );
+     WHERE sm.product_id = $1`;
+  const values = [productId];
+
+  if (locationId) {
+    sql += ' AND sm.location_id = $2';
+    values.push(locationId);
+  }
+
+  sql += ' ORDER BY sm.movement_date DESC';
+
+  const result = await query(sql, values);
   return result.rows;
 };
 

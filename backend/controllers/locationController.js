@@ -5,6 +5,32 @@ const stockModel = require('../src/models/stockModel');
 const { pool } = require('../src/config/db');
 const { logActivity } = require('../src/utils/logger');
 
+const normalizeLocationType = (type) => {
+  if (type === undefined || type === null) return type;
+  const normalized = String(type).toLowerCase();
+  return normalized === 'virtual' ? 'storeroom' : normalized;
+};
+
+const buildLocationCodeBase = (name) => {
+  const words = String(name || '').trim().toUpperCase().match(/[A-Z0-9]+/g) || [];
+  if (words.length > 1) {
+    return words.map((word) => word[0]).join('').slice(0, 6);
+  }
+  return (words[0] || 'LOC').slice(0, 6);
+};
+
+const generateLocationCode = async (name) => {
+  const base = buildLocationCodeBase(name);
+
+  for (let i = 1; i <= 99; i++) {
+    const code = `${base}-${String(i).padStart(2, '0')}`;
+    const exists = await locationModel.locationCodeExists(code);
+    if (!exists) return code;
+  }
+
+  return `${base}-${Date.now().toString().slice(-6)}`;
+};
+
 exports.getAllLocations = async (req, res, next) => {
   try {
     const locations = await locationModel.getAllLocations();
@@ -31,23 +57,36 @@ exports.getLocationById = async (req, res, next) => {
 exports.createLocation = async (req, res, next) => {
   try {
     const { name, code, address_line, barangay, city, province, postal_code, type, color } = req.body;
+    const normalizedType = normalizeLocationType(type);
 
-    if (!name || !code || !type) {
+    if (!name || !normalizedType) {
       return res.status(400).json({
         success: false,
-        message: 'name, code, and type are required.',
+        message: 'name and type are required.',
       });
+    }
+
+    if (!['warehouse', 'store', 'storeroom'].includes(normalizedType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'type must be warehouse, store, or storeroom.',
+      });
+    }
+
+    let locationCode = code ? String(code).trim().toUpperCase() : await generateLocationCode(name);
+    if (await locationModel.locationCodeExists(locationCode)) {
+      locationCode = await generateLocationCode(name);
     }
 
     const location = await locationModel.createLocation({
       name,
-      code,
+      code: locationCode,
       address_line,
       barangay,
       city,
       province,
       postal_code,
-      type,
+      type: normalizedType,
       color: color || '#6c757d',
     });
 
@@ -71,6 +110,14 @@ exports.createLocation = async (req, res, next) => {
 exports.updateLocation = async (req, res, next) => {
   try {
     const { name, code, address_line, barangay, city, province, postal_code, type, color } = req.body;
+    const normalizedType = normalizeLocationType(type);
+
+    if (normalizedType && !['warehouse', 'store', 'storeroom'].includes(normalizedType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'type must be warehouse, store, or storeroom.',
+      });
+    }
 
     const updated = await locationModel.updateLocation(req.params.id, {
       name,
@@ -80,7 +127,7 @@ exports.updateLocation = async (req, res, next) => {
       city,
       province,
       postal_code,
-      type,
+      type: normalizedType,
       color: color === undefined ? undefined : color || '#6c757d',
     });
 

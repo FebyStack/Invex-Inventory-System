@@ -169,6 +169,22 @@ const getMovementLog = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
+    const { location_id } = req.query;
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (location_id) {
+      conditions.push(`sm.location_id = $${idx++}`);
+      values.push(location_id);
+    }
+
+    values.push(limit);
+    const limitParam = idx++;
+    values.push(offset);
+    const offsetParam = idx++;
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const result = await query(`
       SELECT 
@@ -185,9 +201,10 @@ const getMovementLog = async (req, res, next) => {
       JOIN invex.products p ON sm.product_id = p.id
       JOIN invex.locations l ON sm.location_id = l.id
       LEFT JOIN invex.users u ON sm.user_id = u.id
+      ${whereClause}
       ORDER BY sm.movement_date DESC
-      LIMIT $1 OFFSET $2
-    `, [limit, offset]);
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, values);
 
     res.json({
       success: true,

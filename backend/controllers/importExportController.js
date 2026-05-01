@@ -219,6 +219,14 @@ const exportStockReport = async (req, res, next) => {
 const exportMovementLog = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
+    const { location_id } = req.query;
+    const values = [];
+    let whereClause = '';
+
+    if (location_id) {
+      whereClause = 'WHERE sm.location_id = $1';
+      values.push(location_id);
+    }
     
     const result = await query(`
       SELECT 
@@ -235,8 +243,9 @@ const exportMovementLog = async (req, res, next) => {
       JOIN invex.products p ON sm.product_id = p.id
       JOIN invex.locations l ON sm.location_id = l.id
       LEFT JOIN invex.users u ON sm.user_id = u.id
+      ${whereClause}
       ORDER BY sm.movement_date DESC
-    `);
+    `, values);
 
     await sendExportFile(res, result.rows, format, 'movement-log');
   } catch (error) {

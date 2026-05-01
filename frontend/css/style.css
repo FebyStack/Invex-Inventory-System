@@ -41,10 +41,14 @@
   --shadow-glow: 0 0 0 1px var(--border-strong);
 
   /* Layout */
-  --sidebar-width: 220px;
-  --sidebar-collapsed: 60px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 64px;
   --header-height: 64px;
   --transition-speed: 200ms;
+
+  /* Sidebar ambient orb tints */
+  --orb-warm: rgba(248,113,113,0.12);
+  --orb-cool: rgba(140,160,255,0.08);
 }
 
 body.light {
@@ -63,6 +67,9 @@ body.light {
   --success: #059669;
   --warning: #D97706;
   --danger:  #DC2626;
+
+  --orb-warm: rgba(220,38,38,0.10);
+  --orb-cool: rgba(80,100,200,0.08);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

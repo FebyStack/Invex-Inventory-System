@@ -1,0 +1,33 @@
+.modal-content { max-width: 720px !important; }
+.item-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: end;
+}
+#items-container {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+#items-container h3 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-1);
+  margin: 0;
+}
+.remove-btn {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--fg-3);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 120ms;
+}
+.remove-btn:hover { background: var(--hover); color: var(--danger); }

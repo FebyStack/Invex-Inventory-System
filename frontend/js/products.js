@@ -1,0 +1,235 @@
+const tableBody = document.getElementById('products-table-body');
+const loadingState = document.getElementById('loading-state');
+const modal = document.getElementById('product-modal');
+const form = document.getElementById('product-form');
+
+const categoryFilter = document.getElementById('filter-category');
+const supplierFilter = document.getElementById('filter-supplier');
+const searchInput = document.getElementById('search-input');
+const locationSelect = document.getElementById('location_id');
+const skuPreview = document.getElementById('sku-preview');
+let locationsCache = [];
+
+async function loadProducts() {
+  const token = sessionStorage.getItem('token');
+  const params = new URLSearchParams();
+  if (searchInput.value) params.append('search', searchInput.value);
+  if (categoryFilter.value) params.append('category_id', categoryFilter.value);
+  if (supplierFilter.value) params.append('supplier_id', supplierFilter.value);
+
+  try {
+    const res = await fetch(`/api/products?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    loadingState.style.display = 'none';
+    if (data.success) {
+      tableBody.innerHTML = '';
+      data.data.forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <div style="display:flex;align-items:center;">
+              <span class="product-thumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </span>
+              <div class="product-info">
+                <span class="product-name">${p.name}</span>
+                <span class="product-sku">${p.sku}</span>
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--fg-3);">${p.category_name || '—'}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">$${parseFloat(p.unit_price).toFixed(2)}</td>
+          <td><span class="stock-badge stock-in">Fetching…</span></td>
+          <td style="text-align:right;">
+            <button class="action-btn edit-btn" data-id="${p.id}" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="action-btn delete-btn" data-id="${p.id}" title="Delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+        fetchStock(p.id, row.cells[3].querySelector('.stock-badge'), p.reorder_level);
+      });
+    }
+  } catch (err) {
+    loadingState.textContent = 'Failed to load products.';
+  }
+}
+
+async function fetchStock(productId, badge, reorderLevel) {
+  const token = sessionStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/products/${productId}/stock`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      const total = data.data.reduce((sum, loc) => sum + parseInt(loc.quantity), 0);
+      badge.textContent = `${total} in stock`;
+      badge.classList.remove('stock-in');
+      if (total === 0) badge.classList.add('stock-out');
+      else if (total <= reorderLevel) badge.classList.add('stock-low');
+      else badge.classList.add('stock-in');
+    }
+  } catch (err) { badge.textContent = 'Error'; }
+}
+
+async function loadFilters() {
+  const token = sessionStorage.getItem('token');
+  const headers = { 'Authorization': `Bearer ${token}` };
+
+  const cRes = await fetch('/api/categories', { headers });
+  const cData = await cRes.json();
+  if (cData.success) {
+    (cData.data || cData.categories || []).forEach(c => {
+      const opt = new Option(c.name, c.id);
+      categoryFilter.add(opt.cloneNode(true));
+      document.getElementById('category_id').add(opt);
+    });
+  }
+
+  const sRes = await fetch('/api/suppliers', { headers });
+  const sData = await sRes.json();
+  if (sData.success) {
+    (sData.data || sData.suppliers || []).forEach(s => {
+      const opt = new Option(s.name, s.id);
+      supplierFilter.add(opt.cloneNode(true));
+      document.getElementById('supplier_id').add(opt);
+    });
+  }
+
+  const lRes = await fetch('/api/locations', { headers });
+  const lData = await lRes.json();
+  if (lData.success) {
+    locationsCache = lData.data || [];
+    locationsCache.forEach(l => {
+      locationSelect.add(new Option(`${l.name} (${l.code})`, l.id));
+    });
+  }
+}
+
+function locationFromSku(sku) {
+  return locationsCache.find(l => String(sku || '').startsWith(`${l.code}-`));
+}
+
+async function updateSkuPreview(currentSku) {
+  if (currentSku) {
+    skuPreview.textContent = `Current SKU: ${currentSku}`;
+    return;
+  }
+
+  const locationId = locationSelect.value;
+  if (!locationId) {
+    skuPreview.textContent = 'SKU will be generated from the selected location.';
+    return;
+  }
+
+  const token = sessionStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/products/next-sku?location_id=${encodeURIComponent(locationId)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    skuPreview.textContent = data.success ? `Generated SKU: ${data.data.sku}` : 'SKU will be generated on save.';
+  } catch (err) {
+    skuPreview.textContent = 'SKU will be generated on save.';
+  }
+}
+
+searchInput.oninput = loadProducts;
+categoryFilter.onchange = loadProducts;
+supplierFilter.onchange = loadProducts;
+
+document.getElementById('new-product-btn').onclick = () => {
+  form.reset();
+  document.getElementById('edit-id').value = '';
+  document.getElementById('modal-title').textContent = 'New product';
+  locationSelect.disabled = false;
+  updateSkuPreview();
+  modal.style.display = 'flex';
+};
+
+document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
+locationSelect.onchange = () => updateSkuPreview();
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const token = sessionStorage.getItem('token');
+  const id = document.getElementById('edit-id').value;
+  const method = id ? 'PUT' : 'POST';
+  const url = id ? `/api/products/${id}` : '/api/products';
+
+  const payload = {
+    name: document.getElementById('name').value,
+    category_id: parseInt(document.getElementById('category_id').value),
+    supplier_id: parseInt(document.getElementById('supplier_id').value),
+    unit_price: parseFloat(document.getElementById('unit_price').value),
+    reorder_level: parseInt(document.getElementById('reorder_level').value),
+    unit_of_measure: document.getElementById('unit_of_measure').value,
+    track_expiry: document.getElementById('track_expiry').checked
+  };
+  if (!id) payload.location_id = parseInt(locationSelect.value);
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.success) {
+      modal.style.display = 'none';
+      loadProducts();
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (err) { alert('Network error.'); }
+};
+
+tableBody.onclick = async (e) => {
+  if (e.target.classList.contains('delete-btn')) {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    const id = e.target.dataset.id;
+    const token = sessionStorage.getItem('token');
+    const res = await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if ((await res.json()).success) loadProducts();
+  }
+
+  if (e.target.classList.contains('edit-btn')) {
+    const id = e.target.dataset.id;
+    const token = sessionStorage.getItem('token');
+    const res = await fetch(`/api/products/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      const p = data.data;
+      const location = locationFromSku(p.sku);
+      document.getElementById('edit-id').value = p.id;
+      document.getElementById('name').value = p.name;
+      locationSelect.value = location ? location.id : '';
+      locationSelect.disabled = true;
+      updateSkuPreview(p.sku);
+      document.getElementById('category_id').value = p.category_id;
+      document.getElementById('supplier_id').value = p.supplier_id;
+      document.getElementById('unit_price').value = p.unit_price;
+      document.getElementById('reorder_level').value = p.reorder_level;
+      document.getElementById('unit_of_measure').value = p.unit_of_measure;
+      document.getElementById('track_expiry').checked = p.track_expiry;
+
+      document.getElementById('modal-title').textContent = 'Edit product';
+      modal.style.display = 'flex';
+    }
+  }
+}
+
+loadFilters();
+loadProducts();

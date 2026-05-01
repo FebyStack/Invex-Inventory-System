@@ -1,0 +1,28 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.product-info { display: flex; flex-direction: column; }
+.product-name { font-weight: 500; color: var(--fg-1); }
+.product-sku {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-4);
+  margin-top: 2px;
+}
+.product-thumb {
+  width: 28px; height: 28px; border-radius: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--fg-4); margin-right: 12px;
+  vertical-align: middle;
+}
+.product-thumb svg { width: 13px; height: 13px; }
+.sku-preview {
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-4);
+}

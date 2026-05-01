@@ -1,0 +1,8 @@
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--fg-4);
+  font-size: 13px;
+}
+.qty-up { color: var(--success); }
+.qty-down { color: var(--danger); }

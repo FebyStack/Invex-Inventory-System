@@ -144,7 +144,7 @@ const updateOrder = async (id, { reference_no, notes }) => {
  */
 const softDeleteOrder = async (id, client) => {
   const executeQuery = client ? client.query.bind(client) : query;
-  
+
   const result = await executeQuery(
     `UPDATE invex.orders SET is_deleted = TRUE
      WHERE id = $1 AND is_deleted = FALSE

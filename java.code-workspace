@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "../OneDrive/Desktop/adobe/Adobe Premiere Pro 2020 v14.9.0.52 (x64) Pre-Cracked {CracksHash}/activity 4 prog/java"
+		},
+		{
+			"path": "../../../xampp/htdocs"
+		},
+		{
+			"path": "../OneDrive/Desktop"
+		}
+	],
+	"settings": {
+		"java.project.sourcePaths": [
+			"src"
+		],
+		"java.project.outputPath": "bin",
+		"java.project.referencedLibraries": [
+			"lib/**/*.jar"
+		],
+		"java.debug.settings.onBuildFailureProceed": true,
+		"liveServer.settings.multiRootWorkspaceName": "Desktop"
+	}
+}

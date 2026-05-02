@@ -1,0 +1,26 @@
+.ie-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media(max-width:900px) { .ie-grid { grid-template-columns:1fr; } }
+.ie-card { border:1px solid var(--border); border-radius:10px; padding:24px; }
+.ie-card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-card-header h2 { font-size:15px; font-weight:500; }
+.ie-desc { color:var(--fg-3); font-size:13px; margin-bottom:20px; }
+.drop-zone { border:2px dashed var(--border-strong); border-radius:8px; padding:32px; text-align:center; cursor:pointer; transition:all 200ms ease; }
+.drop-zone:hover,.drop-zone.dragover { border-color:var(--fg-3); background:var(--hover); }
+.drop-zone svg { margin-bottom:8px; }
+.drop-zone p { color:var(--fg-2); font-size:13px; font-weight:500; margin-bottom:4px; }
+.drop-zone span { color:var(--fg-4); font-size:12px; display:block; margin:6px 0; }
+.file-hint { color:var(--fg-4); font-size:11px; margin-top:8px; }
+.file-preview { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border:1px solid var(--border-strong); border-radius:6px; margin-top:12px; }
+.file-name { font-size:13px; font-weight:500; color:var(--fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.export-list { display:flex; flex-direction:column; gap:12px; }
+.export-item { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 16px; border:1px solid var(--border); border-radius:8px; transition:border-color 150ms ease; }
+.export-item:hover { border-color:var(--border-strong); }
+.export-title { font-size:13px; font-weight:500; color:var(--fg-1); }
+.export-sub { font-size:11px; color:var(--fg-4); margin-top:2px; }
+.export-btns { display:flex; gap:6px; flex-shrink:0; }
+.export-btn { display:inline-flex; align-items:center; gap:4px; padding:0 10px; height:28px; border-radius:5px; font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--fg-2); transition:all 150ms ease; }
+.export-btn:hover { background:var(--hover); color:var(--fg-1); }
+.import-errors { margin-top:12px; padding:14px; border:1px solid var(--danger); border-radius:8px; background:rgba(248,113,113,0.05); max-height:200px; overflow-y:auto; }
+.import-errors h4 { color:var(--danger); font-size:13px; margin-bottom:8px; }
+.import-errors li { color:var(--fg-2); font-size:12px; margin-bottom:4px; }
+.import-success { margin-top:12px; padding:14px; border:1px solid var(--success); border-radius:8px; background:rgba(74,222,128,0.05); color:var(--success); font-size:13px; font-weight:500; }

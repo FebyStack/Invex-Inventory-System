@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .role-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.02em; padding:3px 8px; border-radius:4px; }
+    .role-admin { background:rgba(248,113,113,0.1); color:var(--danger); }
+    .role-staff { background:rgba(74,222,128,0.1); color:var(--success); }
+    .empty-state { text-align:center; padding:60px 20px; color:var(--fg-4); font-size:13px; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Users</h1>
+        <p>Manage system user accounts</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="new-user-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New user
+        </button>
+      </div>
+    </header>
+    <section style="padding: 0 32px;">
+      <table>
+        <thead><tr>
+          <th>User</th><th>Email</th><th>Role</th><th>Joined</th><th style="text-align:right">Actions</th>
+        </tr></thead>
+        <tbody id="users-table-body"></tbody>
+      </table>
+      <div id="loading-state" class="empty-state">Loading users…</div>
+      <div id="no-data-state" class="empty-state" style="display:none">No users found.</div>
+    </section>
+  </main>
+
+  <!-- User Modal -->
+  <div class="modal" id="user-modal">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="modal-title">New user</h2></div>
+      <form id="user-form">
+        <input type="hidden" id="edit-id" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="form-control" required placeholder="johndoe" />
+          </div>
+          <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" class="form-control" required placeholder="John Doe" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" class="form-control" placeholder="john@example.com" />
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="password">Password <span id="pw-hint" style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0"></span></label>
+            <input type="password" id="password" class="form-control" placeholder="••••••" />
+          </div>
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" class="form-control" required>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal" id="delete-modal">
+    <div class="modal-content" style="max-width:400px">
+      <div class="modal-header"><h2>Confirm Delete</h2></div>
+      <div class="modal-body" style="padding:20px 24px">
+        <p style="color:var(--fg-2);font-size:13px">Are you sure you want to delete this user? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="delete-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/users.js"></script>
+</body>
+</html>

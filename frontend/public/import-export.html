@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import / Export | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/import-export.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Import / Export</h1>
+        <p>Bulk data operations for your inventory</p>
+      </div>
+    </header>
+    <section style="padding: 0 32px;">
+      <div class="ie-grid">
+        <!-- Import Card -->
+        <div class="ie-card">
+          <div class="ie-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <h2>Import Products</h2>
+          </div>
+          <p class="ie-desc">Upload a CSV or Excel file to bulk-import products into the system.</p>
+          <div class="drop-zone" id="drop-zone">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--fg-4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <p>Drag and drop your file here</p>
+            <span>or</span>
+            <button class="btn btn-secondary btn-sm" id="browse-btn">Browse files</button>
+            <input type="file" id="file-input" accept=".csv,.xlsx" style="display:none" />
+            <div class="file-hint">Accepts .csv and .xlsx (max 5MB)</div>
+          </div>
+          <div id="file-preview" class="file-preview" style="display:none">
+            <div class="file-name" id="file-name"></div>
+            <button class="btn btn-ghost btn-sm" id="clear-file-btn">✕</button>
+          </div>
+          <button class="btn btn-primary" id="upload-btn" style="width:100%;margin-top:12px" disabled>Upload & Import</button>
+          <div id="import-result" style="display:none;margin-top:16px"></div>
+        </div>
+
+        <!-- Export Card -->
+        <div class="ie-card">
+          <div class="ie-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            <h2>Export Data</h2>
+          </div>
+          <p class="ie-desc">Download inventory data as CSV or Excel spreadsheets.</p>
+          <div class="export-list">
+            <div class="export-item">
+              <div>
+                <div class="export-title">Products Catalog</div>
+                <div class="export-sub">All active products with categories and suppliers</div>
+              </div>
+              <div class="export-btns">
+                <button class="export-btn" onclick="downloadExport('products','csv')">CSV</button>
+                <button class="export-btn" onclick="downloadExport('products','xlsx')">Excel</button>
+              </div>
+            </div>
+            <div class="export-item">
+              <div>
+                <div class="export-title">Stock Report</div>
+                <div class="export-sub">Current stock levels by product and location</div>
+              </div>
+              <div class="export-btns">
+                <button class="export-btn" onclick="downloadExport('stock-report','csv')">CSV</button>
+                <button class="export-btn" onclick="downloadExport('stock-report','xlsx')">Excel</button>
+              </div>
+            </div>
+            <div class="export-item">
+              <div>
+                <div class="export-title">Movement Log</div>
+                <div class="export-sub">Full history of all stock movements</div>
+              </div>
+              <div class="export-btns">
+                <button class="export-btn" onclick="downloadExport('movement-log','csv')">CSV</button>
+                <button class="export-btn" onclick="downloadExport('movement-log','xlsx')">Excel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/import-export.js"></script>
+</body>
+</html>

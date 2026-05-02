@@ -1,0 +1,22 @@
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:0; }
+.tab-btn { padding:10px 20px; background:transparent; border:none; color:var(--fg-3); font-size:13px; font-weight:500; cursor:pointer; position:relative; transition:color 150ms ease; }
+.tab-btn:hover { color:var(--fg-1); }
+.tab-btn.active { color:var(--fg-1); }
+.tab-btn.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--fg-1); border-radius:2px 2px 0 0; }
+.tab-panel { display:none; padding:24px 0; }
+.tab-panel.active { display:block; }
+.report-actions { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+.export-btn { display:inline-flex; align-items:center; gap:6px; padding:0 12px; height:32px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--fg-2); transition:all 150ms ease; }
+.export-btn:hover { background:var(--hover); color:var(--fg-1); }
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.stat-card { border:1px solid var(--border); border-radius:8px; padding:16px 20px; }
+.stat-card .label { font-size:11px; color:var(--fg-4); text-transform:uppercase; letter-spacing:0.04em; font-weight:500; }
+.stat-card .value { font-size:22px; font-weight:500; color:var(--fg-1); margin-top:4px; font-family:'DM Mono',monospace; }
+.badge-low,.badge-out,.badge-ok,.badge-expired,.badge-soon { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; font-family:'DM Mono',monospace; }
+.badge-low::before,.badge-out::before,.badge-ok::before,.badge-expired::before,.badge-soon::before { content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.badge-low { color:var(--warning); } .badge-low::before { background:var(--warning); }
+.badge-out { color:var(--danger); } .badge-out::before { background:var(--danger); }
+.badge-ok { color:var(--success); } .badge-ok::before { background:var(--success); }
+.badge-expired { color:var(--danger); } .badge-expired::before { background:var(--danger); }
+.badge-soon { color:var(--warning); } .badge-soon::before { background:var(--warning); }
+.empty-state { text-align:center; padding:60px 20px; color:var(--fg-4); font-size:13px; }

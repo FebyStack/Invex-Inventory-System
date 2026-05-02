@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    @media(max-width:900px) { .profile-grid { grid-template-columns:1fr; } }
+    .profile-card { border:1px solid var(--border); border-radius:10px; padding:24px; }
+    .profile-card h2 { font-size:15px; font-weight:500; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+    .info-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+    .info-row:last-child { border-bottom:none; }
+    .info-label { font-size:12px; color:var(--fg-3); text-transform:uppercase; letter-spacing:0.03em; font-weight:500; }
+    .info-value { font-size:13px; color:var(--fg-1); font-weight:500; }
+    .role-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; font-family:'DM Mono',monospace; text-transform:uppercase; padding:3px 8px; border-radius:4px; }
+    .role-admin { background:rgba(248,113,113,0.1); color:var(--danger); }
+    .role-staff { background:rgba(74,222,128,0.1); color:var(--success); }
+    .avatar-large { width:64px; height:64px; border-radius:50%; background:var(--surface-elev); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--fg-1); font-size:22px; margin-bottom:16px; }
+    .pw-msg { margin-top:12px; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:500; display:none; }
+    .pw-msg.success { display:block; background:rgba(74,222,128,0.08); color:var(--success); border:1px solid rgba(74,222,128,0.2); }
+    .pw-msg.error { display:block; background:rgba(248,113,113,0.08); color:var(--danger); border:1px solid rgba(248,113,113,0.2); }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Profile</h1>
+        <p>Your account details</p>
+      </div>
+    </header>
+    <section style="padding: 0 32px;">
+      <div class="profile-grid">
+        <!-- User Info Card -->
+        <div class="profile-card">
+          <h2>Account Information</h2>
+          <div class="avatar-large" id="profile-avatar">--</div>
+          <div class="info-row"><span class="info-label">Username</span><span class="info-value" id="p-username">-</span></div>
+          <div class="info-row"><span class="info-label">Full Name</span><span class="info-value" id="p-fullname">-</span></div>
+          <div class="info-row"><span class="info-label">Email</span><span class="info-value" id="p-email">-</span></div>
+          <div class="info-row"><span class="info-label">Role</span><span class="info-value" id="p-role">-</span></div>
+          <div class="info-row"><span class="info-label">Member Since</span><span class="info-value" id="p-joined">-</span></div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="profile-card">
+          <h2>Change Password</h2>
+          <form id="password-form">
+            <div class="form-group">
+              <label for="current_password">Current Password</label>
+              <input type="password" id="current_password" class="form-control" required placeholder="••••••" />
+            </div>
+            <div class="form-group">
+              <label for="new_password">New Password</label>
+              <input type="password" id="new_password" class="form-control" required placeholder="••••••" minlength="6" />
+            </div>
+            <div class="form-group">
+              <label for="confirm_password">Confirm New Password</label>
+              <input type="password" id="confirm_password" class="form-control" required placeholder="••••••" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%">Update Password</button>
+            <div class="pw-msg" id="pw-msg"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/profile.js"></script>
+</body>
+</html>

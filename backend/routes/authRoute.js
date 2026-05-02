@@ -16,4 +16,7 @@ router.post('/logout', authenticate, asyncHandler(authController.logout));
 // GET /api/auth/me
 router.get('/me', authenticate, asyncHandler(authController.getMe));
 
+// PUT /api/auth/change-password
+router.put('/change-password', authenticate, asyncHandler(authController.changePassword));
+
 module.exports = router;

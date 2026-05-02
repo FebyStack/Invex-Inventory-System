@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock History | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <style>
+    .history-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .back-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      color: var(--fg-2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+
+    .back-btn:hover {
+      background: var(--hover);
+      color: var(--fg-1);
+    }
+
+    .product-info h2 {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--fg-1);
+    }
+
+    .product-info .sku {
+      font-size: 12px;
+      color: var(--fg-4);
+      font-family: 'DM Mono', monospace;
+      margin-top: 2px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 16px 20px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 150ms ease;
+    }
+
+    .timeline-item:hover {
+      border-color: var(--border-strong);
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -27px;
+      top: 20px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--fg-3);
+      border: 2px solid var(--bg);
+    }
+
+    .timeline-dot.dot-in {
+      background: var(--success);
+    }
+
+    .timeline-dot.dot-out {
+      background: var(--danger);
+    }
+
+    .timeline-dot.dot-adjustment {
+      background: var(--warning);
+    }
+
+    .timeline-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .timeline-main {
+      flex: 1;
+    }
+
+    .timeline-type {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg-1);
+    }
+
+    .timeline-meta {
+      font-size: 11px;
+      color: var(--fg-4);
+      margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .timeline-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .timeline-qty {
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .timeline-qty.positive {
+      color: var(--success);
+    }
+
+    .timeline-qty.negative {
+      color: var(--danger);
+    }
+
+    .timeline-notes {
+      font-size: 12px;
+      color: var(--fg-3);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--fg-4);
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="sidebar-placeholder"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Stock History</h1>
+        <p>Full movement timeline for a product</p>
+      </div>
+    </header>
+
+    <section style="padding: 0 32px;">
+      <div class="history-header">
+        <button class="back-btn" onclick="history.back()" title="Go back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div class="product-info" id="product-info">
+          <h2 id="product-name">Loading…</h2>
+          <div class="sku" id="product-sku"></div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <select id="filter-type" class="form-control" style="max-width: 160px; height: 32px; font-size: 12px;">
+          <option value="">All types</option>
+          <option value="ORDER">Orders</option>
+          <option value="ADJUSTMENT">Adjustments</option>
+          <option value="TRANSFER">Transfers</option>
+        </select>
+      </div>
+
+      <div id="loading-state" class="empty-state">Loading history…</div>
+      <div id="no-data-state" class="empty-state" style="display: none;">No stock movements found for this product.
+      </div>
+      <div class="timeline" id="timeline" style="display: none;"></div>
+    </section>
+  </main>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/stock-history.js"></script>
+</body>
+
+</html>

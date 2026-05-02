@@ -142,6 +142,58 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.',
+      });
+    }
+
+    if (new_password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters.',
+      });
+    }
+
+    // Get current user's password hash
+    const userResult = await query(
+      'SELECT id, password FROM invex.users WHERE id = $1 AND is_deleted = FALSE',
+      [req.user.id]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Verify current password
+    const isValid = await bcrypt.compare(current_password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+    }
+
+    // Hash new password and update
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+
+    await query(
+      'UPDATE invex.users SET password = $1 WHERE id = $2',
+      [hashedPassword, req.user.id]
+    );
+
+    void logActivity(req.user.id, 'CHANGE_PASSWORD', 'users', req.user.id);
+
+    return res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 exports.getMe = async (req, res, next) => {
   try {
     const userResult = await query(

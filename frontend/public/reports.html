@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/reports.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h1>Reports</h1>
+        <p>Inventory analytics and data exports</p>
+      </div>
+    </header>
+    <section style="padding: 0 32px;">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="low-stock">Low Stock</button>
+        <button class="tab-btn" data-tab="expiring">Expiring Soon</button>
+        <button class="tab-btn" data-tab="stock-summary">Stock Summary</button>
+        <button class="tab-btn" data-tab="movement-log">Movement Log</button>
+      </div>
+
+      <!-- Low Stock -->
+      <div class="tab-panel active" id="tab-low-stock">
+        <div class="report-actions">
+          <button class="export-btn" onclick="exportReport('stock-report','csv')">⬇ CSV</button>
+          <button class="export-btn" onclick="exportReport('stock-report','xlsx')">⬇ Excel</button>
+        </div>
+        <table><thead><tr>
+          <th>Product</th><th>Location</th><th style="text-align:right">Current</th><th style="text-align:right">Reorder</th><th>Status</th>
+        </tr></thead><tbody id="low-stock-body"></tbody></table>
+        <div id="low-stock-empty" class="empty-state" style="display:none">All products well-stocked.</div>
+        <div id="low-stock-loading" class="empty-state">Loading…</div>
+      </div>
+
+      <!-- Expiring -->
+      <div class="tab-panel" id="tab-expiring">
+        <div class="report-actions">
+          <select id="expiry-days" class="form-control" style="max-width:150px;height:32px;font-size:12px">
+            <option value="7">Next 7 days</option>
+            <option value="30" selected>Next 30 days</option>
+            <option value="60">Next 60 days</option>
+            <option value="90">Next 90 days</option>
+          </select>
+        </div>
+        <table><thead><tr>
+          <th>Product</th><th>Batch #</th><th>Location</th><th style="text-align:right">Qty</th><th>Expiry</th><th>Status</th>
+        </tr></thead><tbody id="expiring-body"></tbody></table>
+        <div id="expiring-empty" class="empty-state" style="display:none">No batches expiring.</div>
+        <div id="expiring-loading" class="empty-state">Loading…</div>
+      </div>
+
+      <!-- Stock Summary -->
+      <div class="tab-panel" id="tab-stock-summary">
+        <div class="report-actions">
+          <button class="export-btn" onclick="exportReport('stock-report','csv')">⬇ CSV</button>
+          <button class="export-btn" onclick="exportReport('stock-report','xlsx')">⬇ Excel</button>
+        </div>
+        <div class="stat-row" id="summary-stats"></div>
+        <table><thead><tr>
+          <th>Location</th><th style="text-align:right">Products</th><th style="text-align:right">Items</th><th style="text-align:right">Value</th>
+        </tr></thead><tbody id="stock-summary-body"></tbody></table>
+        <div id="summary-loading" class="empty-state">Loading…</div>
+      </div>
+
+      <!-- Movement Log -->
+      <div class="tab-panel" id="tab-movement-log">
+        <div class="report-actions">
+          <button class="export-btn" onclick="exportReport('movement-log','csv')">⬇ CSV</button>
+          <button class="export-btn" onclick="exportReport('movement-log','xlsx')">⬇ Excel</button>
+        </div>
+        <table><thead><tr>
+          <th>Date</th><th>Product</th><th>Location</th><th style="text-align:right">Qty</th><th>Type</th><th>By</th><th>Notes</th>
+        </tr></thead><tbody id="movement-log-body"></tbody></table>
+        <div id="movement-loading" class="empty-state">Loading…</div>
+        <div id="movement-empty" class="empty-state" style="display:none">No movements yet.</div>
+      </div>
+    </section>
+  </main>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/reports.js"></script>
+</body>
+</html>

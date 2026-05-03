@@ -24,3 +24,11 @@
 .import-errors h4 { color:var(--danger); font-size:13px; margin-bottom:8px; }
 .import-errors li { color:var(--fg-2); font-size:12px; margin-bottom:4px; }
 .import-success { margin-top:12px; padding:14px; border:1px solid var(--success); border-radius:8px; background:rgba(74,222,128,0.05); color:var(--success); font-size:13px; font-weight:500; }
+
+.template-guide { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.guide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.guide-title { font-size: 11px; font-weight: 600; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.guide-list li { font-size: 11px; color: var(--fg-3); line-height: 1.4; }
+.guide-list li strong { color: var(--fg-2); font-family: 'DM Mono', monospace; font-weight: 500; font-size: 10px; }
+@media (max-width: 1200px) { .guide-list { grid-template-columns: 1fr; } }

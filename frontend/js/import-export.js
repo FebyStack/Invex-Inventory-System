@@ -123,6 +123,30 @@
     }
   });
 
+  // Download Template
+  const downloadTemplateBtn = document.getElementById('download-template-btn');
+  if (downloadTemplateBtn) {
+    downloadTemplateBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const headers = ['sku', 'name', 'category_id', 'supplier_id', 'unit_price', 'reorder_level', 'track_expiry', 'unit_of_measure'];
+      const rows = [
+        ['PROD-001', 'Sample Product', '1', '1', '25.50', '10', 'false', 'pcs'],
+        ['PROD-002', 'Expiry Tracked Item', '2', '1', '150.00', '5', 'true', 'box']
+      ];
+      
+      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "invex_product_template.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+  }
+
   // Export download (globally accessible)
   window.downloadExport = function (type, format) {
     const url = `/api/export/${type}?format=${format}`;

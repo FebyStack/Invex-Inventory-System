@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,6 +9,7 @@
   <link rel="stylesheet" href="/css/sidebar.css" />
   <link rel="stylesheet" href="/css/import-export.css" />
 </head>
+
 <body>
   <div id="sidebar-placeholder"></div>
   <main class="main-content">
@@ -22,15 +24,17 @@
         <!-- Import Card -->
         <div class="ie-card">
           <div class="ie-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
             <h2>Import Products</h2>
           </div>
           <p class="ie-desc">Upload a CSV or Excel file to bulk-import products into the system.</p>
           <div class="drop-zone" id="drop-zone">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--fg-4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--fg-4)" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
             <p>Drag and drop your file here</p>
             <span>or</span>
@@ -42,15 +46,38 @@
             <div class="file-name" id="file-name"></div>
             <button class="btn btn-ghost btn-sm" id="clear-file-btn">✕</button>
           </div>
-          <button class="btn btn-primary" id="upload-btn" style="width:100%;margin-top:12px" disabled>Upload & Import</button>
+          <button class="btn btn-primary" id="upload-btn" style="width:100%;margin-top:12px" disabled>Upload &
+            Import</button>
+
+          <div class="template-guide">
+            <div class="guide-header">
+              <span class="guide-title">Import Template Guide</span>
+              <button class="btn btn-ghost btn-sm" id="download-template-btn"
+                style="padding: 2px 8px; height: 24px; font-size: 10px;">
+                Download Template
+              </button>
+            </div>
+            <ul class="guide-list">
+              <li><strong>sku</strong>: Unique product identifier (e.g., SKU-100)</li>
+              <li><strong>name</strong>: Full product name</li>
+              <li><strong>category_id</strong>: Numeric ID of the category</li>
+              <li><strong>supplier_id</strong>: Numeric ID of the supplier</li>
+              <li><strong>unit_price</strong>: Current price (numeric only)</li>
+              <li><strong>reorder_level</strong>: Stock threshold for alerts</li>
+              <li><strong>track_expiry</strong>: "true" or "false"</li>
+              <li><strong>unit_of_measure</strong>: e.g., pcs, box, kg</li>
+            </ul>
+          </div>
+
           <div id="import-result" style="display:none;margin-top:16px"></div>
         </div>
 
         <!-- Export Card -->
         <div class="ie-card">
           <div class="ie-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
             <h2>Export Data</h2>
           </div>
@@ -94,4 +121,5 @@
   <script src="/js/sidebar.js"></script>
   <script src="/js/import-export.js"></script>
 </body>
+
 </html>

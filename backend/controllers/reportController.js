@@ -82,14 +82,13 @@ const getLowStock = async (req, res, next) => {
         p.id as product_id,
         p.sku,
         p.name as product_name,
-        l.name as location_name,
-        ps.quantity as current_stock,
+        COALESCE(SUM(ps.quantity), 0) as current_stock,
         p.reorder_level
-      FROM invex.product_stock ps
-      JOIN invex.active_products p ON ps.product_id = p.id
-      JOIN invex.active_locations l ON ps.location_id = l.id
-      WHERE ps.quantity <= p.reorder_level
-      ORDER BY (ps.quantity - p.reorder_level) ASC
+      FROM invex.active_products p
+      LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
+      GROUP BY p.id, p.sku, p.name, p.reorder_level
+      HAVING COALESCE(SUM(ps.quantity), 0) <= p.reorder_level
+      ORDER BY (COALESCE(SUM(ps.quantity), 0) - p.reorder_level) ASC, p.name ASC
     `);
 
     res.json({

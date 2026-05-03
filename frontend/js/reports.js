@@ -37,7 +37,6 @@
               <div style="font-weight:500;color:var(--fg-1)">${item.product_name}</div>
               <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${item.sku}</div>
             </td>
-            <td style="color:var(--fg-2)">${item.location_name}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace;color:${isOut ? 'var(--danger)' : 'var(--warning)'}">${item.current_stock}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-3)">${item.reorder_level}</td>
             <td>${isOut ? '<span class="badge-out">OUT OF STOCK</span>' : '<span class="badge-low">LOW STOCK</span>'}</td>

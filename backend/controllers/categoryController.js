@@ -1,6 +1,16 @@
 const categoryModel = require('../models/categoryModel');
 const { logActivity } = require('../src/utils/logger');
 
+// Accept either #RGB, #RRGGBB, or #RRGGBBAA hex values.
+const HEX_COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+const normalizeColor = (raw) => {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const value = String(raw).trim();
+  if (!HEX_COLOR_RE.test(value)) return null; // explicit "invalid" sentinel
+  return value;
+};
+
 /**
  * GET /api/categories
  * List all active categories.
@@ -50,13 +60,21 @@ exports.getById = async (req, res, next) => {
  */
 exports.create = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, color } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         message: 'Category name is required.',
+      });
+    }
+
+    const normalizedColor = normalizeColor(color);
+    if (normalizedColor === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Color must be a valid hex value (e.g. #7C7CFF).',
       });
     }
 
@@ -72,6 +90,7 @@ exports.create = async (req, res, next) => {
     const category = await categoryModel.create({
       name: name.trim(),
       description: description ? description.trim() : null,
+      color: normalizedColor,
     });
 
     // Log activity (fire-and-forget)
@@ -97,13 +116,21 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, description, color } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         message: 'Category name is required.',
+      });
+    }
+
+    const normalizedColor = normalizeColor(color);
+    if (normalizedColor === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Color must be a valid hex value (e.g. #7C7CFF).',
       });
     }
 
@@ -128,6 +155,7 @@ exports.update = async (req, res, next) => {
     const category = await categoryModel.update(id, {
       name: name.trim(),
       description: description ? description.trim() : null,
+      color: normalizedColor,
     });
 
     void logActivity(req.user.id, 'UPDATE_CATEGORY', 'categories', category.id, {

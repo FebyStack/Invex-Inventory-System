@@ -1,18 +1,19 @@
 // ============================================
 // Categories — card grid (Invex Dark redesign)
+// Backend communicates: GET /api/categories returns name, description,
+// color, product_count, total_value — no separate /api/products fetch needed.
 // ============================================
 
-const grid = document.getElementById('cat-grid');
-const loadingState = document.getElementById('loading-state');
-const emptyState = document.getElementById('empty-state');
-const modal = document.getElementById('category-modal');
-const form = document.getElementById('category-form');
-const searchInput = document.getElementById('search-input');
-const countEl = document.getElementById('cat-count');
+const grid          = document.getElementById('cat-grid');
+const loadingState  = document.getElementById('loading-state');
+const emptyState    = document.getElementById('empty-state');
+const modal         = document.getElementById('category-modal');
+const form          = document.getElementById('category-form');
+const searchInput   = document.getElementById('search-input');
+const countEl       = document.getElementById('cat-count');
 const colorPickerEl = document.getElementById('color-picker');
 
 let categoriesCache = [];
-let productsCache = [];
 
 // Palette mirrors the dark-mode design spec.
 const PALETTE = [
@@ -25,20 +26,14 @@ const PALETTE = [
   '#4ADE80', // green
   '#60A5FA', // blue
 ];
+const DEFAULT_COLOR = PALETTE[0];
 
-// Persist user-picked colors locally (the backend only stores name + description)
-const COLOR_STORE_KEY = 'invex.category.colors';
-const colorStore = (() => {
-  try { return JSON.parse(localStorage.getItem(COLOR_STORE_KEY) || '{}'); }
-  catch { return {}; }
-})();
-const saveColors = () => localStorage.setItem(COLOR_STORE_KEY, JSON.stringify(colorStore));
-
-// Auto-pick a color if none stored. Hash the name into the palette.
+// Use the server-provided color, fall back to a deterministic palette pick
+// keyed off the name so legacy rows without a color still look right.
 function colorFor(cat) {
-  if (colorStore[cat.id]) return colorStore[cat.id];
+  if (cat.color) return cat.color;
   let h = 0;
-  for (const ch of cat.name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  for (const ch of (cat.name || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return PALETTE[h % PALETTE.length];
 }
 
@@ -50,9 +45,10 @@ function skuFor(name) {
 
 // Format PHP value
 function formatValue(v) {
-  if (!v) return '₱0';
-  if (v >= 1000) return '₱' + Math.round(v).toLocaleString();
-  return '₱' + v.toFixed(0);
+  const n = Number(v) || 0;
+  if (!n) return '₱0';
+  if (n >= 1000) return '₱' + Math.round(n).toLocaleString();
+  return '₱' + n.toFixed(0);
 }
 
 // ── Data load ───────────────────────────────────
@@ -63,16 +59,11 @@ async function loadCategories() {
   emptyState.style.display = 'none';
 
   try {
-    const [catRes, prodRes] = await Promise.all([
-      fetch('/api/categories', { headers: { 'Authorization': `Bearer ${token}` } }),
-      fetch('/api/products', { headers: { 'Authorization': `Bearer ${token}` } }),
-    ]);
-    const catData = await catRes.json();
-    const prodData = await prodRes.json();
-
-    categoriesCache = (catData.success && (catData.categories || catData.data)) || [];
-    productsCache = (prodData.success && (prodData.data || prodData.products)) || [];
-
+    const res = await fetch('/api/categories', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await res.json();
+    categoriesCache = (data.success && (data.categories || data.data)) || [];
     renderGrid();
   } catch (err) {
     loadingState.textContent = 'Failed to load categories.';
@@ -86,8 +77,8 @@ function renderGrid() {
   const q = searchInput.value.toLowerCase().trim();
   const filtered = q
     ? categoriesCache.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      (c.description || '').toLowerCase().includes(q))
+        c.name.toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q))
     : categoriesCache;
 
   countEl.textContent = filtered.length;
@@ -102,20 +93,11 @@ function renderGrid() {
   grid.style.display = '';
   grid.innerHTML = '';
 
-  // Per-category aggregates
-  const stats = {};
-  productsCache.forEach(p => {
-    const k = p.category_id;
-    if (!stats[k]) stats[k] = { items: 0, value: 0 };
-    stats[k].items += 1;
-    const qty = Number(p.total_stock ?? p.quantity ?? 0);
-    const price = Number(p.unit_price ?? p.price ?? 0);
-    stats[k].value += qty * price;
-  });
-
   filtered.forEach(c => {
     const color = colorFor(c);
-    const stat = stats[c.id] || { items: 0, value: 0 };
+    const items = Number(c.product_count ?? 0);
+    const value = Number(c.total_value ?? 0);
+
     const card = document.createElement('div');
     card.className = 'cat-card';
     card.dataset.id = c.id;
@@ -142,11 +124,11 @@ function renderGrid() {
       <div class="cat-stats">
         <div class="cat-stat">
           <div class="cat-stat-label">Items</div>
-          <div class="cat-stat-value">${stat.items}</div>
+          <div class="cat-stat-value">${items}</div>
         </div>
         <div class="cat-stat right">
           <div class="cat-stat-label">Value</div>
-          <div class="cat-stat-value">${formatValue(stat.value)}</div>
+          <div class="cat-stat-value">${formatValue(value)}</div>
         </div>
       </div>
     `;
@@ -174,12 +156,14 @@ function escapeHtml(s) {
 }
 
 // ── Color picker ─────────────────────────────────
-let selectedColor = PALETTE[0];
+let selectedColor = DEFAULT_COLOR;
 
 function renderColorPicker(active) {
-  selectedColor = active || PALETTE[0];
+  selectedColor = active || DEFAULT_COLOR;
+  // Ensure the active swatch is selectable even if it isn't in the palette.
+  const colors = PALETTE.includes(selectedColor) ? PALETTE : [...PALETTE, selectedColor];
   colorPickerEl.innerHTML = '';
-  PALETTE.forEach(c => {
+  colors.forEach(c => {
     const sw = document.createElement('button');
     sw.type = 'button';
     sw.className = 'swatch' + (c === selectedColor ? ' selected' : '');
@@ -230,8 +214,9 @@ form.onsubmit = async (e) => {
   const isEdit = Boolean(id);
 
   const payload = {
-    name: document.getElementById('cat-name').value.trim(),
+    name:        document.getElementById('cat-name').value.trim(),
     description: document.getElementById('cat-description').value.trim() || null,
+    color:       selectedColor,
   };
 
   if (!payload.name) return;
@@ -248,11 +233,6 @@ form.onsubmit = async (e) => {
     });
     const result = await res.json();
     if (result.success) {
-      const savedId = isEdit ? id : (result.category?.id ?? result.data?.id);
-      if (savedId) {
-        colorStore[savedId] = selectedColor;
-        saveColors();
-      }
       closeModal();
       loadCategories();
     } else {
@@ -289,8 +269,6 @@ grid.onclick = async (e) => {
         });
         const result = await res.json();
         if (result.success) {
-          delete colorStore[id];
-          saveColors();
           loadCategories();
         } else {
           alert(result.message || 'Could not delete category.');

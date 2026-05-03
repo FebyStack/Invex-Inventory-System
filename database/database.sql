@@ -14,10 +14,14 @@ CREATE TABLE invex.categories (
     id           SERIAL PRIMARY KEY,
     name         VARCHAR(100) NOT NULL UNIQUE,
     description  TEXT,
+    color        VARCHAR(9)   NOT NULL DEFAULT '#7C7CFF',
     is_deleted   BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at   TIMESTAMP,
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migration helper for existing databases (idempotent):
+--   ALTER TABLE invex.categories ADD COLUMN IF NOT EXISTS color VARCHAR(9) NOT NULL DEFAULT '#7C7CFF';
 
 -- Stores supplier information for Invex stock-in transactions
 CREATE TABLE invex.suppliers (

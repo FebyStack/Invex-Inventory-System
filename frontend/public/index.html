@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invex Inventory</title>
+  <meta http-equiv="refresh" content="0;url=/login.html">
+  <style>
+    html, body { background: #0A0A0B; color: #B4B4B8; font-family: 'DM Sans', sans-serif; height: 100%; margin: 0; }
+    body { display: flex; align-items: center; justify-content: center; }
+    a { color: #F5F5F7; }
+  </style>
+</head>
+<body>
+  <script>
+    // Route based on auth state. Falls back to <meta refresh> if JS is disabled.
+    (function () {
+      try {
+        var token = sessionStorage.getItem('token');
+        window.location.replace(token ? '/dashboard.html' : '/login.html');
+      } catch (_) {
+        window.location.replace('/login.html');
+      }
+    })();
+  </script>
+  <noscript>
+    <p>Redirecting to <a href="/login.html">sign in</a>…</p>
+  </noscript>
+</body>
+</html>

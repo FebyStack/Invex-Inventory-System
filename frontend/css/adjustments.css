@@ -6,3 +6,5 @@
 }
 .qty-up { color: var(--success); }
 .qty-down { color: var(--danger); }
+.qty-transfer { color: var(--accent); }
+.status-low-stock { background: rgba(99, 102, 241, 0.1); color: var(--accent); }

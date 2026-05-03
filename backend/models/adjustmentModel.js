@@ -4,13 +4,13 @@ const { query } = require('../src/config/db');
  * Create a stock adjustment record.
  * @param {Object} client - DB transaction client
  */
-const createAdjustment = async (client, { product_id, location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id }) => {
+const createAdjustment = async (client, { product_id, location_id, to_location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id }) => {
   const result = await client.query(
     `INSERT INTO invex.stock_adjustments
-       (product_id, location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, product_id, location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id, adjustment_date`,
-    [product_id, location_id, batch_id || null, adjustment_type, quantity_change, reason_code_id, notes || null, user_id]
+       (product_id, location_id, to_location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING id, product_id, location_id, to_location_id, batch_id, adjustment_type, quantity_change, reason_code_id, notes, user_id, adjustment_date`,
+    [product_id, location_id, to_location_id || null, batch_id || null, adjustment_type, quantity_change, reason_code_id, notes || null, user_id]
   );
   return result.rows[0];
 };
@@ -23,11 +23,13 @@ const getAllAdjustments = async ({ product_id, location_id, adjustment_type } = 
     SELECT sa.id, sa.adjustment_type, sa.quantity_change, sa.notes, sa.adjustment_date,
            p.name AS product_name, p.sku,
            l.name AS location_name, l.code AS location_code,
+           tl.name AS to_location_name, tl.code AS to_location_code,
            rc.code AS reason_code, rc.description AS reason_description,
            u.full_name AS adjusted_by
     FROM invex.stock_adjustments sa
     JOIN invex.products p ON sa.product_id = p.id
     JOIN invex.locations l ON sa.location_id = l.id
+    LEFT JOIN invex.locations tl ON sa.to_location_id = tl.id
     JOIN invex.reason_codes rc ON sa.reason_code_id = rc.id
     JOIN invex.users u ON sa.user_id = u.id
     WHERE sa.is_deleted = FALSE
@@ -81,7 +83,7 @@ const softDeleteAdjustment = async (id, client) => {
   const result = await client.query(
     `UPDATE invex.stock_adjustments SET is_deleted = TRUE
      WHERE id = $1 AND is_deleted = FALSE
-     RETURNING id, product_id, location_id, adjustment_type, quantity_change`,
+     RETURNING id, product_id, location_id, to_location_id, adjustment_type, quantity_change`,
     [id]
   );
   return result.rows[0] || null;

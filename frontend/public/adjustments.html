@@ -81,8 +81,16 @@
             <select id="adjustment_type" class="form-control" required>
               <option value="INCREASE">Increase (+)</option>
               <option value="DECREASE">Decrease (−)</option>
+              <option value="TRANSFER">Transfer (→)</option>
             </select>
           </div>
+        </div>
+        
+        <div class="form-group" id="to-location-group" style="display: none;">
+          <label for="to_location_id">Destination Location</label>
+          <select id="to_location_id" class="form-control">
+            <option value="">Select destination…</option>
+          </select>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">

@@ -27,15 +27,24 @@ async function loadData() {
         const date = new Date(adj.adjustment_date).toLocaleDateString() + ' ' + new Date(adj.adjustment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         const isUp = adj.adjustment_type === 'INCREASE';
+        const isTransfer = adj.adjustment_type === 'TRANSFER';
+        
+        let typeLabel = isUp ? 'Increase' : (isTransfer ? 'Transfer' : 'Decrease');
+        let statusClass = isUp ? 'status-in-stock' : (isTransfer ? 'status-low-stock' : 'status-out-of-stock');
+        let qtyPrefix = isUp ? '+' : (isTransfer ? '→' : '−');
+        let qtyClass = isUp ? 'qty-up' : (isTransfer ? 'qty-transfer' : 'qty-down');
+
         row.innerHTML = `
           <td style="color: var(--fg-3);">${date}</td>
           <td>
             <div style="font-weight: 500; color: var(--fg-1);">${adj.product_name}</div>
             <div style="font-size: 11px; color: var(--fg-4); font-family: 'DM Mono', monospace;">${adj.sku}</div>
           </td>
-          <td style="color: var(--fg-2);">${adj.location_name}</td>
-          <td><span class="status-badge ${isUp ? 'status-in-stock' : 'status-out-of-stock'}">${isUp ? 'Increase' : 'Decrease'}</span></td>
-          <td class="num ${isUp ? 'qty-up' : 'qty-down'}" style="text-align: right;">${isUp ? '+' : '−'}${adj.quantity_change}</td>
+          <td style="color: var(--fg-2);">
+            ${isTransfer ? `${adj.location_name} <span style="color:var(--fg-4)">→</span> ${adj.to_location_name}` : adj.location_name}
+          </td>
+          <td><span class="status-badge ${statusClass}">${typeLabel}</span></td>
+          <td class="num ${qtyClass}" style="text-align: right;">${qtyPrefix}${adj.quantity_change}</td>
           <td>
             <div style="color: var(--fg-1);">${adj.reason_code}</div>
             <div style="font-size: 11px; color: var(--fg-4);">${adj.reason_description}</div>
@@ -65,6 +74,8 @@ async function loadData() {
       lData.data.forEach(l => {
         const opt = new Option(l.name, l.id);
         locationSelect.add(opt);
+        // Also add to the destination dropdown
+        document.getElementById('to_location_id').add(new Option(l.name, l.id));
       });
     }
 
@@ -86,18 +97,37 @@ async function loadData() {
 
 // Modal logic
 document.getElementById('new-adjustment-btn').onclick = () => modal.style.display = 'flex';
-document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
+document.getElementById('cancel-btn').onclick = () => {
+  modal.style.display = 'none';
+  document.getElementById('to-location-group').style.display = 'none';
+  form.reset();
+};
 window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; }
+
+// Toggle destination location based on type
+document.getElementById('adjustment_type').addEventListener('change', (e) => {
+  const toLocGroup = document.getElementById('to-location-group');
+  const toLocSelect = document.getElementById('to_location_id');
+  if (e.target.value === 'TRANSFER') {
+    toLocGroup.style.display = 'block';
+    toLocSelect.setAttribute('required', 'required');
+  } else {
+    toLocGroup.style.display = 'none';
+    toLocSelect.removeAttribute('required');
+  }
+});
 
 // Submit form
 form.onsubmit = async (e) => {
   e.preventDefault();
   const token = sessionStorage.getItem('token');
 
+  const type = document.getElementById('adjustment_type').value;
   const payload = {
     product_id: parseInt(productSelect.value),
     location_id: parseInt(locationSelect.value),
-    adjustment_type: document.getElementById('adjustment_type').value,
+    to_location_id: type === 'TRANSFER' ? parseInt(document.getElementById('to_location_id').value) : null,
+    adjustment_type: type,
     quantity_change: parseInt(document.getElementById('quantity_change').value),
     reason_code_id: parseInt(reasonSelect.value),
     notes: document.getElementById('notes').value

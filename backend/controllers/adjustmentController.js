@@ -49,10 +49,25 @@ exports.createAdjustment = async (req, res, next) => {
       });
     }
 
-    if (!['INCREASE', 'DECREASE'].includes(adjustment_type)) {
+    if (!['INCREASE', 'DECREASE', 'TRANSFER'].includes(adjustment_type)) {
       return res.status(400).json({
         success: false,
-        message: 'adjustment_type must be INCREASE or DECREASE.',
+        message: 'adjustment_type must be INCREASE, DECREASE, or TRANSFER.',
+      });
+    }
+
+    const { to_location_id } = req.body;
+    if (adjustment_type === 'TRANSFER' && !to_location_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'to_location_id is required for transfers.',
+      });
+    }
+
+    if (adjustment_type === 'TRANSFER' && String(location_id) === String(to_location_id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source and destination locations must be different.',
       });
     }
 
@@ -87,6 +102,7 @@ exports.createAdjustment = async (req, res, next) => {
     const adjustment = await adjustmentModel.createAdjustment(client, {
       product_id,
       location_id,
+      to_location_id: adjustment_type === 'TRANSFER' ? to_location_id : null,
       batch_id,
       adjustment_type,
       quantity_change,
@@ -98,8 +114,11 @@ exports.createAdjustment = async (req, res, next) => {
     // 2. Update product_stock
     if (adjustment_type === 'INCREASE') {
       await stockModel.incrementStock(product_id, location_id, quantity_change, client);
-    } else {
+    } else if (adjustment_type === 'DECREASE') {
       await stockModel.decrementStock(product_id, location_id, quantity_change, client);
+    } else if (adjustment_type === 'TRANSFER') {
+      await stockModel.decrementStock(product_id, location_id, quantity_change, client);
+      await stockModel.incrementStock(product_id, to_location_id, quantity_change, client);
     }
 
     await client.query('COMMIT');
@@ -108,6 +127,7 @@ exports.createAdjustment = async (req, res, next) => {
     void logActivity(req.user.id, `STOCK_${adjustment_type}`, 'stock_adjustments', adjustment.id, {
       product_id,
       location_id,
+      to_location_id: adjustment_type === 'TRANSFER' ? to_location_id : null,
       quantity_change,
       reason: reasonCode.code,
     });
@@ -147,8 +167,11 @@ exports.deleteAdjustment = async (req, res, next) => {
     // 2. Reverse stock
     if (deleted.adjustment_type === 'INCREASE') {
       await stockModel.decrementStock(deleted.product_id, deleted.location_id, deleted.quantity_change, client);
-    } else {
+    } else if (deleted.adjustment_type === 'DECREASE') {
       await stockModel.incrementStock(deleted.product_id, deleted.location_id, deleted.quantity_change, client);
+    } else if (deleted.adjustment_type === 'TRANSFER') {
+      await stockModel.incrementStock(deleted.product_id, deleted.location_id, deleted.quantity_change, client);
+      await stockModel.decrementStock(deleted.product_id, deleted.to_location_id, deleted.quantity_change, client);
     }
 
     await client.query('COMMIT');

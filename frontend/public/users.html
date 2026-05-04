@@ -6,38 +6,64 @@
   <title>Users | Invex Inventory</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
-  <style>
-    .role-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.02em; padding:3px 8px; border-radius:4px; }
-    .role-admin { background:rgba(248,113,113,0.1); color:var(--danger); }
-    .role-staff { background:rgba(74,222,128,0.1); color:var(--success); }
-    .empty-state { text-align:center; padding:60px 20px; color:var(--fg-4); font-size:13px; }
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  </style>
+  <link rel="stylesheet" href="/css/lists.css" />
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
+
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
         <h1>Users</h1>
-        <p>Manage system user accounts</p>
+        <p>Manage who has access to your workspace</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" id="new-user-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New user
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite member
         </button>
       </div>
     </header>
-    <section style="padding: 0 32px;">
-      <table>
-        <thead><tr>
-          <th>User</th><th>Email</th><th>Role</th><th>Joined</th><th style="text-align:right">Actions</th>
-        </tr></thead>
-        <tbody id="users-table-body"></tbody>
-      </table>
-      <div id="loading-state" class="empty-state">Loading users…</div>
-      <div id="no-data-state" class="empty-state" style="display:none">No users found.</div>
+
+    <section class="page-shell" style="padding-top:32px;">
+      <!-- Stat strip -->
+      <div class="stats-strip cols-4" style="margin: 0 32px 32px;">
+        <div class="stat">
+          <div class="stat-label">Total members</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-hint" id="stat-total-hint">across the workspace</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Active sessions</div>
+          <div class="stat-value" id="stat-active">—</div>
+          <div class="stat-hint">last 24 hours</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Admins</div>
+          <div class="stat-value" id="stat-admins">—</div>
+          <div class="stat-hint">full access</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Staff</div>
+          <div class="stat-value" id="stat-staff">—</div>
+          <div class="stat-hint">limited access</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <div class="title">Team members</div>
+          <div class="sub">Manage who has access to your workspace</div>
+        </div>
+      </div>
+
+      <div class="bordered-list" id="users-list">
+        <div class="list-loading" id="loading-state">Loading users…</div>
+        <div class="list-empty" id="no-data-state" style="display:none;">
+          <div class="title">No users yet</div>
+          <div>Invite your first team member to get started.</div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -46,32 +72,34 @@
     <div class="modal-content">
       <div class="modal-header"><h2 id="modal-title">New user</h2></div>
       <form id="user-form">
-        <input type="hidden" id="edit-id" />
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" class="form-control" required placeholder="johndoe" />
+        <div class="modal-body">
+          <input type="hidden" id="edit-id" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" class="form-control" required placeholder="johndoe" />
+            </div>
+            <div class="form-group">
+              <label for="full_name">Full Name</label>
+              <input type="text" id="full_name" class="form-control" required placeholder="John Doe" />
+            </div>
           </div>
           <div class="form-group">
-            <label for="full_name">Full Name</label>
-            <input type="text" id="full_name" class="form-control" required placeholder="John Doe" />
+            <label for="email">Email</label>
+            <input type="email" id="email" class="form-control" placeholder="john@example.com" />
           </div>
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" class="form-control" placeholder="john@example.com" />
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="password">Password <span id="pw-hint" style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0"></span></label>
-            <input type="password" id="password" class="form-control" placeholder="••••••" />
-          </div>
-          <div class="form-group">
-            <label for="role">Role</label>
-            <select id="role" class="form-control" required>
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+              <label for="password">Password <span id="pw-hint" style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0"></span></label>
+              <input type="password" id="password" class="form-control" placeholder="••••••" />
+            </div>
+            <div class="form-group">
+              <label for="role">Role</label>
+              <select id="role" class="form-control" required>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -82,7 +110,7 @@
     </div>
   </div>
 
-  <!-- Delete Confirm Modal -->
+  <!-- Delete confirm -->
   <div class="modal" id="delete-modal">
     <div class="modal-content" style="max-width:400px">
       <div class="modal-header"><h2>Confirm Delete</h2></div>

@@ -20,3 +20,90 @@
 .badge-expired { color:var(--danger); } .badge-expired::before { background:var(--danger); }
 .badge-soon { color:var(--warning); } .badge-soon::before { background:var(--warning); }
 .empty-state { text-align:center; padding:60px 20px; color:var(--fg-4); font-size:13px; }
+
+/* ── Overview: Stock by category + Inventory value ── */
+.reports-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  padding: 8px 0 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.overview-block { min-width: 0; display: flex; flex-direction: column; }
+.overview-head { margin-bottom: 24px; }
+.overview-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--fg-1);
+  letter-spacing: -0.02em;
+}
+.overview-sub {
+  font-size: 12px;
+  color: var(--fg-4);
+  margin-top: 4px;
+}
+
+/* Category bars */
+.cat-list { display: flex; flex-direction: column; gap: 18px; }
+.cat-row { display: flex; flex-direction: column; gap: 8px; }
+.cat-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+.cat-name { color: var(--fg-1); font-weight: 500; }
+.cat-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--fg-3);
+  letter-spacing: 0.02em;
+}
+.cat-meta .dot { color: var(--fg-4); margin: 0 6px; }
+.cat-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cat-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inventory value */
+.inv-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.inv-value {
+  font-size: 56px;
+  font-weight: 500;
+  color: var(--fg-1);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.inv-delta {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.inv-delta.up { color: var(--success); }
+.inv-delta.down { color: var(--danger); }
+.inv-chart {
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+@media (max-width: 900px) {
+  .reports-overview { grid-template-columns: 1fr; gap: 32px; }
+  .inv-value { font-size: 44px; }
+}

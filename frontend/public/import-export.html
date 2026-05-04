@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Import / Export | Invex Inventory</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/lists.css" />
   <link rel="stylesheet" href="/css/import-export.css" />
 </head>
-
 <body>
   <div id="sidebar-placeholder"></div>
+
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
@@ -19,107 +19,146 @@
         <p>Bulk data operations for your inventory</p>
       </div>
     </header>
-    <section style="padding: 0 32px;">
-      <div class="ie-grid">
-        <!-- Import Card -->
-        <div class="ie-card">
-          <div class="ie-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            <h2>Import Products</h2>
+
+    <section class="page-shell" style="padding:32px;max-width:1100px;">
+      <!-- Two columns: import + export -->
+      <div class="ie-row">
+        <!-- Import column -->
+        <div>
+          <div class="section-head" style="padding:0;">
+            <div>
+              <div class="title">Import data</div>
+              <div class="sub">Upload a CSV to add or update products in bulk</div>
+            </div>
           </div>
-          <p class="ie-desc">Upload a CSV or Excel file to bulk-import products into the system.</p>
-          <div class="drop-zone" id="drop-zone">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--fg-4)" stroke-width="1.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            <p>Drag and drop your file here</p>
-            <span>or</span>
-            <button class="btn btn-secondary btn-sm" id="browse-btn">Browse files</button>
+
+          <div class="ie-drop" id="drop-zone">
+            <div class="ie-drop-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            </div>
+            <div class="ie-drop-title">Drop CSV file here</div>
+            <div class="ie-drop-sub">or click to browse · max 5MB</div>
+            <button type="button" class="btn btn-secondary btn-sm" id="browse-btn">Choose file</button>
             <input type="file" id="file-input" accept=".csv,.xlsx" style="display:none" />
-            <div class="file-hint">Accepts .csv and .xlsx (max 5MB)</div>
           </div>
-          <div id="file-preview" class="file-preview" style="display:none">
+
+          <div class="ie-template-link">
+            <span style="color:var(--fg-2);">Need a template?</span>
+            <a href="#" id="download-template-btn">products.csv</a>
+          </div>
+
+          <div id="file-preview" class="ie-file-preview" style="display:none;">
             <div class="file-name" id="file-name"></div>
             <button class="btn btn-ghost btn-sm" id="clear-file-btn">✕</button>
           </div>
-          <button class="btn btn-primary" id="upload-btn" style="width:100%;margin-top:12px" disabled>Upload &
-            Import</button>
-
-          <div class="template-guide">
-            <div class="guide-header">
-              <span class="guide-title">Import Template Guide</span>
-              <button class="btn btn-ghost btn-sm" id="download-template-btn"
-                style="padding: 2px 8px; height: 24px; font-size: 10px;">
-                Download Template
-              </button>
-            </div>
-            <ul class="guide-list">
-              <li><strong>sku</strong>: Unique product identifier (e.g., SKU-100)</li>
-              <li><strong>name</strong>: Full product name</li>
-              <li><strong>category_id</strong>: Numeric ID of the category</li>
-              <li><strong>supplier_id</strong>: Numeric ID of the supplier</li>
-              <li><strong>unit_price</strong>: Current price (numeric only)</li>
-              <li><strong>reorder_level</strong>: Stock threshold for alerts</li>
-              <li><strong>track_expiry</strong>: "true" or "false"</li>
-              <li><strong>unit_of_measure</strong>: e.g., pcs, box, kg</li>
-            </ul>
-          </div>
+          <button class="btn btn-primary" id="upload-btn" style="width:100%;margin-top:12px;display:none;" disabled>Upload &amp; import</button>
 
           <div id="import-result" style="display:none;margin-top:16px"></div>
         </div>
 
-        <!-- Export Card -->
-        <div class="ie-card">
-          <div class="ie-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
-            <h2>Export Data</h2>
+        <!-- Export column -->
+        <div>
+          <div class="section-head" style="padding:0;">
+            <div>
+              <div class="title">Export data</div>
+              <div class="sub">Generate snapshots and reports</div>
+            </div>
           </div>
-          <p class="ie-desc">Download inventory data as CSV or Excel spreadsheets.</p>
-          <div class="export-list">
-            <div class="export-item">
-              <div>
-                <div class="export-title">Products Catalog</div>
-                <div class="export-sub">All active products with categories and suppliers</div>
+
+          <div class="ie-export-list">
+            <div class="ie-export-item" data-type="products" data-format="csv">
+              <div class="ie-icon-tile">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               </div>
-              <div class="export-btns">
-                <button class="export-btn" onclick="downloadExport('products','csv')">CSV</button>
-                <button class="export-btn" onclick="downloadExport('products','xlsx')">Excel</button>
+              <div style="flex:1;">
+                <div class="ie-export-title">Products catalog</div>
+                <div class="ie-export-sub">All active products with categories and suppliers</div>
               </div>
+              <span class="ie-format">CSV</span>
             </div>
-            <div class="export-item">
-              <div>
-                <div class="export-title">Stock Report</div>
-                <div class="export-sub">Current stock levels by product and location</div>
+
+            <div class="ie-export-item" data-type="stock-report" data-format="csv">
+              <div class="ie-icon-tile">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               </div>
-              <div class="export-btns">
-                <button class="export-btn" onclick="downloadExport('stock-report','csv')">CSV</button>
-                <button class="export-btn" onclick="downloadExport('stock-report','xlsx')">Excel</button>
+              <div style="flex:1;">
+                <div class="ie-export-title">Stock report</div>
+                <div class="ie-export-sub">Current stock levels by product and location</div>
               </div>
+              <span class="ie-format">CSV</span>
             </div>
-            <div class="export-item">
-              <div>
-                <div class="export-title">Movement Log</div>
-                <div class="export-sub">Full history of all stock movements</div>
+
+            <div class="ie-export-item" data-type="movement-log" data-format="csv">
+              <div class="ie-icon-tile">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               </div>
-              <div class="export-btns">
-                <button class="export-btn" onclick="downloadExport('movement-log','csv')">CSV</button>
-                <button class="export-btn" onclick="downloadExport('movement-log','xlsx')">Excel</button>
+              <div style="flex:1;">
+                <div class="ie-export-title">Movement log</div>
+                <div class="ie-export-sub">Stock in / out · last 30 days</div>
               </div>
+              <span class="ie-format">CSV</span>
             </div>
           </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Import review modal -->
+  <div class="modal" id="import-review-modal">
+    <div class="modal-content" style="max-width: 1080px;">
+      <div class="modal-header">
+        <h2>Review imported products</h2>
+        <p style="font-size:12px;color:var(--fg-3);margin-top:4px;">
+          Pick a location, category, and (optionally) supplier for each row. SKUs are auto-generated on save.
+        </p>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <!-- Bulk apply bar -->
+        <div class="bulk-apply">
+          <div class="bulk-title">Apply to all</div>
+          <div class="bulk-controls">
+            <select id="bulk-location" class="form-control">
+              <option value="">Location…</option>
+            </select>
+            <select id="bulk-category" class="form-control">
+              <option value="">Category…</option>
+            </select>
+            <select id="bulk-supplier" class="form-control">
+              <option value="">Supplier (optional)…</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="bulk-apply-btn">Apply</button>
+          </div>
+        </div>
+
+        <div class="review-table-wrap">
+          <table class="review-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="num">Qty</th>
+                <th>UoM</th>
+                <th class="num">Reorder</th>
+                <th class="num">Unit price</th>
+                <th>Expiry</th>
+                <th>Location</th>
+                <th>Category</th>
+                <th>Supplier</th>
+              </tr>
+            </thead>
+            <tbody id="review-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="review-cancel-btn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="review-confirm-btn">Import</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/sidebar.js"></script>
+  <script src="/js/notifications.js"></script>
   <script src="/js/import-export.js"></script>
 </body>
-
 </html>

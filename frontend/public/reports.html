@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <link rel="stylesheet" href="/css/reports.css" />
+  <link rel="stylesheet" href="/css/notifications.css" />
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
@@ -14,9 +15,57 @@
     <header class="top-header">
       <div class="header-title">
         <h1>Reports</h1>
-        <p>Inventory analytics and data exports</p>
+        <p>Insights from your stock data</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Notifications">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="dot"></span>
+        </button>
+        <button class="btn btn-primary" onclick="exportReport('stock-report','xlsx')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export
+        </button>
       </div>
     </header>
+    <section>
+      <!-- Overview: Stock by category + Inventory value -->
+      <div class="reports-overview">
+        <div class="overview-block">
+          <div class="overview-head">
+            <div class="overview-title">Stock by category</div>
+            <div class="overview-sub" id="cat-sub">Distribution across — items</div>
+          </div>
+          <div class="cat-list" id="cat-list">
+            <div class="empty-state" style="padding:40px 0">Loading…</div>
+          </div>
+        </div>
+
+        <div class="overview-block">
+          <div class="overview-head">
+            <div class="overview-title">Inventory value</div>
+            <div class="overview-sub">Total estimated value of current stock</div>
+          </div>
+          <div class="inv-value-row">
+            <div class="inv-value" id="inv-value">$—</div>
+            <div class="inv-delta up" id="inv-delta">+0.0%</div>
+          </div>
+          <div class="inv-chart">
+            <svg id="inv-area-chart" width="100%" height="180" viewBox="0 0 800 180"
+              preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+      </div>
+    </section>
     <section style="padding: 0 32px;">
       <div class="tabs">
         <button class="tab-btn active" data-tab="low-stock">Low Stock</button>
@@ -83,6 +132,7 @@
     </section>
   </main>
   <script src="/js/sidebar.js"></script>
+  <script src="/js/notifications.js"></script>
   <script src="/js/reports.js"></script>
 </body>
 </html>

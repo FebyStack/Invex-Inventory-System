@@ -6,13 +6,13 @@
   <title>Orders | Invex Inventory</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/lists.css" />
   <link rel="stylesheet" href="/css/orders.css" />
 </head>
 <body>
-  <!-- Sidebar (loaded dynamically) -->
   <div id="sidebar-placeholder"></div>
 
-<main class="main-content">
+  <main class="main-content">
     <header class="top-header">
       <div class="header-title">
         <h1>Orders</h1>
@@ -20,86 +20,101 @@
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" id="new-order-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New order
         </button>
       </div>
     </header>
 
-    <section style="padding: 0 32px;">
-      <table id="orders-table">
-        <thead>
-          <tr>
-            <th>Order #</th>
-            <th>Type</th>
-            <th>Reference</th>
-            <th>Source / Dest</th>
-            <th>Date</th>
-            <th style="text-align:right;">Items</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="orders-table-body">
-          <!-- Data loaded here -->
-        </tbody>
-      </table>
-      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--fg-4); font-size: 13px;">Loading orders…</div>
+    <section class="page-shell">
+      <!-- Tabs -->
+      <div class="tab-bar" id="order-tabs">
+        <button data-tab="all" class="active">All orders <span class="count-pill" data-c="all">0</span></button>
+        <button data-tab="IN">Purchase orders <span class="count-pill" data-c="IN">0</span></button>
+        <button data-tab="OUT">Sales orders <span class="count-pill" data-c="OUT">0</span></button>
+        <button data-tab="TRANSFER">Transfers <span class="count-pill" data-c="TRANSFER">0</span></button>
+      </div>
+
+      <!-- Table -->
+      <div class="list-wrap">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Type</th>
+              <th>Reference</th>
+              <th>Source / Destination</th>
+              <th>Items</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body">
+            <tr id="loading-state"><td colspan="7" class="list-loading">Loading orders…</td></tr>
+          </tbody>
+        </table>
+        <div id="empty-state" class="list-empty" style="display:none;">
+          <div class="title">No orders yet</div>
+          <div>Create your first purchase, sales, or transfer order.</div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- Order Modal -->
+  <!-- Order modal -->
   <div class="modal" id="order-modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2>New order</h2>
       </div>
       <form id="order-form">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="order_type">Order type</label>
-            <select id="order_type" class="form-control" required>
-              <option value="IN">Stock in (Inbound)</option>
-              <option value="OUT">Stock out (Outbound)</option>
-              <option value="TRANSFER">Internal transfer</option>
-            </select>
+        <div class="modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="order_type">Order type</label>
+              <select id="order_type" class="form-control" required>
+                <option value="IN">Stock in (Inbound)</option>
+                <option value="OUT">Stock out (Outbound)</option>
+                <option value="TRANSFER">Internal transfer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="reference_no">Reference</label>
+              <input type="text" id="reference_no" class="form-control" placeholder="PO-12345">
+            </div>
           </div>
-          <div class="form-group">
-            <label for="reference_no">Reference</label>
-            <input type="text" id="reference_no" class="form-control" placeholder="PO-12345">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group" id="source-loc-group" style="display: none;">
+              <label for="source_location_id">Source</label>
+              <select id="source_location_id" class="form-control">
+                <option value="">Select source…</option>
+              </select>
+            </div>
+            <div class="form-group" id="dest-loc-group">
+              <label for="destination_location_id">Destination</label>
+              <select id="destination_location_id" class="form-control">
+                <option value="">Select destination…</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="items-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3>Order items</h3>
+              <button type="button" class="btn btn-ghost btn-sm" id="add-item-btn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add item
+              </button>
+            </div>
+            <div id="items-list"></div>
+          </div>
+
+          <div class="form-group" style="margin-top: 18px;">
+            <label for="notes">Internal notes</label>
+            <textarea id="notes" class="form-control" rows="2"></textarea>
           </div>
         </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group" id="source-loc-group" style="display: none;">
-            <label for="source_location_id">Source</label>
-            <select id="source_location_id" class="form-control">
-              <option value="">Select source…</option>
-            </select>
-          </div>
-          <div class="form-group" id="dest-loc-group">
-            <label for="destination_location_id">Destination</label>
-            <select id="destination_location_id" class="form-control">
-              <option value="">Select destination…</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="items-container">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3>Order items</h3>
-            <button type="button" class="btn btn-ghost btn-sm" id="add-item-btn">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add item
-            </button>
-          </div>
-          <div id="items-list"></div>
-        </div>
-
-        <div class="form-group" style="margin-top: 18px;">
-          <label for="notes">Internal notes</label>
-          <textarea id="notes" class="form-control" rows="2"></textarea>
-        </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
           <button type="submit" class="btn btn-primary">Submit order</button>

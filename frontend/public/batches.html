@@ -6,56 +6,61 @@
   <title>Batches | Invex Inventory</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
-  <link rel="stylesheet" href="/css/products.css" />
+  <link rel="stylesheet" href="/css/lists.css" />
 </head>
 <body>
-  <!-- Sidebar (loaded dynamically) -->
   <div id="sidebar-placeholder"></div>
 
-<!-- Main Content -->
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
         <h1>Batches</h1>
         <p>Track product batches and expiry dates</p>
       </div>
-      <div class="header-actions">
-        <!-- Batches is read-only view -->
-      </div>
+      <div class="header-actions"></div>
     </header>
 
-    <section style="padding: 0 32px;">
-      <div class="search-bar">
-        <input type="text" id="search-input" class="form-control" style="max-width: 280px;" placeholder="Search by product name or SKU…">
-        <select id="filter-status" class="form-control" style="max-width: 180px;">
-          <option value="">All batches</option>
-          <option value="expired">Expired</option>
-          <option value="urgent">Expiring (< 30 days)</option>
-          <option value="warning">Expiring (30-90 days)</option>
-          <option value="ok">Healthy (90+ days)</option>
-        </select>
+    <section class="page-shell">
+      <!-- Filter chip bar -->
+      <div class="tab-bar" id="batch-filters">
+        <button data-filter="all"      class="active">All <span class="count-pill" data-c="all">0</span></button>
+        <button data-filter="active">Active <span class="count-pill" data-c="active">0</span></button>
+        <button data-filter="expiring">Expiring <span class="count-pill" data-c="expiring">0</span></button>
+        <button data-filter="expired">Expired <span class="count-pill" data-c="expired">0</span></button>
+        <div style="flex:1"></div>
+        <div class="search">
+          <input type="text" id="search-input" placeholder="Search product or SKU…">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
       </div>
 
-      <table id="batches-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Batch #</th>
-            <th>Quantity</th>
-            <th>Expires</th>
-            <th>Status</th>
-            <th style="text-align: right;">Days left</th>
-          </tr>
-        </thead>
-        <tbody id="batches-table-body">
-          <!-- Data will be loaded here -->
-        </tbody>
-      </table>
-      <div id="loading-state" style="text-align: center; padding: 40px; color: var(--fg-4); font-size: 13px;">Loading batches…</div>
+      <!-- Table -->
+      <div class="list-wrap">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Batch #</th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Manufactured</th>
+              <th>Expires</th>
+              <th>Loc</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="batches-table-body">
+            <tr id="loading-state"><td colspan="7" class="list-loading">Loading batches…</td></tr>
+          </tbody>
+        </table>
+        <div id="empty-state" class="list-empty" style="display:none;">
+          <div class="title">No batches yet</div>
+          <div>New batches appear here when you receive stock.</div>
+        </div>
+      </div>
     </section>
   </main>
 
   <script src="/js/sidebar.js"></script>
-  <script type="module" src="/js/batches.js"></script>
+  <script src="/js/batches.js"></script>
 </body>
 </html>

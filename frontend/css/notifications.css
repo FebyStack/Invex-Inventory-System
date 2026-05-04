@@ -1,0 +1,128 @@
+/* ── Notifications: bell dropdown ── */
+.notif-anchor { position: relative; }
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-height: 460px;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+body.light .notif-panel { box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12); }
+.notif-panel.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.notif-header .title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-1);
+  letter-spacing: -0.01em;
+}
+.notif-header .clear-btn {
+  font-size: 11px;
+  color: var(--fg-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.notif-header .clear-btn:hover { color: var(--fg-1); background: var(--hover); }
+.notif-header .clear-btn:disabled { opacity: 0.4; cursor: default; }
+
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.notif-item {
+  display: grid;
+  grid-template-columns: 8px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.notif-item:hover { background: var(--hover); }
+.notif-item + .notif-item { margin-top: 2px; }
+
+.notif-item .severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--fg-3);
+  flex-shrink: 0;
+}
+.notif-item.severity-warning  .severity-dot { background: var(--warning); }
+.notif-item.severity-critical .severity-dot { background: var(--danger); }
+
+.notif-item .body { min-width: 0; }
+.notif-item .item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-1);
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+.notif-item .item-body {
+  font-size: 12px;
+  color: var(--fg-3);
+  margin-top: 3px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.notif-item .item-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--fg-4);
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notif-empty {
+  padding: 36px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-4);
+}
+
+.notif-loading {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-4);
+}
+
+/* Hide the bell's static red dot — JS toggles .has-unread for live state. */
+.icon-btn:not(.has-unread) .dot { display: none; }

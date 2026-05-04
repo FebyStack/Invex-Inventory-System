@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stock Adjustments | Invex Inventory</title>
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/lists.css" />
   <link rel="stylesheet" href="/css/adjustments.css" />
 </head>
-
 <body>
-
-  <!-- Sidebar -->
-  <!-- Sidebar (loaded dynamically) -->
   <div id="sidebar-placeholder"></div>
 
-  <!-- Main Content -->
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
@@ -25,92 +20,117 @@
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" id="new-adjustment-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New adjustment
         </button>
       </div>
     </header>
 
-    <section style="padding: 0 32px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Product</th>
-            <th>Location</th>
-            <th>Type</th>
-            <th style="text-align:right;">Qty</th>
-            <th>Reason</th>
-            <th>By</th>
-          </tr>
-        </thead>
-        <tbody id="adjustments-table-body"></tbody>
-      </table>
-      <div id="loading-state" class="empty-state">Loading adjustments…</div>
-      <div id="no-data-state" class="empty-state" style="display: none;">No adjustments found.</div>
+    <section class="page-shell" style="padding-top:32px;">
+      <!-- Stat strip -->
+      <div class="stats-strip cols-3" style="margin: 0 32px 32px;">
+        <div class="stat">
+          <div class="stat-label">Adjustments this month</div>
+          <div class="stat-value" id="stat-month">—</div>
+          <div class="stat-hint" id="stat-month-hint">all time</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Net unit change</div>
+          <div class="stat-value" id="stat-net">—</div>
+          <div class="stat-hint" id="stat-net-hint">across SKUs</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Largest adjustment</div>
+          <div class="stat-value" id="stat-largest">—</div>
+          <div class="stat-hint" id="stat-largest-hint">single change</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <div class="title">Recent adjustments</div>
+          <div class="sub">Manual changes to stock levels — every adjustment is logged</div>
+        </div>
+      </div>
+
+      <!-- Bordered list -->
+      <div class="bordered-list" id="adjustments-list">
+        <div class="list-loading" id="loading-state">Loading adjustments…</div>
+        <div class="list-empty" id="no-data-state" style="display:none;">
+          <div class="title">No adjustments yet</div>
+          <div>Create your first adjustment to track stock corrections.</div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- New Adjustment Modal -->
+  <!-- Adjustment modal -->
   <div class="modal" id="adjustment-modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2>New adjustment</h2>
       </div>
       <form id="adjustment-form">
-        <div class="form-group">
-          <label for="product_id">Product</label>
-          <select id="product_id" class="form-control" required>
-            <option value="">Select a product…</option>
-          </select>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="modal-body">
           <div class="form-group">
-            <label for="location_id">Location</label>
-            <select id="location_id" class="form-control" required>
-              <option value="">Select a location…</option>
+            <label for="product_search">Product</label>
+            <div class="combobox" id="product-combobox">
+              <input
+                type="text"
+                id="product_search"
+                class="form-control"
+                placeholder="Search product by name or SKU…"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <input type="hidden" id="product_id" required />
+              <div class="combobox-panel" id="product-suggestions" hidden></div>
+              <div class="combobox-hint" id="product-hint" hidden></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="location_id">Location</label>
+              <select id="location_id" class="form-control" required>
+                <option value="">Select a location…</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="adjustment_type">Type</label>
+              <select id="adjustment_type" class="form-control" required>
+                <option value="INCREASE">Increase (+)</option>
+                <option value="DECREASE">Decrease (−)</option>
+                <option value="TRANSFER">Transfer (→)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="to-location-group" style="display: none;">
+            <label for="to_location_id">Destination location</label>
+            <select id="to_location_id" class="form-control">
+              <option value="">Select destination…</option>
             </select>
           </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="quantity_change">Quantity</label>
+              <input type="number" id="quantity_change" class="form-control" min="1" required placeholder="10">
+            </div>
+            <div class="form-group">
+              <label for="reason_code_id">Reason</label>
+              <select id="reason_code_id" class="form-control" required>
+                <option value="">Select a reason…</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label for="adjustment_type">Type</label>
-            <select id="adjustment_type" class="form-control" required>
-              <option value="INCREASE">Increase (+)</option>
-              <option value="DECREASE">Decrease (−)</option>
-              <option value="TRANSFER">Transfer (→)</option>
-            </select>
+            <label for="notes">Notes</label>
+            <textarea id="notes" class="form-control" rows="2" placeholder="Optional context"></textarea>
           </div>
         </div>
-        
-        <div class="form-group" id="to-location-group" style="display: none;">
-          <label for="to_location_id">Destination Location</label>
-          <select id="to_location_id" class="form-control">
-            <option value="">Select destination…</option>
-          </select>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="quantity_change">Quantity</label>
-            <input type="number" id="quantity_change" class="form-control" min="1" required placeholder="10">
-          </div>
-          <div class="form-group">
-            <label for="reason_code_id">Reason</label>
-            <select id="reason_code_id" class="form-control" required>
-              <option value="">Select a reason…</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="notes">Notes</label>
-          <textarea id="notes" class="form-control" rows="2" placeholder="Optional context"></textarea>
-        </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
           <button type="submit" class="btn btn-primary">Save adjustment</button>
@@ -122,5 +142,4 @@
   <script src="/js/sidebar.js"></script>
   <script src="/js/adjustments.js"></script>
 </body>
-
 </html>

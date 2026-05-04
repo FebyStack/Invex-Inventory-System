@@ -21,3 +21,98 @@
   background: rgba(99, 102, 241, 0.1);
   color: var(--accent);
 }
+
+/* ── Searchable product combobox ── */
+.combobox { position: relative; }
+
+.combobox-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+}
+body.light .combobox-panel { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12); }
+
+.combobox-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--fg-1);
+  transition: background 80ms ease;
+}
+.combobox-option:hover,
+.combobox-option.active {
+  background: var(--hover);
+}
+.combobox-option.recommended {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.20);
+}
+body.light .combobox-option.recommended {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.18);
+}
+.combobox-option.recommended.active {
+  background: rgba(248, 113, 113, 0.14);
+}
+.combobox-option .opt-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.combobox-option .opt-name {
+  font-weight: 500;
+  color: var(--fg-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combobox-option .opt-sku {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-4);
+  letter-spacing: 0.02em;
+}
+.combobox-option .opt-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.combobox-option .opt-tag {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-right: 6px;
+}
+.combobox-option mark {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.combobox-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-4);
+}
+
+.combobox-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--fg-4);
+}
+.combobox-hint.warn { color: var(--warning); }

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/css/sidebar.css" />
 
   <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/notifications.css" />
 </head>
 
 <body> <!-- Sidebar (loaded dynamically) -->
@@ -51,31 +52,30 @@
           <div class="stat-label">Total products</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-total">—</div>
-            <div class="stat-delta up" id="stat-total-delta">+12</div>
+            <div class="stat-delta neutral" id="stat-total-delta">—</div>
           </div>
           <div class="stat-hint">items tracked</div>
-          <svg class="sparkline" data-points="20,22,24,25,28,30,32,34,36,38,40,42,44,46,48,52"
-            data-color="accent"></svg>
+          <svg class="sparkline" data-color="accent"></svg>
         </div>
 
         <div class="stat">
           <div class="stat-label">Low stock</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-low">—</div>
-            <div class="stat-delta down" id="stat-low-delta">+4</div>
+            <div class="stat-delta neutral" id="stat-low-delta">—</div>
           </div>
-          <div class="stat-hint">vs last week</div>
-          <svg class="sparkline" data-points="8,9,10,10,11,12,12,13,13,14,13,14,14,14,14,14" data-color="warning"></svg>
+          <div class="stat-hint">below reorder level</div>
+          <svg class="sparkline" data-color="warning"></svg>
         </div>
 
         <div class="stat">
-          <div class="stat-label">Pending orders</div>
+          <div class="stat-label">Orders this week</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-orders">—</div>
             <div class="stat-delta neutral">—</div>
           </div>
-          <div class="stat-hint">awaiting fulfillment</div>
-          <svg class="sparkline" data-points="1,1,2,2,2,2,3,3,3,3,3,3,3,3,3,3" data-color="danger"></svg>
+          <div class="stat-hint">last 7 days</div>
+          <svg class="sparkline" data-color="accent"></svg>
         </div>
 
         <div class="stat">
@@ -84,8 +84,8 @@
             <div class="stat-value" id="stat-locations">—</div>
             <div class="stat-delta neutral">—</div>
           </div>
-          <div class="stat-hint">no change</div>
-          <svg class="sparkline" data-points="8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8" data-color="muted"></svg>
+          <div class="stat-hint">sites tracked</div>
+          <svg class="sparkline" data-color="muted"></svg>
         </div>
       </div>
 
@@ -165,6 +165,7 @@
   </main>
 
   <script src="/js/sidebar.js"></script>
+  <script src="/js/notifications.js"></script>
   <script src="/js/dashboard.js"></script>
 </body>
 

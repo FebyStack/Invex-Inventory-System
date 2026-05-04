@@ -3,146 +3,250 @@ const fs = require('fs');
 const { pool, query } = require('../src/config/db');
 const csvHelper = require('../src/utils/csvHelper');
 const excelHelper = require('../src/utils/excelHelper');
+const productModel = require('../models/productModel');
 
-/**
- * Validates product data and checks against the database
- */
-const validateProducts = async (products) => {
+// ── Import-template fields ─────────────────────────────────────────────
+// SKU, category_id, supplier_id are *intentionally* not in the template.
+// The system auto-generates the SKU at commit time (per chosen location);
+// category and supplier are picked in the post-import review modal.
+const TEMPLATE_FIELDS = [
+  'name',
+  'initial_quantity',
+  'unit_of_measure',
+  'reorder_level',
+  'unit_price',
+  'expiry_date',
+];
+
+const toBool = (v) =>
+  v === true || String(v).toLowerCase() === 'true' || v === 1 || v === '1';
+
+function normalizeRow(raw) {
+  const get = (k) => (raw[k] === undefined ? raw[k.toUpperCase()] : raw[k]);
+  const name = get('name') ? String(get('name')).trim() : '';
+  const unit_of_measure = get('unit_of_measure')
+    ? String(get('unit_of_measure')).trim()
+    : 'pcs';
+  const initial_quantity =
+    get('initial_quantity') !== undefined && get('initial_quantity') !== ''
+      ? parseInt(get('initial_quantity'), 10)
+      : 0;
+  const reorder_level =
+    get('reorder_level') !== undefined && get('reorder_level') !== ''
+      ? parseInt(get('reorder_level'), 10)
+      : 0;
+  const unit_price =
+    get('unit_price') !== undefined && get('unit_price') !== ''
+      ? parseFloat(get('unit_price'))
+      : NaN;
+  const expRaw = get('expiry_date');
+  const expiry_date = expRaw ? String(expRaw).trim() : null;
+  return { name, initial_quantity, unit_of_measure, reorder_level, unit_price, expiry_date };
+}
+
+function validateRow(row) {
   const errors = [];
-  
-  // Pre-fetch valid categories and suppliers
-  const categoriesRes = await query('SELECT id FROM invex.categories WHERE is_deleted = false');
-  const validCategoryIds = new Set(categoriesRes.rows.map(r => r.id));
-  
-  const suppliersRes = await query('SELECT id FROM invex.suppliers WHERE is_deleted = false');
-  const validSupplierIds = new Set(suppliersRes.rows.map(r => r.id));
-  
-  const existingProductsRes = await query('SELECT sku FROM invex.products');
-  const existingSkus = new Set(existingProductsRes.rows.map(r => r.sku));
-
-  const currentFileSkus = new Set();
-
-  products.forEach((product, index) => {
-    const rowNum = index + 2; // Assuming row 1 is headers
-    const rowErrors = [];
-
-    // Required fields check
-    if (!product.sku) rowErrors.push('SKU is required');
-    if (!product.name) rowErrors.push('Name is required');
-    if (product.category_id === undefined || product.category_id === null) rowErrors.push('category_id is required');
-    if (product.supplier_id === undefined || product.supplier_id === null) rowErrors.push('supplier_id is required');
-    
-    // Numeric and format validation
-    if (product.unit_price === undefined || product.unit_price < 0 || isNaN(product.unit_price)) {
-      rowErrors.push('unit_price must be a positive number');
+  if (!row.name) errors.push('name is required');
+  if (Number.isNaN(row.unit_price) || row.unit_price < 0) {
+    errors.push('unit_price must be a non-negative number');
+  }
+  if (Number.isNaN(row.reorder_level) || row.reorder_level < 0) {
+    errors.push('reorder_level must be a non-negative integer');
+  }
+  if (Number.isNaN(row.initial_quantity) || row.initial_quantity < 0) {
+    errors.push('initial_quantity must be a non-negative integer');
+  }
+  if (row.expiry_date) {
+    const d = new Date(row.expiry_date);
+    if (Number.isNaN(d.getTime())) {
+      errors.push('expiry_date must be a valid date (e.g. 2026-12-31)');
     }
-    
-    if (product.reorder_level !== undefined && (product.reorder_level < 0 || isNaN(product.reorder_level))) {
-      rowErrors.push('reorder_level must be a non-negative integer');
-    }
+  }
+  return errors;
+}
 
-    // Referential integrity check
-    if (product.category_id && !validCategoryIds.has(product.category_id)) {
-      rowErrors.push(`category_id ${product.category_id} does not exist or is deleted`);
-    }
-    if (product.supplier_id && !validSupplierIds.has(product.supplier_id)) {
-      rowErrors.push(`supplier_id ${product.supplier_id} does not exist or is deleted`);
-    }
+// POST /api/import/products
+// Step 1 of the import flow. Parses the uploaded file, validates the
+// template fields, and returns the normalized rows for the review modal.
+// Nothing is written to the database yet.
+const importProducts = async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Please upload a CSV or Excel file' });
+  }
 
-    // Unique SKU check
-    if (product.sku) {
-      const skuStr = String(product.sku).trim();
-      if (existingSkus.has(skuStr)) {
-        rowErrors.push(`SKU ${skuStr} already exists in the database`);
-      }
-      if (currentFileSkus.has(skuStr)) {
-        rowErrors.push(`SKU ${skuStr} is a duplicate within the uploaded file`);
-      }
-      currentFileSkus.add(skuStr);
-    }
+  const filePath = req.file.path;
+  const fileExtension = path.extname(req.file.originalname).toLowerCase();
+  let parsed = [];
 
+  try {
+    if (fileExtension === '.csv') {
+      parsed = await csvHelper.parseCSV(filePath);
+    } else if (fileExtension === '.xlsx') {
+      parsed = await excelHelper.parseExcel(filePath);
+    } else {
+      return res.status(400).json({ success: false, message: 'Unsupported file format' });
+    }
+  } catch (parseError) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Error parsing file', error: parseError.message });
+  } finally {
+    try { fs.unlinkSync(filePath); } catch { /* ignore */ }
+  }
+
+  if (parsed.length === 0) {
+    return res.status(400).json({ success: false, message: 'The uploaded file is empty' });
+  }
+
+  const rows = [];
+  const errors = [];
+  parsed.forEach((raw, idx) => {
+    const norm = normalizeRow(raw);
+    const rowErrors = validateRow(norm);
     if (rowErrors.length > 0) {
-      errors.push({ row: rowNum, errors: rowErrors });
+      errors.push({ row: idx + 2, errors: rowErrors });
+    } else {
+      rows.push(norm);
     }
   });
 
-  return errors;
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed. Fix the rows below and re-upload.',
+      errors,
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: `Parsed ${rows.length} row${rows.length === 1 ? '' : 's'}.`,
+    fields: TEMPLATE_FIELDS,
+    data: rows,
+  });
 };
 
-// POST /api/import/products
-const importProducts = async (req, res, next) => {
+// POST /api/import/products/commit
+// Step 2: takes the reviewed rows (each with location_id + category_id +
+// optional supplier_id), auto-generates SKUs, creates products, seeds
+// initial stock, and creates an initial batch when an expiry_date is given.
+const commitImportedProducts = async (req, res, next) => {
+  const rows = Array.isArray(req.body && req.body.rows) ? req.body.rows : [];
+  if (rows.length === 0) {
+    return res.status(400).json({ success: false, message: 'No rows to import.' });
+  }
+
+  // Pre-flight reference checks so we fail fast before opening a tx.
+  const [catRes, supRes, locRes] = await Promise.all([
+    query('SELECT id FROM invex.categories WHERE is_deleted = false'),
+    query('SELECT id FROM invex.suppliers WHERE is_deleted = false'),
+    query('SELECT id FROM invex.locations WHERE is_deleted = false'),
+  ]);
+  const validCats = new Set(catRes.rows.map((r) => r.id));
+  const validSups = new Set(supRes.rows.map((r) => r.id));
+  const validLocs = new Set(locRes.rows.map((r) => r.id));
+
+  const errors = [];
+  const cleaned = rows.map((raw, idx) => {
+    const r = normalizeRow(raw);
+    const location_id = parseInt(raw.location_id, 10);
+    const category_id = parseInt(raw.category_id, 10);
+    const supplier_id =
+      raw.supplier_id === undefined || raw.supplier_id === null || raw.supplier_id === ''
+        ? null
+        : parseInt(raw.supplier_id, 10);
+
+    const rowErrors = validateRow(r);
+    if (!Number.isInteger(location_id) || !validLocs.has(location_id)) {
+      rowErrors.push('location_id is required and must reference an active location');
+    }
+    if (!Number.isInteger(category_id) || !validCats.has(category_id)) {
+      rowErrors.push('category_id is required and must reference an active category');
+    }
+    if (supplier_id !== null && !validSups.has(supplier_id)) {
+      rowErrors.push('supplier_id must reference an active supplier');
+    }
+    if (rowErrors.length) errors.push({ row: idx + 1, errors: rowErrors });
+
+    return { ...r, location_id, category_id, supplier_id };
+  });
+
+  if (errors.length) {
+    return res.status(400).json({
+      success: false,
+      message: 'Some rows are missing required selections.',
+      errors,
+    });
+  }
+
+  const client = await pool.connect();
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Please upload a CSV or Excel file' });
+    await client.query('BEGIN');
+
+    // Lock each touched location so concurrent imports get distinct SKUs.
+    const locks = Array.from(new Set(cleaned.map((r) => r.location_id))).sort((a, b) => a - b);
+    for (const lid of locks) {
+      await client.query('SELECT pg_advisory_xact_lock($1)', [lid]);
     }
 
-    const filePath = req.file.path;
-    const fileExtension = path.extname(req.file.originalname).toLowerCase();
-    
-    let products = [];
-    
-    try {
-      if (fileExtension === '.csv') {
-        products = await csvHelper.parseCSV(filePath);
-      } else if (fileExtension === '.xlsx') {
-        products = await excelHelper.parseExcel(filePath);
-      } else {
-        return res.status(400).json({ success: false, message: 'Unsupported file format' });
-      }
-    } catch (parseError) {
-      return res.status(400).json({ success: false, message: 'Error parsing file', error: parseError.message });
-    } finally {
-      // Clean up uploaded file
-      fs.unlinkSync(filePath);
-    }
+    const created = [];
+    for (const r of cleaned) {
+      const sku = await productModel.getNextSkuForLocation(r.location_id, client);
+      if (!sku) throw new Error(`Location ${r.location_id} not found.`);
 
-    if (products.length === 0) {
-      return res.status(400).json({ success: false, message: 'The uploaded file is empty' });
-    }
+      const trackExpiry = !!r.expiry_date;
+      const productRes = await client.query(
+        `INSERT INTO invex.products
+           (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, sku, name`,
+        [
+          r.name, sku, r.category_id, r.supplier_id,
+          r.unit_price, r.reorder_level, trackExpiry,
+          r.unit_of_measure || 'pcs',
+        ]
+      );
+      const product = productRes.rows[0];
 
-    // Validate rows
-    const validationErrors = await validateProducts(products);
-
-    if (validationErrors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed. No products were imported.',
-        errors: validationErrors
-      });
-    }
-
-    // Proceed with database transaction
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      for (const product of products) {
-        const sku = String(product.sku).trim();
-        const name = String(product.name).trim();
-        const category_id = parseInt(product.category_id, 10);
-        const supplier_id = parseInt(product.supplier_id, 10);
-        const unit_price = parseFloat(product.unit_price);
-        const reorder_level = product.reorder_level !== undefined && product.reorder_level !== null ? parseInt(product.reorder_level, 10) : 0;
-        const track_expiry = product.track_expiry === true || String(product.track_expiry).toLowerCase() === 'true';
-        const unit_of_measure = product.unit_of_measure ? String(product.unit_of_measure).trim() : 'pcs';
-
+      if (trackExpiry) {
         await client.query(
-          `INSERT INTO invex.products (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure]
+          `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [product.id, r.location_id, 'INIT-' + sku, 0, r.expiry_date]
         );
       }
 
-      await client.query('COMMIT');
-      res.status(201).json({ success: true, message: `Successfully imported ${products.length} products.` });
-    } catch (dbError) {
-      await client.query('ROLLBACK');
-      throw dbError;
-    } finally {
-      client.release();
+      if (r.initial_quantity > 0) {
+        await client.query(
+          `INSERT INTO invex.product_stock (product_id, location_id, quantity)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (product_id, location_id)
+           DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
+                         last_updated = CURRENT_TIMESTAMP`,
+          [product.id, r.location_id, r.initial_quantity]
+        );
+      }
+
+      created.push({ id: product.id, sku: product.sku, name: product.name });
     }
-  } catch (error) {
-    next(error);
+
+    await client.query('COMMIT');
+    return res.status(201).json({
+      success: true,
+      message: `Successfully imported ${created.length} product${created.length === 1 ? '' : 's'}.`,
+      data: created,
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    if (err.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        message: 'A SKU collision occurred — please retry the import.',
+      });
+    }
+    return next(err);
+  } finally {
+    client.release();
   }
 };
 
@@ -255,6 +359,7 @@ const exportMovementLog = async (req, res, next) => {
 
 module.exports = {
   importProducts,
+  commitImportedProducts,
   exportProducts,
   exportStockReport,
   exportMovementLog

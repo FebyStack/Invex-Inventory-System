@@ -1,34 +1,238 @@
-.ie-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-@media(max-width:900px) { .ie-grid { grid-template-columns:1fr; } }
-.ie-card { border:1px solid var(--border); border-radius:10px; padding:24px; }
-.ie-card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.ie-card-header h2 { font-size:15px; font-weight:500; }
-.ie-desc { color:var(--fg-3); font-size:13px; margin-bottom:20px; }
-.drop-zone { border:2px dashed var(--border-strong); border-radius:8px; padding:32px; text-align:center; cursor:pointer; transition:all 200ms ease; }
-.drop-zone:hover,.drop-zone.dragover { border-color:var(--fg-3); background:var(--hover); }
-.drop-zone svg { margin-bottom:8px; }
-.drop-zone p { color:var(--fg-2); font-size:13px; font-weight:500; margin-bottom:4px; }
-.drop-zone span { color:var(--fg-4); font-size:12px; display:block; margin:6px 0; }
-.file-hint { color:var(--fg-4); font-size:11px; margin-top:8px; }
-.file-preview { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border:1px solid var(--border-strong); border-radius:6px; margin-top:12px; }
-.file-name { font-size:13px; font-weight:500; color:var(--fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.export-list { display:flex; flex-direction:column; gap:12px; }
-.export-item { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 16px; border:1px solid var(--border); border-radius:8px; transition:border-color 150ms ease; }
-.export-item:hover { border-color:var(--border-strong); }
-.export-title { font-size:13px; font-weight:500; color:var(--fg-1); }
-.export-sub { font-size:11px; color:var(--fg-4); margin-top:2px; }
-.export-btns { display:flex; gap:6px; flex-shrink:0; }
-.export-btn { display:inline-flex; align-items:center; gap:4px; padding:0 10px; height:28px; border-radius:5px; font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--fg-2); transition:all 150ms ease; }
-.export-btn:hover { background:var(--hover); color:var(--fg-1); }
-.import-errors { margin-top:12px; padding:14px; border:1px solid var(--danger); border-radius:8px; background:rgba(248,113,113,0.05); max-height:200px; overflow-y:auto; }
-.import-errors h4 { color:var(--danger); font-size:13px; margin-bottom:8px; }
-.import-errors li { color:var(--fg-2); font-size:12px; margin-bottom:4px; }
-.import-success { margin-top:12px; padding:14px; border:1px solid var(--success); border-radius:8px; background:rgba(74,222,128,0.05); color:var(--success); font-size:13px; font-weight:500; }
+/* ============================================
+   Import / Export — drop zone + export list
+   Per the Invex Dark redesign spec.
+   ============================================ */
 
-.template-guide { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
-.guide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.guide-title { font-size: 11px; font-weight: 600; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.05em; }
-.guide-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.guide-list li { font-size: 11px; color: var(--fg-3); line-height: 1.4; }
-.guide-list li strong { color: var(--fg-2); font-family: 'DM Mono', monospace; font-weight: 500; font-size: 10px; }
-@media (max-width: 1200px) { .guide-list { grid-template-columns: 1fr; } }
+.ie-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* ── Drop zone ── */
+.ie-drop {
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  border-radius: 10px;
+  padding: 40px 24px;
+  text-align: center;
+  transition: all 150ms ease;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.ie-drop:hover { background: var(--hover); }
+.ie-drop.dragover {
+  border-color: var(--accent);
+  background: var(--hover);
+}
+.ie-drop-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  color: var(--fg-2);
+}
+.ie-drop-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-1);
+  margin-bottom: 4px;
+}
+.ie-drop-sub {
+  font-size: 11px;
+  color: var(--fg-4);
+  margin-bottom: 14px;
+}
+
+.ie-template-link {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--fg-4);
+}
+.ie-template-link a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+.ie-template-link a:hover { text-decoration: underline; }
+
+.ie-file-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 12px;
+}
+.ie-file-preview .file-name {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--fg-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Export list ── */
+.ie-export-list {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.ie-export-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.ie-export-item:last-child { border-bottom: none; }
+.ie-export-item:hover { background: var(--hover); }
+
+.ie-icon-tile {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ie-export-title { font-size: 13px; font-weight: 500; color: var(--fg-1); }
+.ie-export-sub   { font-size: 11px; color: var(--fg-4); }
+.ie-format       { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--fg-4); }
+
+/* ── Result box ── */
+.import-success {
+  border: 1px solid var(--success);
+  background: rgba(74, 222, 128, 0.08);
+  color: var(--success);
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.import-errors {
+  border: 1px solid var(--danger);
+  background: rgba(248, 113, 113, 0.05);
+  padding: 12px 14px;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.import-errors h4 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.import-errors ul {
+  margin: 6px 0 0 16px;
+  padding: 0;
+  color: var(--fg-2);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .ie-row { grid-template-columns: 1fr; }
+}
+
+/* ── Import review modal ── */
+.bulk-apply {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--hover);
+}
+.bulk-apply .bulk-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-3);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.bulk-apply .bulk-controls {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.bulk-apply .form-control {
+  height: 32px;
+  font-size: 12px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.review-table-wrap {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 0 24px 8px;
+}
+.review-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.review-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-3);
+  font-weight: 500;
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.review-table th.num,
+.review-table td.num { text-align: right; font-family: 'DM Mono', monospace; }
+.review-table tbody td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.review-table tbody tr:hover { background: var(--hover); }
+.review-table input.form-control,
+.review-table select.form-control {
+  height: 30px;
+  font-size: 12px;
+  padding: 0 8px;
+  min-width: 0;
+  width: 100%;
+}
+.review-table .name-cell  { min-width: 160px; }
+.review-table .num-cell   { width: 80px; }
+.review-table .uom-cell   { width: 70px; }
+.review-table .date-cell  { width: 130px; }
+.review-table .pick-cell  { min-width: 130px; }
+.review-table tr.row-error td {
+  border-bottom-color: var(--danger);
+}
+.review-table tr.row-error .row-error-msg {
+  color: var(--danger);
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}

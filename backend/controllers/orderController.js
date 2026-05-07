@@ -3,6 +3,22 @@ const orderModel = require('../models/orderModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
 
+const ORDER_REF_PREFIX = {
+  IN: 'IN',
+  OUT: 'OUT',
+  TRANSFER: 'TRF',
+};
+
+const buildGeneratedReference = (orderType, orderId, itemSkuRefs) => {
+  const prefix = ORDER_REF_PREFIX[orderType] || 'ORD';
+  const compactSku = String(itemSkuRefs[0] || `ORD-${orderId}`)
+    .replace(/[^A-Z0-9-]/gi, '')
+    .toUpperCase();
+  const multiSuffix = itemSkuRefs.length > 1 ? `+${itemSkuRefs.length - 1}` : '';
+  const idSuffix = String(orderId).padStart(5, '0');
+  return `${prefix}-${compactSku}${multiSuffix}-${idSuffix}`.slice(0, 50);
+};
+
 /**
  * GET /api/orders
  */
@@ -52,6 +68,18 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'order_type and items[] are required.' });
     }
 
+    if (order_type === 'IN' && !destination_location_id) {
+      return res.status(400).json({ success: false, message: 'destination_location_id is required for stock-in orders.' });
+    }
+
+    if (order_type === 'OUT' && !source_location_id) {
+      return res.status(400).json({ success: false, message: 'source_location_id is required for stock-out orders.' });
+    }
+
+    if (order_type === 'TRANSFER' && (!source_location_id || !destination_location_id)) {
+      return res.status(400).json({ success: false, message: 'source_location_id and destination_location_id are required for transfers.' });
+    }
+
     await client.query('BEGIN');
 
     // 1. Create the main order record
@@ -66,6 +94,7 @@ exports.createOrder = async (req, res, next) => {
     });
 
     // 2. Process each item
+    const itemSkuRefs = [];
     for (const item of items) {
       let batchId = null;
 
@@ -92,14 +121,23 @@ exports.createOrder = async (req, res, next) => {
 
       // Update stock levels
       if (order_type === 'IN') {
-        await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
+        const stock = await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
+        itemSkuRefs.push(stock.location_sku);
       } else if (order_type === 'OUT') {
-        await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
+        const stock = await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
+        itemSkuRefs.push(stock.location_sku);
       } else if (order_type === 'TRANSFER') {
         // Atomic transfer: out from source, in to destination
         await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
-        await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
+        const stock = await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
+        itemSkuRefs.push(stock.location_sku);
       }
+    }
+
+    if (!order.reference_no) {
+      const generatedReference = buildGeneratedReference(order_type, order.id, itemSkuRefs.filter(Boolean));
+      const updatedRef = await orderModel.updateOrderReference(client, order.id, generatedReference);
+      order.reference_no = updatedRef?.reference_no || generatedReference;
     }
 
     await client.query('COMMIT');

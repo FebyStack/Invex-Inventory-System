@@ -13,11 +13,14 @@ const itemsList    = document.getElementById('items-list');
 const typeSelect  = document.getElementById('order_type');
 const sourceGroup = document.getElementById('source-loc-group');
 const destGroup   = document.getElementById('dest-loc-group');
+const referenceInput = document.getElementById('reference_no');
 
 let ordersCache = [];
 let productsCache = [];
+let scopedProductsCache = [];
 let locationsCache = [];
 let activeTab = 'all';
+let referenceTouched = false;
 
 const fmtDate = (d) => {
   if (!d) return '—';
@@ -114,6 +117,7 @@ async function loadCache() {
     fetch('/api/locations', { headers }),
   ]);
   productsCache  = (await pRes.json()).data || [];
+  scopedProductsCache = productsCache;
   locationsCache = (await lRes.json()).data || [];
 
   const sourceSel = document.getElementById('source_location_id');
@@ -130,7 +134,66 @@ typeSelect.onchange = () => {
   const v = typeSelect.value;
   sourceGroup.style.display = (v === 'OUT' || v === 'TRANSFER') ? 'block' : 'none';
   destGroup.style.display   = (v === 'IN'  || v === 'TRANSFER') ? 'block' : 'none';
+  updateProductOptionsForLocation();
+  updateReferenceHint();
 };
+
+function activeSkuLocationId() {
+  const sourceId = document.getElementById('source_location_id').value;
+  const destId = document.getElementById('destination_location_id').value;
+  if (typeSelect.value === 'IN') return destId;
+  return sourceId || destId;
+}
+
+function productOptionLabel(product) {
+  const sku = product.location_sku || product.sku || 'SKU pending';
+  const stock = product.location_stock !== undefined ? ` · ${product.location_stock} on hand` : '';
+  return `${product.name} (${sku})${stock}`;
+}
+
+function renderProductOptions(select, selectedValue = '') {
+  select.innerHTML = `
+    <option value="">Select…</option>
+    ${scopedProductsCache.map((p) => `
+      <option value="${p.id}" ${String(p.id) === String(selectedValue) ? 'selected' : ''}>
+        ${escapeHtml(productOptionLabel(p))}
+      </option>`).join('')}
+  `;
+}
+
+async function updateProductOptionsForLocation() {
+  const token = sessionStorage.getItem('token');
+  const locationId = activeSkuLocationId();
+  try {
+    if (locationId) {
+      const res = await fetch(`/api/products?location_id=${encodeURIComponent(locationId)}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      scopedProductsCache = data.data || productsCache;
+    } else {
+      scopedProductsCache = productsCache;
+    }
+  } catch {
+    scopedProductsCache = productsCache;
+  }
+
+  document.querySelectorAll('.product-select').forEach((select) => {
+    renderProductOptions(select, select.value);
+  });
+  updateReferenceHint();
+}
+
+function updateReferenceHint() {
+  if (referenceTouched && referenceInput.value.trim()) return;
+  const selectedProductId = document.querySelector('.product-select')?.value;
+  const product = scopedProductsCache.find((p) => String(p.id) === String(selectedProductId));
+  const sku = product?.location_sku || product?.sku;
+  const prefix = typeSelect.value === 'TRANSFER' ? 'TRF' : typeSelect.value;
+  referenceInput.placeholder = sku
+    ? `Auto: ${prefix}-${sku}-00001`
+    : 'Auto-generated from location SKU';
+}
 
 function addItemRow() {
   const div = document.createElement('div');
@@ -139,8 +202,6 @@ function addItemRow() {
     <div class="form-group">
       <label>Product</label>
       <select class="form-control product-select" required>
-        <option value="">Select…</option>
-        ${productsCache.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.sku)})</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
@@ -156,12 +217,15 @@ function addItemRow() {
       <button type="button" class="btn btn-ghost btn-sm remove-btn">✕</button>
     </div>
   `;
+  renderProductOptions(div.querySelector('.product-select'));
+  div.querySelector('.product-select').onchange = updateReferenceHint;
   div.querySelector('.remove-btn').onclick = () => div.remove();
   itemsList.appendChild(div);
 }
 
 document.getElementById('new-order-btn').onclick = () => {
   form.reset();
+  referenceTouched = false;
   itemsList.innerHTML = '';
   addItemRow();
   typeSelect.onchange();
@@ -170,6 +234,15 @@ document.getElementById('new-order-btn').onclick = () => {
 document.getElementById('add-item-btn').onclick = addItemRow;
 document.getElementById('cancel-btn').onclick = () => modal.style.display = 'none';
 modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+referenceInput.oninput = () => { referenceTouched = true; };
+document.getElementById('source_location_id').onchange = () => {
+  updateProductOptionsForLocation();
+  updateReferenceHint();
+};
+document.getElementById('destination_location_id').onchange = () => {
+  updateProductOptionsForLocation();
+  updateReferenceHint();
+};
 
 form.onsubmit = async (e) => {
   e.preventDefault();

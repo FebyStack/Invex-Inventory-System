@@ -130,12 +130,13 @@ exports.createProduct = async (req, res, next) => {
     const initQty = parseInt(initial_quantity, 10) || 0;
     if (initQty > 0) {
       await client.query(
-        `INSERT INTO invex.product_stock (product_id, location_id, quantity)
-         VALUES ($1, $2, $3)
+        `INSERT INTO invex.product_stock (product_id, location_id, quantity, location_sku)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT (product_id, location_id)
          DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
+                       location_sku = COALESCE(invex.product_stock.location_sku, EXCLUDED.location_sku),
                        last_updated = CURRENT_TIMESTAMP`,
-        [product.id, locationId, initQty]
+        [product.id, locationId, initQty, product.sku]
       );
     }
 

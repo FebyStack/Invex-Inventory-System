@@ -1,4 +1,5 @@
 const { pool, query } = require('../src/config/db');
+const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
 
 /**
@@ -107,6 +108,9 @@ exports.createTransfer = async (req, res, next) => {
 
     await client.query('BEGIN');
     transactionStarted = true;
+
+    const sourceLocationSku = await stockModel.ensureLocationSku(product_id, from_location_id, client);
+    const destinationLocationSku = await stockModel.ensureLocationSku(product_id, to_location_id, client);
 
     const sourceStockResult = await client.query(
       `SELECT quantity
@@ -221,6 +225,8 @@ exports.createTransfer = async (req, res, next) => {
     );
 
     const transfer = transferResult.rows[0];
+    transfer.source_location_sku = sourceLocationSku;
+    transfer.destination_location_sku = destinationLocationSku;
     const activityDetails = `Transferred ${transfer.quantity} units of product ${transfer.product_id} from location ${transfer.from_location_id} to location ${transfer.to_location_id}.`;
 
     await client.query(

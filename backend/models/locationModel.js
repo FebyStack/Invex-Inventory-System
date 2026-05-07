@@ -194,7 +194,8 @@ const getLocationSummary = async () => {
 /**
  * Get all products with their per-location stock (matrix) plus a total.
  * Returns: [{ id, name, sku, category_name, reorder_level, unit_price,
- *             total, by_location: { [location_id]: quantity } }]
+ *             total, by_location: { [location_id]: quantity },
+ *             by_location_sku: { [location_id]: sku } }]
  */
 const getInventoryMatrix = async () => {
   const result = await query(
@@ -202,6 +203,8 @@ const getInventoryMatrix = async () => {
             c.name AS category_name,
             COALESCE(json_object_agg(ps.location_id, ps.quantity)
                      FILTER (WHERE ps.location_id IS NOT NULL), '{}') AS by_location,
+            COALESCE(json_object_agg(ps.location_id, ps.location_sku)
+                     FILTER (WHERE ps.location_id IS NOT NULL AND ps.location_sku IS NOT NULL), '{}') AS by_location_sku,
             COALESCE(SUM(ps.quantity), 0)::bigint AS total
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id
@@ -219,6 +222,7 @@ const getInventoryMatrix = async () => {
     unit_price: Number(r.unit_price),
     total: Number(r.total),
     by_location: r.by_location,
+    by_location_sku: r.by_location_sku,
   }));
 };
 

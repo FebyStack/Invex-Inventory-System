@@ -104,6 +104,7 @@ CREATE TABLE invex.product_stock (
     id            SERIAL  PRIMARY KEY,
     product_id    INTEGER NOT NULL REFERENCES invex.products(id),
     location_id   INTEGER NOT NULL REFERENCES invex.locations(id),
+    location_sku  VARCHAR(50),
     quantity      INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
     last_updated  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (product_id, location_id)
@@ -213,6 +214,10 @@ CREATE INDEX idx_invex_activity_user
 CREATE INDEX idx_invex_products_sku
     ON invex.products(sku)
     WHERE is_deleted = FALSE;
+
+CREATE UNIQUE INDEX idx_invex_product_stock_location_sku
+    ON invex.product_stock(location_sku)
+    WHERE location_sku IS NOT NULL;
 
 CREATE INDEX idx_invex_products_category
     ON invex.products(category_id);
@@ -688,6 +693,14 @@ ALTER TABLE invex.activity_logs
     ADD COLUMN IF NOT EXISTS location_id INTEGER
         REFERENCES invex.locations(id) ON DELETE SET NULL;
 
+-- Add location-specific SKU identity to each product/location stock row
+ALTER TABLE invex.product_stock
+    ADD COLUMN IF NOT EXISTS location_sku VARCHAR(50);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invex_product_stock_location_sku
+    ON invex.product_stock(location_sku)
+    WHERE location_sku IS NOT NULL;
+
 -- ============================================================
 -- 2. NEW TABLE: location_transfer_logs
 --    Records completed stock transfers between locations.
@@ -789,6 +802,10 @@ SELECT
     p.id                AS product_id,
     p.name              AS product_name,
     p.sku               AS product_sku,
+    COALESCE(ps_from.location_sku, p.sku)
+                        AS source_location_sku,
+    COALESCE(ps_to.location_sku, p.sku)
+                        AS destination_location_sku,
     p.unit_of_measure,
 
     -- From location

@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { ensureLocationSku } = require('./locationSkuModel');
 
 /**
  * Returns stock per location for one product.
@@ -6,9 +7,11 @@ const { query } = require('../config/db');
 const getStockByProduct = async (productId) => {
   const result = await query(
     `SELECT ps.location_id, l.name AS location_name, l.code AS location_code,
+            ps.location_sku, COALESCE(ps.location_sku, p.sku) AS sku,
             ps.quantity, ps.last_updated
      FROM invex.product_stock ps
      JOIN invex.locations l ON ps.location_id = l.id
+     JOIN invex.products p ON p.id = ps.product_id
      WHERE ps.product_id = $1 AND l.is_deleted = FALSE
      ORDER BY l.name`,
     [productId]
@@ -21,7 +24,9 @@ const getStockByProduct = async (productId) => {
  */
 const getStockByLocation = async (locationId) => {
   const result = await query(
-    `SELECT ps.product_id, p.name AS product_name, p.sku,
+    `SELECT ps.product_id, p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
+            ps.location_sku,
             ps.quantity, ps.last_updated
      FROM invex.product_stock ps
      JOIN invex.products p ON ps.product_id = p.id
@@ -39,15 +44,19 @@ const getStockByLocation = async (locationId) => {
 const incrementStock = async (productId, locationId, qty, dbClient) => {
   // If no transaction client provided, use default query pool
   const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+  const locationSku = Number(qty) > 0
+    ? await ensureLocationSku(productId, locationId, dbClient)
+    : null;
   
   const result = await executeQuery(
-    `INSERT INTO invex.product_stock (product_id, location_id, quantity)
-     VALUES ($1, $2, $3)
+    `INSERT INTO invex.product_stock (product_id, location_id, quantity, location_sku)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (product_id, location_id)
      DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
+                   location_sku = COALESCE(invex.product_stock.location_sku, EXCLUDED.location_sku),
                    last_updated = CURRENT_TIMESTAMP
-     RETURNING quantity`,
-    [productId, locationId, qty]
+     RETURNING quantity, location_sku`,
+    [productId, locationId, qty, locationSku]
   );
   return result.rows[0];
 };
@@ -58,26 +67,30 @@ const incrementStock = async (productId, locationId, qty, dbClient) => {
  */
 const decrementStock = async (productId, locationId, qty, dbClient) => {
   const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+  await ensureLocationSku(productId, locationId, dbClient);
   
   const result = await executeQuery(
     `UPDATE invex.product_stock
      SET quantity = quantity - $3,
          last_updated = CURRENT_TIMESTAMP
      WHERE product_id = $1 AND location_id = $2
-     RETURNING quantity`,
+       AND quantity >= $3
+     RETURNING quantity, location_sku`,
     [productId, locationId, qty]
   );
 
   if (result.rowCount === 0) {
-    throw new Error('Stock record not found for this product and location.');
+    const currentResult = await executeQuery(
+      `SELECT COALESCE(quantity, 0) AS quantity
+       FROM invex.product_stock
+       WHERE product_id = $1 AND location_id = $2`,
+      [productId, locationId]
+    );
+    const available = Number(currentResult.rows[0]?.quantity || 0);
+    throw new Error(`Insufficient stock for product ID ${productId} at location ID ${locationId}. Available: ${available}`);
   }
 
-  const updatedStock = result.rows[0];
-  if (updatedStock.quantity < 0) {
-    throw new Error(`Insufficient stock for product ID ${productId} at location ID ${locationId}. Available: ${updatedStock.quantity + qty}`);
-  }
-
-  return updatedStock;
+  return result.rows[0];
 };
 
 module.exports = {
@@ -85,4 +98,5 @@ module.exports = {
   getStockByLocation,
   incrementStock,
   decrementStock,
+  ensureLocationSku,
 };

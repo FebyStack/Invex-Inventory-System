@@ -30,6 +30,17 @@ const createOrderItem = async (client, { order_id, product_id, batch_id, quantit
   return result.rows[0];
 };
 
+const updateOrderReference = async (client, id, reference_no) => {
+  const result = await client.query(
+    `UPDATE invex.orders
+     SET reference_no = $2
+     WHERE id = $1 AND is_deleted = FALSE
+     RETURNING id, reference_no`,
+    [id, reference_no]
+  );
+  return result.rows[0] || null;
+};
+
 /**
  * Create or update a product batch (UPSERT) for IN orders.
  */
@@ -114,9 +125,24 @@ const getOrderById = async (id) => {
 
   // Get items
   const itemsRes = await query(
-    `SELECT oi.*, p.name AS product_name, p.sku
+    `SELECT oi.*, p.name AS product_name, p.sku,
+            COALESCE(
+              CASE
+                WHEN o.order_type = 'IN' THEN ps_dest.location_sku
+                WHEN o.order_type = 'OUT' THEN ps_source.location_sku
+                ELSE ps_dest.location_sku
+              END,
+              p.sku
+            ) AS location_sku
      FROM invex.order_items oi
+     JOIN invex.orders o ON o.id = oi.order_id
      JOIN invex.products p ON oi.product_id = p.id
+     LEFT JOIN invex.product_stock ps_source
+       ON ps_source.product_id = oi.product_id
+      AND ps_source.location_id = o.source_location_id
+     LEFT JOIN invex.product_stock ps_dest
+       ON ps_dest.product_id = oi.product_id
+      AND ps_dest.location_id = o.destination_location_id
      WHERE oi.order_id = $1 AND oi.is_deleted = FALSE`,
     [id]
   );
@@ -179,6 +205,7 @@ const getOrderItems = async (orderId) => {
 module.exports = {
   createOrder,
   createOrderItem,
+  updateOrderReference,
   createBatch,
   getAllOrders,
   getOrderById,

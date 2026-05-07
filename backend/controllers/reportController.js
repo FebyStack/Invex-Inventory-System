@@ -58,7 +58,7 @@ const getDashboardData = async (req, res, next) => {
       SELECT
         sm.movement_date,
         p.name AS product_name,
-        p.sku,
+        COALESCE(ps.location_sku, p.sku) AS sku,
         sm.quantity_change,
         sm.source_type,
         l.name AS location_name,
@@ -66,6 +66,9 @@ const getDashboardData = async (req, res, next) => {
       FROM invex.stock_movements sm
       JOIN invex.products p ON sm.product_id = p.id
       JOIN invex.locations l ON sm.location_id = l.id
+      LEFT JOIN invex.product_stock ps
+        ON ps.product_id = sm.product_id
+       AND ps.location_id = sm.location_id
       LEFT JOIN invex.users u ON sm.user_id = u.id
       ORDER BY sm.movement_date DESC
       LIMIT 8
@@ -263,7 +266,7 @@ const getMovementLog = async (req, res, next) => {
       SELECT 
         sm.movement_id,
         sm.movement_date,
-        p.sku,
+        COALESCE(ps.location_sku, p.sku) AS sku,
         p.name as product_name,
         sm.quantity_change,
         l.name as location_name,
@@ -273,6 +276,9 @@ const getMovementLog = async (req, res, next) => {
       FROM invex.stock_movements sm
       JOIN invex.products p ON sm.product_id = p.id
       JOIN invex.locations l ON sm.location_id = l.id
+      LEFT JOIN invex.product_stock ps
+        ON ps.product_id = sm.product_id
+       AND ps.location_id = sm.location_id
       LEFT JOIN invex.users u ON sm.user_id = u.id
       ${whereClause}
       ORDER BY sm.movement_date DESC

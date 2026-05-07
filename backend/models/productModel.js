@@ -1,7 +1,5 @@
 const { query } = require('../src/config/db');
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const escapeLike = (value) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
+const { getNextSkuForLocation } = require('../src/models/locationSkuModel');
 
 /**
  * Get all active products with optional filters.
@@ -31,14 +29,20 @@ const getAllProducts = async ({ search, category_id, supplier_id, location_id } 
               SELECT SUM(ps.quantity)
               FROM invex.product_stock ps
               WHERE ps.product_id = p.id
-            ), 0) AS total_stock`;
+            ), 0) AS total_stock,
+            NULL::VARCHAR AS location_sku`;
 
   if (location_id) {
     stockSelect = `COALESCE((
               SELECT ps.quantity
               FROM invex.product_stock ps
               WHERE ps.product_id = p.id AND ps.location_id = $${idx++}
-            ), 0) AS location_stock`;
+            ), 0) AS location_stock,
+            (
+              SELECT ps.location_sku
+              FROM invex.product_stock ps
+              WHERE ps.product_id = p.id AND ps.location_id = $${idx - 1}
+            ) AS location_sku`;
     values.push(location_id);
   }
 
@@ -79,40 +83,6 @@ const getProductById = async (id) => {
     [id]
   );
   return result.rows[0] || null;
-};
-
-/**
- * Generate the next product SKU for a location code.
- */
-const getNextSkuForLocation = async (locationId, dbClient) => {
-  const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
-
-  const locationResult = await executeQuery(
-    `SELECT id, code
-     FROM invex.locations
-     WHERE id = $1 AND is_deleted = FALSE`,
-    [locationId]
-  );
-
-  const location = locationResult.rows[0];
-  if (!location) return null;
-
-  const prefix = `${location.code}-`;
-  const result = await executeQuery(
-    `SELECT sku
-     FROM invex.products
-     WHERE sku LIKE $1 ESCAPE '\\'`,
-    [`${escapeLike(prefix)}%`]
-  );
-
-  const skuPattern = new RegExp(`^${escapeRegExp(prefix)}(\\d+)$`);
-  const maxNumber = result.rows.reduce((max, row) => {
-    const match = String(row.sku || '').match(skuPattern);
-    if (!match) return max;
-    return Math.max(max, parseInt(match[1], 10));
-  }, 0);
-
-  return `${prefix}${String(maxNumber + 1).padStart(3, '0')}`;
 };
 
 /**
@@ -212,9 +182,11 @@ const softDeleteProduct = async (id) => {
 const getProductStock = async (productId) => {
   const result = await query(
     `SELECT ps.location_id, l.name AS location_name, l.code AS location_code,
+            ps.location_sku, COALESCE(ps.location_sku, p.sku) AS sku,
             ps.quantity, ps.last_updated
      FROM invex.product_stock ps
      JOIN invex.locations l ON ps.location_id = l.id
+     JOIN invex.products p ON p.id = ps.product_id
      WHERE ps.product_id = $1 AND l.is_deleted = FALSE
      ORDER BY l.name`,
     [productId]

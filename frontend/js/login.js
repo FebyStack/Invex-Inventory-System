@@ -22,6 +22,10 @@ const btnLoader = document.getElementById('btn-loader');
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // Drop any lingering session from a previous user before signing in.
+    // Prevents the new login from inheriting a stale role/token.
+    try { sessionStorage.clear(); } catch {}
+
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 

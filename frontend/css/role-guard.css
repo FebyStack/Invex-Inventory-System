@@ -1,0 +1,108 @@
+/* Permission-denied modal shown when a non-admin tries an admin-only page or action. */
+.role-guard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: rg-fade 0.18s ease-out;
+}
+
+.role-guard-modal {
+  background: var(--card, #1a1d24);
+  color: var(--text, #e6e8ee);
+  border: 1px solid var(--border, #2a2f3a);
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: calc(100% - 40px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: rg-pop 0.2s ease-out;
+}
+
+body.light .role-guard-modal {
+  background: #fff;
+  color: #1a1d24;
+  border-color: #e2e5eb;
+}
+
+.role-guard-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--danger, #f87171);
+}
+
+.role-guard-icon svg {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+
+.role-guard-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.role-guard-message {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.role-guard-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.role-guard-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #2a2f3a);
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.role-guard-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.light .role-guard-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.role-guard-btn.primary {
+  background: var(--accent, #5b8def);
+  border-color: var(--accent, #5b8def);
+  color: #fff;
+}
+
+.role-guard-btn.primary:hover {
+  filter: brightness(1.1);
+  background: var(--accent, #5b8def);
+}
+
+@keyframes rg-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rg-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

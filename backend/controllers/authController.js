@@ -80,7 +80,7 @@ exports.login = async (req, res, next) => {
     }
 
     const userResult = await query(
-      `SELECT id, username, password, role
+      `SELECT id, username, password, full_name, email, role
        FROM invex.users
        WHERE username = $1 AND is_deleted = FALSE
        LIMIT 1`,

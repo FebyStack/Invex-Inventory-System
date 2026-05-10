@@ -181,13 +181,17 @@
       roleLabel.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
     }
 
-    // 7. Admin Section Guard
+    // 7. Admin Section Guard — show admin-only items for admins, force-hide for everyone else
+    const divider = document.getElementById('admin-divider');
+    const label = document.getElementById('admin-label');
     if (user.role === 'admin') {
-      const divider = document.getElementById('admin-divider');
-      const label = document.getElementById('admin-label');
       if (divider) divider.style.display = 'block';
       if (label) label.style.display = 'block';
       document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'flex');
+    } else {
+      if (divider) divider.style.display = 'none';
+      if (label) label.style.display = 'none';
+      document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'none');
     }
   }
 })();

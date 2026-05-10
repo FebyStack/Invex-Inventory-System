@@ -249,6 +249,17 @@ exports.importStock = async (req, res, next) => {
 
 exports.deleteLocation = async (req, res, next) => {
   try {
+    // Block deletion when products still hold stock at this location.
+    // Stock has to be moved out (transfer) or zeroed (adjustment) before
+    // the location can be retired.
+    const productsHere = await locationModel.countProductsAtLocation(req.params.id);
+    if (productsHere > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Cannot delete: ${productsHere} product${productsHere === 1 ? '' : 's'} still hold stock at this location. Transfer or adjust the stock to zero first.`,
+      });
+    }
+
     const deleted = await locationModel.softDeleteLocation(req.params.id);
 
     if (!deleted) {

@@ -121,6 +121,11 @@ function chipFor(loc, idx) {
 }
 
 // ── Active view (headline + stats + body) ───────────────
+function currentUser() {
+  try { return JSON.parse(sessionStorage.getItem('user') || '{}'); }
+  catch { return {}; }
+}
+
 function renderActive() {
   if (!state.summary) return;
   const isAll = state.activeLoc === 'all';
@@ -142,6 +147,16 @@ function renderActive() {
     ? 'At a glance — your inventory across every location'
     : `Stock physically held at ${loc.name}`;
   $('receive-btn-label').textContent = isAll ? 'Import stock' : 'Receive stock';
+
+  // Delete button: shown only when viewing a specific location AND user is admin.
+  // Staff never see it; if they trigger DELETE another way, the global 403
+  // interceptor in role-guard.js shows the permission popup.
+  const deleteBtn = $('delete-loc-btn');
+  if (deleteBtn) {
+    const isAdmin = currentUser().role === 'admin';
+    deleteBtn.style.display = (!isAll && isAdmin) ? 'inline-flex' : 'none';
+    deleteBtn.onclick = () => confirmDeleteLocation(loc);
+  }
 
   const stats = [
     { label: 'Total units', value: fmt(loc.units) },
@@ -344,11 +359,60 @@ function wireProductRows() {
   });
 }
 
+// ── Delete Location ─────────────────────────────────────
+async function confirmDeleteLocation(loc) {
+  const ok = window.confirm(
+    `Delete "${loc.name}" (${loc.code})?\n\n` +
+    `This will be a soft delete — the location is hidden but its history is kept.\n` +
+    `Locations with products still in stock cannot be deleted.`
+  );
+  if (!ok) return;
+
+  try {
+    const res = await fetch(`/api/locations/${loc.id}`, {
+      method: 'DELETE',
+      headers: authHeaders,
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 409) {
+      // Stock still present — show the server's specific message.
+      alert(data.message || 'Cannot delete: this location still has products in stock.');
+      return;
+    }
+    if (!res.ok || data.success === false) {
+      // 403s are already surfaced by the role-guard interceptor; only
+      // alert here when it's some other failure.
+      if (res.status !== 403) alert(data.message || 'Failed to delete location.');
+      return;
+    }
+
+    state.activeLoc = 'all';
+    await load();
+  } catch {
+    alert('Network error.');
+  }
+}
+
 // ── Add Location modal ──────────────────────────────────
 const addModal = $('add-loc-modal');
 let addColor = SWATCHES[0];
 
 function openAddLocation() {
+  // Staff cannot create locations — show the popup before the modal opens
+  // instead of letting them fill out a form that the server will reject.
+  if (currentUser().role !== 'admin') {
+    if (window.Invex && window.Invex.denyAccess) {
+      window.Invex.denyAccess({
+        title: 'Admins only',
+        message: 'Creating new locations is restricted to administrators.',
+      });
+    } else {
+      alert('Creating new locations is restricted to administrators.');
+    }
+    return;
+  }
+
   addColor = SWATCHES[0];
   $('add-loc-form').reset();
   $('al-code').value = '';
@@ -466,16 +530,17 @@ function renderMultiList() {
   const list = $('im-multi-list');
   list.innerHTML = state.summary.locations.map((l, i) => {
     const dot = dotFor(l, i + 1);
-    const enabled = multiQtys[l.id] !== undefined;
+    const selected = multiQtys[l.id] !== undefined;
+    const qty = selected ? multiQtys[l.id] : '';
     return `
-      <div class="multi-loc-row ${enabled ? 'enabled' : ''}" data-loc-id="${l.id}">
-        <input type="checkbox" ${enabled ? 'checked' : ''} data-toggle="${l.id}">
+      <div class="multi-loc-row ${selected ? 'enabled' : ''}" data-loc-id="${l.id}">
+        <input type="checkbox" ${selected ? 'checked' : ''} data-toggle="${l.id}">
         <div class="name">
           <span class="dot" style="background:${dot}"></span>
           <span>${escapeHtml(l.name)}</span>
           <span class="code">${escapeHtml(l.code)}</span>
         </div>
-        <input type="number" min="0" placeholder="0" data-qty="${l.id}" ${enabled ? '' : 'disabled'} value="${enabled ? (multiQtys[l.id] || '') : ''}">
+        <input type="number" min="0" placeholder="0" data-qty="${l.id}" value="${escapeHtml(qty)}">
       </div>`;
   }).join('');
 
@@ -485,11 +550,30 @@ function renderMultiList() {
       if (e.target.checked) multiQtys[id] = '';
       else delete multiQtys[id];
       renderMultiList();
+      if (e.target.checked) {
+        const qtyInput = Array.from(list.querySelectorAll('input[type="number"][data-qty]'))
+          .find((input) => input.dataset.qty === id);
+        if (qtyInput) qtyInput.focus();
+      }
       updateImportTotal();
     };
   });
   list.querySelectorAll('input[type="number"][data-qty]').forEach((inp) => {
+    const selectRow = (input) => {
+      const id = input.dataset.qty;
+      if (multiQtys[id] === undefined) multiQtys[id] = input.value;
+      const row = input.closest('.multi-loc-row');
+      if (!row) return;
+      row.classList.add('enabled');
+      const checkbox = row.querySelector('input[type="checkbox"][data-toggle]');
+      if (checkbox) checkbox.checked = true;
+    };
+    inp.onfocus = (e) => {
+      selectRow(e.target);
+      updateImportTotal();
+    };
     inp.oninput = (e) => {
+      selectRow(e.target);
       multiQtys[e.target.dataset.qty] = e.target.value;
       updateImportTotal();
     };
@@ -500,8 +584,9 @@ let importCurrentStock = 0;
 
 function updateImportTotal() {
   let addQty = 0;
-  if (importMode === 'single') addQty = Number($('im-qty').value) || 0;
-  else addQty = Object.values(multiQtys).reduce((s, v) => s + (Number(v) || 0), 0);
+  const positiveQty = (value) => Math.max(0, Number(value) || 0);
+  if (importMode === 'single') addQty = positiveQty($('im-qty').value);
+  else addQty = Object.values(multiQtys).reduce((s, v) => s + positiveQty(v), 0);
 
   $('im-current-stock').textContent = fmt(importCurrentStock);
   $('im-total').textContent = addQty > 0 ? `+${fmt(addQty)}` : '+0';

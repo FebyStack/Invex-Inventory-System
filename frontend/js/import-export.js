@@ -126,6 +126,17 @@
   // ── Upload (parse step) ──
   uploadBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
+
+    // Guard: only admins can import. Staff hit the popup instead of a 403.
+    const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('user') || '{}'); } catch { return {}; } })();
+    if (currentUser.role !== 'admin' && window.Invex && window.Invex.denyAccess) {
+      window.Invex.denyAccess({
+        title: 'Admins only',
+        message: 'Importing products is restricted to administrators. You can still export from this page.',
+      });
+      return;
+    }
+
     uploadBtn.disabled = true;
     uploadBtn.textContent = 'Parsing…';
 

@@ -227,6 +227,20 @@ const getInventoryMatrix = async () => {
 };
 
 /**
+ * Count distinct products that currently hold stock (qty > 0) at this location.
+ * Used to block deletion of a non-empty location.
+ */
+const countProductsAtLocation = async (id) => {
+  const result = await query(
+    `SELECT COUNT(DISTINCT product_id)::int AS count
+     FROM invex.product_stock
+     WHERE location_id = $1 AND quantity > 0`,
+    [id]
+  );
+  return result.rows[0].count;
+};
+
+/**
  * Soft-delete a location.
  */
 const softDeleteLocation = async (id) => {
@@ -246,6 +260,7 @@ module.exports = {
   locationCodeExists,
   updateLocation,
   softDeleteLocation,
+  countProductsAtLocation,
   getLocationSummary,
   getInventoryMatrix,
 };

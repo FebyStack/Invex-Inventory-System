@@ -15,11 +15,15 @@
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
+        <div class="header-eyebrow">
+          <span class="he-num">07</span>
+          <span>Movement &middot; Corrections</span>
+        </div>
         <h1>Adjustments</h1>
-        <p>Manual inventory corrections and recounts</p>
+        <p>Manual count corrections, transfers, and write-offs</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-adjustment-btn">
+        <button class="btn btn-accent" id="new-adjustment-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New adjustment
         </button>
@@ -29,17 +33,17 @@
     <section class="page-shell" style="padding-top:32px;">
       <!-- Stat strip -->
       <div class="stats-strip cols-3" style="margin: 0 32px 32px;">
-        <div class="stat">
+        <div class="stat" data-tag="amber">
           <div class="stat-label">Adjustments this month</div>
           <div class="stat-value" id="stat-month">—</div>
           <div class="stat-hint" id="stat-month-hint">all time</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-tag="steel">
           <div class="stat-label">Net unit change</div>
           <div class="stat-value" id="stat-net">—</div>
           <div class="stat-hint" id="stat-net-hint">across SKUs</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-tag="rose">
           <div class="stat-label">Largest adjustment</div>
           <div class="stat-value" id="stat-largest">—</div>
           <div class="stat-hint" id="stat-largest-hint">single change</div>

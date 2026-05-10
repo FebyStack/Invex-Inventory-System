@@ -14,11 +14,15 @@
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
+        <div class="header-eyebrow">
+          <span class="he-num">10</span>
+          <span>Access &middot; Workspace</span>
+        </div>
         <h1>Users</h1>
-        <p>Manage who has access to your workspace</p>
+        <p>Operators with access to this workspace</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" id="new-user-btn">
+        <button class="btn btn-accent" id="new-user-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Invite member
         </button>
@@ -28,22 +32,22 @@
     <section class="page-shell" style="padding-top:32px;">
       <!-- Stat strip -->
       <div class="stats-strip cols-4" style="margin: 0 32px 32px;">
-        <div class="stat">
+        <div class="stat" data-tag="amber">
           <div class="stat-label">Total members</div>
           <div class="stat-value" id="stat-total">—</div>
           <div class="stat-hint" id="stat-total-hint">across the workspace</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-tag="success">
           <div class="stat-label">Active sessions</div>
           <div class="stat-value" id="stat-active">—</div>
           <div class="stat-hint">last 24 hours</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-tag="rose">
           <div class="stat-label">Admins</div>
           <div class="stat-value" id="stat-admins">—</div>
           <div class="stat-hint">full access</div>
         </div>
-        <div class="stat">
+        <div class="stat" data-tag="steel">
           <div class="stat-label">Staff</div>
           <div class="stat-value" id="stat-staff">—</div>
           <div class="stat-hint">limited access</div>

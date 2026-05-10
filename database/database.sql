@@ -10,7 +10,7 @@ CREATE SCHEMA IF NOT EXISTS invex;
 -- 1. TABLES
 -- ============================================================
 
-CREATE TABLE invex.categories (
+CREATE TABLE IF NOT EXISTS invex.categories (
     id           SERIAL PRIMARY KEY,
     name         VARCHAR(100) NOT NULL UNIQUE,
     description  TEXT,
@@ -24,7 +24,7 @@ CREATE TABLE invex.categories (
 --   ALTER TABLE invex.categories ADD COLUMN IF NOT EXISTS color VARCHAR(9) NOT NULL DEFAULT '#7C7CFF';
 
 -- Stores supplier information for Invex stock-in transactions
-CREATE TABLE invex.suppliers (
+CREATE TABLE IF NOT EXISTS invex.suppliers (
     id              SERIAL PRIMARY KEY,
     name            VARCHAR(100) NOT NULL,
     contact_person  VARCHAR(100),
@@ -41,7 +41,7 @@ CREATE TABLE invex.suppliers (
 );
 
 -- Stores warehouses, stores, and storerooms managed by Invex
-CREATE TABLE invex.locations (
+CREATE TABLE IF NOT EXISTS invex.locations (
     id            SERIAL PRIMARY KEY,
     name          VARCHAR(100) NOT NULL,
     code          VARCHAR(20)  NOT NULL UNIQUE,
@@ -58,7 +58,7 @@ CREATE TABLE invex.locations (
 );
 
 -- Predefined codes for Invex stock adjustment entries
-CREATE TABLE invex.reason_codes (
+CREATE TABLE IF NOT EXISTS invex.reason_codes (
     id               SERIAL PRIMARY KEY,
     code             VARCHAR(30)  NOT NULL UNIQUE,
     description      VARCHAR(255) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE invex.reason_codes (
 );
 
 -- Invex system users — admins and staff
-CREATE TABLE invex.users (
+CREATE TABLE IF NOT EXISTS invex.users (
     id          SERIAL PRIMARY KEY,
     username    VARCHAR(50)  NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE invex.users (
 );
 
 -- Products tracked in the Invex inventory
-CREATE TABLE invex.products (
+CREATE TABLE IF NOT EXISTS invex.products (
     id               SERIAL PRIMARY KEY,
     name             VARCHAR(100)   NOT NULL,
     sku              VARCHAR(50)    NOT NULL UNIQUE,
@@ -100,7 +100,7 @@ CREATE TABLE invex.products (
 
 -- Current on-hand quantity per product per location in Invex
 -- Maintained transactionally on every order and adjustment
-CREATE TABLE invex.product_stock (
+CREATE TABLE IF NOT EXISTS invex.product_stock (
     id            SERIAL  PRIMARY KEY,
     product_id    INTEGER NOT NULL REFERENCES invex.products(id),
     location_id   INTEGER NOT NULL REFERENCES invex.locations(id),
@@ -112,7 +112,7 @@ CREATE TABLE invex.product_stock (
 
 -- Individual stock batches with expiry dates (Invex batch tracking)
 -- Only used for products where track_expiry = TRUE
-CREATE TABLE invex.product_batches (
+CREATE TABLE IF NOT EXISTS invex.product_batches (
     id             SERIAL  PRIMARY KEY,
     product_id     INTEGER NOT NULL REFERENCES invex.products(id),
     location_id    INTEGER NOT NULL REFERENCES invex.locations(id),
@@ -127,7 +127,7 @@ CREATE TABLE invex.product_batches (
 );
 
 -- Invex stock movement transactions — stock-in, stock-out, transfers
-CREATE TABLE invex.orders (
+CREATE TABLE IF NOT EXISTS invex.orders (
     id                       SERIAL  PRIMARY KEY,
     order_type               VARCHAR(20) NOT NULL
                              CHECK (order_type IN ('IN', 'OUT', 'TRANSFER')),
@@ -144,7 +144,7 @@ CREATE TABLE invex.orders (
 );
 
 -- Line items for each Invex order (products + quantities per transaction)
-CREATE TABLE invex.order_items (
+CREATE TABLE IF NOT EXISTS invex.order_items (
     id          SERIAL         PRIMARY KEY,
     order_id    INTEGER        NOT NULL REFERENCES invex.orders(id),
     product_id  INTEGER        NOT NULL REFERENCES invex.products(id),
@@ -156,7 +156,7 @@ CREATE TABLE invex.order_items (
 );
 
 -- Manual stock corrections recorded in Invex with a required reason code
-CREATE TABLE invex.stock_adjustments (
+CREATE TABLE IF NOT EXISTS invex.stock_adjustments (
     id               SERIAL  PRIMARY KEY,
     product_id       INTEGER NOT NULL REFERENCES invex.products(id),
     location_id      INTEGER NOT NULL REFERENCES invex.locations(id),
@@ -173,7 +173,7 @@ CREATE TABLE invex.stock_adjustments (
 );
 
 -- Full audit trail of all user actions performed in Invex
-CREATE TABLE invex.activity_logs (
+CREATE TABLE IF NOT EXISTS invex.activity_logs (
     id           SERIAL  PRIMARY KEY,
     user_id      INTEGER NOT NULL REFERENCES invex.users(id),
     action       VARCHAR(50) NOT NULL,
@@ -707,7 +707,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_invex_product_stock_location_sku
 --    No approval workflow — transfers execute immediately.
 -- ============================================================
 
-CREATE TABLE invex.location_transfer_logs (
+CREATE TABLE IF NOT EXISTS invex.location_transfer_logs (
     id                  SERIAL      PRIMARY KEY,
     from_location_id    INTEGER     NOT NULL
                             REFERENCES invex.locations(id) ON DELETE RESTRICT,

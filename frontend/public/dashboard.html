@@ -21,8 +21,13 @@
     <!-- Top header (fixed) -->
     <header class="top-header">
       <div class="header-title">
-        <h1>Overview</h1>
-        <p id="header-sub">At a glance — your inventory across all locations</p>
+        <div class="header-eyebrow">
+          <span class="he-num">00</span>
+          <span>Inventory &middot; Live</span>
+          <span class="he-pulse"></span>
+        </div>
+        <h1>Operations overview</h1>
+        <p id="header-sub">Real-time stock posture across every site</p>
       </div>
       <div class="header-actions">
         <button class="icon-btn" title="Notifications">
@@ -33,7 +38,7 @@
           </svg>
           <span class="dot"></span>
         </button>
-        <button class="btn btn-primary" onclick="window.location.href='/orders.html'">
+        <button class="btn btn-accent" onclick="window.location.href='/orders.html'">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -46,45 +51,45 @@
 
     <!-- Dashboard body -->
     <section>
-      <!-- Stats: 4 minimal columns separated by hairlines -->
+      <!-- Stats: warehouse-panel layout — color-coded tabs per metric -->
       <div class="dash-stats">
-        <div class="stat">
-          <div class="stat-label">Total products</div>
+        <div class="stat" data-tag="amber">
+          <div class="stat-label">SKU registry</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-total">—</div>
             <div class="stat-delta neutral" id="stat-total-delta">—</div>
           </div>
-          <div class="stat-hint">items tracked</div>
+          <div class="stat-hint">items on file</div>
           <svg class="sparkline" data-color="accent"></svg>
         </div>
 
-        <div class="stat">
-          <div class="stat-label">Low stock</div>
+        <div class="stat" data-tag="warn">
+          <div class="stat-label">Below reorder</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-low">—</div>
             <div class="stat-delta neutral" id="stat-low-delta">—</div>
           </div>
-          <div class="stat-hint">below reorder level</div>
+          <div class="stat-hint">flagged for replenishment</div>
           <svg class="sparkline" data-color="warning"></svg>
         </div>
 
-        <div class="stat">
-          <div class="stat-label">Orders this week</div>
+        <div class="stat" data-tag="steel">
+          <div class="stat-label">Orders &middot; 7d</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-orders">—</div>
             <div class="stat-delta neutral">—</div>
           </div>
-          <div class="stat-hint">last 7 days</div>
+          <div class="stat-hint">throughput · last week</div>
           <svg class="sparkline" data-color="accent"></svg>
         </div>
 
-        <div class="stat">
-          <div class="stat-label">Active locations</div>
+        <div class="stat" data-tag="sage">
+          <div class="stat-label">Active sites</div>
           <div class="stat-value-row">
             <div class="stat-value" id="stat-locations">—</div>
             <div class="stat-delta neutral">—</div>
           </div>
-          <div class="stat-hint">sites tracked</div>
+          <div class="stat-hint">tracked locations</div>
           <svg class="sparkline" data-color="muted"></svg>
         </div>
       </div>

@@ -139,7 +139,7 @@
     }
     html += `<path d="${toArea(inPts)}" fill="url(#inGrad)"/>`;
     html += `<path d="${toPath(inPts)}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`;
-    html += `<path d="${toPath(outPts)}" fill="none" stroke="var(--fg-4)" stroke-width="1.2" stroke-dasharray="3,3"/>`;
+    html += `<path d="${toPath(outPts)}" fill="none" stroke="var(--accent-cool)" stroke-width="1.3" stroke-dasharray="3,3"/>`;
     svg.innerHTML = html;
   }
 
@@ -159,7 +159,8 @@
       return;
     }
 
-    const palette = ['#F87171', '#FBBF24', '#4ADE80', '#60A5FA', '#A78BFA', '#F472B6', '#34D399', '#FB923C'];
+    // Inventory bin-tag palette — desaturated, no oversaturated AI-purple/blue
+    const palette = ['#E0A458', '#7892A3', '#88A37C', '#C97879', '#9088B0', '#B68563', '#5BB873', '#9AA8B8'];
     const total = data.reduce((s, d) => s + d.value, 0);
     const cx = 140, cy = 140, r = 100, innerR = 64;
 
@@ -249,11 +250,11 @@
         const stock = Number(p.current_stock || 0);
         const isOut = stock === 0;
         return `
-          <div class="needs-row">
+          <div class="needs-row${isOut ? ' critical' : ''}">
             <div class="needs-name">${escapeHtml(p.product_name)}</div>
             <div class="needs-sku">${escapeHtml(p.sku)}</div>
             <div class="needs-qty" style="color:${isOut ? 'var(--danger)' : 'var(--warning)'}">
-              ${stock} <span class="max">/ ${p.reorder_level}</span>
+              ${stock}<span class="max">${p.reorder_level}</span>
             </div>
             <div style="display:flex;justify-content:flex-end;">
               <span class="status-badge ${isOut ? 'status-out-of-stock' : 'status-low-stock'}">${isOut ? 'OUT' : 'LOW'}</span>
@@ -299,9 +300,9 @@
         elLowDelta.classList.add(summary.lowStock > 0 ? 'down' : 'neutral');
       }
 
-      // Pending → "Orders this week" with WoW delta
-      if (elOrdersLabel) elOrdersLabel.textContent = 'Orders this week';
-      if (elOrdersHint)  elOrdersHint.textContent  = 'last 7 days';
+      // Orders stat — keep redesigned label "Orders · 7d" + hint
+      if (elOrdersLabel) elOrdersLabel.textContent = 'Orders · 7d';
+      if (elOrdersHint)  elOrdersHint.textContent  = 'throughput · last week';
       const wowDelta = summary.ordersThisWeek - summary.ordersLastWeek;
       setDelta(elOrdersDeltaWrap, summary.ordersLastWeek > 0 || summary.ordersThisWeek > 0 ? wowDelta : null);
 
@@ -312,7 +313,7 @@
         elLocDelta.classList.add('neutral');
       }
       if (elLocHint) {
-        elLocHint.textContent = summary.activeLocations === 1 ? 'site tracked' : 'sites tracked';
+        elLocHint.textContent = summary.activeLocations === 1 ? 'tracked location' : 'tracked locations';
       }
 
       // Sparklines from real series — last 16 points so the line has shape

@@ -123,7 +123,29 @@
   object-fit: cover;
   background: var(--surface-elev);
   box-shadow: var(--shadow-glow);
-  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.15));
+  filter: drop-shadow(0 0 6px var(--accent-soft));
+  position: relative;
+}
+/* Tiny live status dot beside the logo — system online indicator */
+.logo-container::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 6px rgba(91,184,115,0.6);
+  left: 32px;
+  top: 4px;
+  opacity: 1;
+  animation: invex-pulse 2.4s ease-in-out infinite;
+}
+.sidebar:hover .logo-container::after {
+  opacity: 0;
+}
+@keyframes invex-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--bg), 0 0 4px rgba(91,184,115,0.5); }
+  50%      { box-shadow: 0 0 0 2px var(--bg), 0 0 9px rgba(91,184,115,0.85); }
 }
 
 .logo-icon {
@@ -168,12 +190,17 @@
 }
 
 .logo-subtitle {
-  font-size: 10px;
-  color: var(--fg-4);
+  font-size: 9px;
+  color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.14em;
   font-family: 'DM Mono', monospace;
   margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid var(--accent-line);
+  border-radius: 3px;
+  background: var(--accent-soft);
+  font-weight: 500;
 }
 
 /* ---- Nav menu ---- */
@@ -226,8 +253,9 @@
   top: 10px;
   bottom: 10px;
   width: 2px;
-  background: var(--fg-1);
+  background: var(--accent);
   border-radius: 0;
+  box-shadow: 0 0 6px var(--accent-line);
 }
 
 .sidebar:hover .nav-item.active::before {
@@ -559,4 +587,40 @@
 .sidebar:not(:hover) .logout-btn,
 .sidebar:not(:hover) .theme-toggle {
   justify-content: flex-start;
+}
+
+/* ---- System status strip (revealed on hover) ----
+   Mono build/version line that gives the sidebar a "running system" feel. */
+.sys-strip {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 2px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-4);
+  opacity: 0;
+  visibility: hidden;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity var(--transition-speed) ease, visibility var(--transition-speed);
+}
+.sys-strip .sys-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 5px rgba(91,184,115,0.7);
+  flex-shrink: 0;
+  animation: invex-pulse 2.4s ease-in-out infinite;
+}
+.sys-strip .sys-label { color: var(--fg-3); }
+.sys-strip .sys-build { color: var(--accent); }
+.sidebar:hover .sys-strip {
+  opacity: 1;
+  visibility: visible;
 }

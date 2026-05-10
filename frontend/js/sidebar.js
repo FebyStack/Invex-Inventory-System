@@ -86,6 +86,21 @@
       });
     });
 
+    // 3a. Inject system-status strip just above the theme toggle
+    //     Renders a small mono "SYS · ONLINE · vN.N" line that gives the
+    //     sidebar a running-system feel when expanded.
+    const footerForSys = document.querySelector('.sidebar-footer');
+    if (footerForSys && !document.querySelector('.sys-strip')) {
+      const sys = document.createElement('div');
+      sys.className = 'sys-strip';
+      sys.innerHTML = `
+        <span class="sys-dot" aria-hidden="true"></span>
+        <span class="sys-label">SYS &middot; ONLINE</span>
+        <span class="sys-build">v1.04</span>
+      `;
+      footerForSys.parentNode.insertBefore(sys, footerForSys);
+    }
+
     // 3. Inject theme toggle just above the sidebar-footer
     const footer = document.querySelector('.sidebar-footer');
     if (footer && !document.querySelector('.theme-toggle')) {

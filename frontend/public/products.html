@@ -119,8 +119,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="unit_of_measure">Unit</label>
-            <input type="text" id="unit_of_measure" class="form-control" list="unit-options" required value="pcs" placeholder="e.g. pcs, box, kg">
+            <label for="unit_of_measure">Unit <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(defaults to pcs)</span></label>
+            <input type="text" id="unit_of_measure" class="form-control" list="unit-options" placeholder="pcs">
             <datalist id="unit-options">
               <option value="pcs">Pieces</option>
               <option value="box">Box / Case</option>
@@ -141,8 +141,8 @@
             <input type="number" id="unit_price" class="form-control" required step="0.01" min="0" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label for="reorder_level">Reorder level</label>
-            <input type="number" id="reorder_level" class="form-control" required min="0" value="10">
+            <label for="reorder_level">Reorder level <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(defaults to 10)</span></label>
+            <input type="number" id="reorder_level" class="form-control" min="0" placeholder="10">
           </div>
         </div>
 

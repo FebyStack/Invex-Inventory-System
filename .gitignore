@@ -3,6 +3,11 @@ node_modules/
 
 # Environment variables
 .env
+backend/.env
+
+# Postman environments may contain credentials — keep out of git
+postman/environments/*.environment.yaml
+!postman/environments/*.example.yaml
 
 # Uploaded files
 backend/uploads/*

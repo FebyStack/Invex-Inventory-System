@@ -71,10 +71,11 @@ exports.createAdjustment = async (req, res, next) => {
       });
     }
 
-    if (quantity_change <= 0) {
+    const qty = Number(quantity_change);
+    if (!Number.isInteger(qty) || qty <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'quantity_change must be greater than 0.',
+        message: 'quantity_change must be a positive integer.',
       });
     }
 
@@ -105,7 +106,7 @@ exports.createAdjustment = async (req, res, next) => {
       to_location_id: adjustment_type === 'TRANSFER' ? to_location_id : null,
       batch_id,
       adjustment_type,
-      quantity_change,
+      quantity_change: qty,
       reason_code_id,
       notes,
       user_id: req.user.id,
@@ -113,12 +114,12 @@ exports.createAdjustment = async (req, res, next) => {
 
     // 2. Update product_stock
     if (adjustment_type === 'INCREASE') {
-      await stockModel.incrementStock(product_id, location_id, quantity_change, client);
+      await stockModel.incrementStock(product_id, location_id, qty, client);
     } else if (adjustment_type === 'DECREASE') {
-      await stockModel.decrementStock(product_id, location_id, quantity_change, client);
+      await stockModel.decrementStock(product_id, location_id, qty, client);
     } else if (adjustment_type === 'TRANSFER') {
-      await stockModel.decrementStock(product_id, location_id, quantity_change, client);
-      await stockModel.incrementStock(product_id, to_location_id, quantity_change, client);
+      await stockModel.decrementStock(product_id, location_id, qty, client);
+      await stockModel.incrementStock(product_id, to_location_id, qty, client);
     }
 
     await client.query('COMMIT');
@@ -128,7 +129,7 @@ exports.createAdjustment = async (req, res, next) => {
       product_id,
       location_id,
       to_location_id: adjustment_type === 'TRANSFER' ? to_location_id : null,
-      quantity_change,
+      quantity_change: qty,
       reason: reasonCode.code,
     });
 

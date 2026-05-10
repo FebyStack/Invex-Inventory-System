@@ -10,10 +10,10 @@ router.use(authenticate);
 router.get('/', asyncHandler(locationController.getAllLocations));
 router.get('/summary', asyncHandler(locationController.getSummary));
 router.get('/inventory-matrix', asyncHandler(locationController.getInventoryMatrix));
-router.post('/import-stock', asyncHandler(locationController.importStock));
+router.post('/import-stock', authorize('admin'), asyncHandler(locationController.importStock));
 router.get('/:id', asyncHandler(locationController.getLocationById));
 router.post('/', authorize('admin'), asyncHandler(locationController.createLocation));
-router.put('/:id', asyncHandler(locationController.updateLocation));
+router.put('/:id', authorize('admin'), asyncHandler(locationController.updateLocation));
 router.delete('/:id', authorize('admin'), asyncHandler(locationController.deleteLocation));
 
 module.exports = router;

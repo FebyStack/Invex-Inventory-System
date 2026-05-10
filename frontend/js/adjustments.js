@@ -135,14 +135,12 @@ async function loadData() {
     }
 
     // Populate dropdowns
-    const [pRes, lRes, rRes] = await Promise.all([
+    const [pRes, lRes] = await Promise.all([
       fetch('/api/locations/inventory-matrix', { headers }),
       fetch('/api/locations', { headers }),
-      fetch('/api/reason-codes', { headers }),
     ]);
     const pData = await pRes.json();
     const lData = await lRes.json();
-    const rData = await rRes.json();
 
     if (pData.success) {
       // Inventory matrix gives us by_location stock counts per product
@@ -162,13 +160,37 @@ async function loadData() {
         locationSelect.add(new Option(l.name, l.id));
         toSel.add(new Option(l.name, l.id));
       });
+      // Restore last-used location for this user, if still valid
+      const lastLoc = localStorage.getItem('invex.adjustments.lastLocation');
+      if (lastLoc && [...locationSelect.options].some(o => o.value === lastLoc)) {
+        locationSelect.value = lastLoc;
+      }
     }
-    if (rData.success) {
-      reasonSelect.innerHTML = '<option value="">Select a reason…</option>';
-      (rData.data || []).forEach(r => reasonSelect.add(new Option(`${r.code} — ${r.description}`, r.id)));
-    }
+    // Initial reason-code load is filtered to the current type.
+    await loadReasonCodes(typeSelect.value);
   } catch (err) {
     loadingState.textContent = 'Network error.';
+  }
+}
+
+// Fetches reason codes filtered by adjustment type. Backend returns:
+//   - type=INCREASE → codes with adjustment_type IN ('INCREASE', 'BOTH')
+//   - type=DECREASE/TRANSFER → codes with adjustment_type IN ('DECREASE', 'BOTH')
+async function loadReasonCodes(type) {
+  const token = sessionStorage.getItem('token');
+  const headers = { 'Authorization': `Bearer ${token}` };
+  const url = type ? `/api/reason-codes?type=${encodeURIComponent(type)}` : '/api/reason-codes';
+  try {
+    const r = await fetch(url, { headers });
+    const data = await r.json();
+    reasonSelect.innerHTML = '<option value="">Select a reason…</option>';
+    if (data.success) {
+      (data.data || []).forEach(rc =>
+        reasonSelect.add(new Option(`${rc.code} — ${rc.description}`, rc.id))
+      );
+    }
+  } catch {
+    /* network errors leave the placeholder visible */
   }
 }
 
@@ -353,6 +375,8 @@ typeSelect.addEventListener('change', (e) => {
     grp.style.display = 'none';
     sel.removeAttribute('required');
   }
+  // Refilter reason codes to those compatible with the chosen type.
+  loadReasonCodes(e.target.value);
   // Re-evaluate: if currently picked product is no longer eligible, clear it.
   if (productIdInput.value) {
     const eligible = getEligibleProducts().some(p => String(p.id) === String(productIdInput.value));
@@ -362,6 +386,9 @@ typeSelect.addEventListener('change', (e) => {
 });
 
 locationSelect.addEventListener('change', () => {
+  if (locationSelect.value) {
+    localStorage.setItem('invex.adjustments.lastLocation', locationSelect.value);
+  }
   if (productIdInput.value) {
     const eligible = getEligibleProducts().some(p => String(p.id) === String(productIdInput.value));
     if (!eligible) resetProductPicker();

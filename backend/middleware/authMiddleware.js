@@ -34,9 +34,31 @@ const authenticate = (req, res, next) => {
     };
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        code: 'TOKEN_EXPIRED',
+        message: 'Session expired. Please sign in again.',
+      });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        code: 'TOKEN_INVALID',
+        message: 'Invalid authentication token.',
+      });
+    }
+    if (error.name === 'NotBeforeError') {
+      return res.status(401).json({
+        success: false,
+        code: 'TOKEN_NOT_ACTIVE',
+        message: 'Token is not yet active.',
+      });
+    }
     return res.status(401).json({
       success: false,
-      message: 'Invalid or expired token.',
+      code: 'AUTH_FAILED',
+      message: 'Authentication failed.',
     });
   }
 };

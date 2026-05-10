@@ -6,6 +6,12 @@
 (function () {
   'use strict';
 
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
   const token = sessionStorage.getItem('token');
   const headers = { 'Authorization': `Bearer ${token}` };
 
@@ -46,11 +52,11 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>
-              <div style="font-weight:500;color:var(--fg-1)">${item.product_name}</div>
-              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${item.sku}</div>
+              <div style="font-weight:500;color:var(--fg-1)">${escapeHtml(item.product_name)}</div>
+              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${escapeHtml(item.sku)}</div>
             </td>
-            <td style="text-align:right;font-family:'DM Mono',monospace;color:${isOut ? 'var(--danger)' : 'var(--warning)'}">${item.current_stock}</td>
-            <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-3)">${item.reorder_level}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;color:${isOut ? 'var(--danger)' : 'var(--warning)'}">${Number(item.current_stock) || 0}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-3)">${Number(item.reorder_level) || 0}</td>
             <td>${isOut ? '<span class="badge-out">OUT OF STOCK</span>' : '<span class="badge-low">LOW STOCK</span>'}</td>
           `;
           tbody.appendChild(tr);
@@ -92,12 +98,12 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>
-              <div style="font-weight:500;color:var(--fg-1)">${item.product_name}</div>
-              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${item.sku}</div>
+              <div style="font-weight:500;color:var(--fg-1)">${escapeHtml(item.product_name)}</div>
+              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${escapeHtml(item.sku)}</div>
             </td>
-            <td style="font-family:'DM Mono',monospace;color:var(--fg-2)">${item.batch_no || '-'}</td>
-            <td style="color:var(--fg-2)">${item.location_name}</td>
-            <td style="text-align:right;font-family:'DM Mono',monospace">${item.quantity}</td>
+            <td style="font-family:'DM Mono',monospace;color:var(--fg-2)">${escapeHtml(item.batch_no || '-')}</td>
+            <td style="color:var(--fg-2)">${escapeHtml(item.location_name)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace">${Number(item.quantity) || 0}</td>
             <td style="color:var(--fg-2)">${new Date(item.expiry_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
             <td>${statusBadge}</td>
           `;
@@ -140,8 +146,8 @@
         data.data.forEach(loc => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td style="font-weight:500;color:var(--fg-1)">${loc.location_name}</td>
-            <td style="text-align:right;font-family:'DM Mono',monospace">${loc.total_unique_products}</td>
+            <td style="font-weight:500;color:var(--fg-1)">${escapeHtml(loc.location_name)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace">${Number(loc.total_unique_products) || 0}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace">${parseInt(loc.total_items).toLocaleString()}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace">₱${parseFloat(loc.total_value).toLocaleString('en',{minimumFractionDigits:2})}</td>
           `;
@@ -171,14 +177,14 @@
           tr.innerHTML = `
             <td style="color:var(--fg-3);white-space:nowrap">${date.toLocaleDateString('en-US',{month:'short',day:'numeric'})} ${date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
             <td>
-              <div style="font-weight:500;color:var(--fg-1)">${m.product_name}</div>
-              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${m.sku}</div>
+              <div style="font-weight:500;color:var(--fg-1)">${escapeHtml(m.product_name)}</div>
+              <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${escapeHtml(m.sku)}</div>
             </td>
-            <td style="color:var(--fg-2)">${m.location_name}</td>
-            <td style="text-align:right;font-family:'DM Mono',monospace;color:${isPositive?'var(--success)':'var(--danger)'}">${isPositive?'+':''}${m.quantity_change}</td>
-            <td><span class="status-badge ${isPositive?'status-in-stock':'status-out-of-stock'}">${m.source_type || '-'}</span></td>
-            <td style="color:var(--fg-3)">${m.performed_by || '-'}</td>
-            <td style="color:var(--fg-4);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.notes || '-'}</td>
+            <td style="color:var(--fg-2)">${escapeHtml(m.location_name)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;color:${isPositive?'var(--success)':'var(--danger)'}">${isPositive?'+':''}${Number(m.quantity_change) || 0}</td>
+            <td><span class="status-badge ${isPositive?'status-in-stock':'status-out-of-stock'}">${escapeHtml(m.source_type || '-')}</span></td>
+            <td style="color:var(--fg-3)">${escapeHtml(m.performed_by || '-')}</td>
+            <td style="color:var(--fg-4);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.notes || '-')}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -220,7 +226,7 @@
           return `
             <div class="cat-row">
               <div class="cat-row-head">
-                <span class="cat-name">${c.category_name}</span>
+                <span class="cat-name">${escapeHtml(c.category_name)}</span>
                 <span class="cat-meta">${qty.toLocaleString()}<span class="dot">·</span>${pct}%</span>
               </div>
               <div class="cat-bar"><span style="width:${barW}%"></span></div>

@@ -1,4 +1,10 @@
+// One-off integration test that mutates real data. Refuses to run in production
+// to prevent accidental writes against a live database.
 require('dotenv').config({ path: './.env' });
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to run test_stock.js in production.');
+  process.exit(1);
+}
 const { query, pool } = require('./src/config/db');
 
 async function runTest() {

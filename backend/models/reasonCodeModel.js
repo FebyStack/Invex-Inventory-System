@@ -1,15 +1,25 @@
 const { query } = require('../src/config/db');
 
 /**
- * Get all active reason codes.
+ * Get all active reason codes. Optionally filter by adjustment type:
+ *   - INCREASE  → returns codes with adjustment_type IN ('INCREASE', 'BOTH')
+ *   - DECREASE  → returns codes with adjustment_type IN ('DECREASE', 'BOTH')
+ *   - TRANSFER  → transfers decrement the source, so returns DECREASE-compatible codes
  */
-const getAll = async () => {
-  const result = await query(
-    `SELECT id, code, description, adjustment_type, created_at
-     FROM invex.reason_codes
-     WHERE is_deleted = FALSE
-     ORDER BY code`
-  );
+const getAll = async ({ type } = {}) => {
+  let sql = `SELECT id, code, description, adjustment_type, created_at
+             FROM invex.reason_codes
+             WHERE is_deleted = FALSE`;
+  const values = [];
+
+  const normalized = type === 'TRANSFER' ? 'DECREASE' : type;
+  if (normalized === 'INCREASE' || normalized === 'DECREASE') {
+    sql += ` AND adjustment_type IN ($1, 'BOTH')`;
+    values.push(normalized);
+  }
+
+  sql += ` ORDER BY code`;
+  const result = await query(sql, values);
   return result.rows;
 };
 

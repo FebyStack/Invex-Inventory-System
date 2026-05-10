@@ -27,8 +27,8 @@ router.get('/:id/history', asyncHandler(adjustmentController.getProductHistory))
 // POST   /api/products              (admin only)
 router.post('/', authorize('admin'), asyncHandler(productController.createProduct));
 
-// PUT    /api/products/:id
-router.put('/:id', asyncHandler(productController.updateProduct));
+// PUT    /api/products/:id        (admin only)
+router.put('/:id', authorize('admin'), asyncHandler(productController.updateProduct));
 
 // DELETE /api/products/:id          (admin only)
 router.delete('/:id', authorize('admin'), asyncHandler(productController.deleteProduct));

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../src/config/db');
 const config = require('../src/config/env');
 const { logActivity } = require('../src/utils/logger');
+const { validatePassword } = require('../src/utils/passwordPolicy');
 
 const signToken = (user) =>
   jwt.sign(
@@ -24,6 +25,15 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Username, password, full name, email, and role are required.',
+      });
+    }
+
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      return res.status(400).json({
+        success: false,
+        code: 'WEAK_PASSWORD',
+        message: pwCheck.message,
       });
     }
 
@@ -155,10 +165,12 @@ exports.changePassword = async (req, res, next) => {
       });
     }
 
-    if (new_password.length < 6) {
+    const pwCheck = validatePassword(new_password);
+    if (!pwCheck.ok) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters.',
+        code: 'WEAK_PASSWORD',
+        message: pwCheck.message,
       });
     }
 

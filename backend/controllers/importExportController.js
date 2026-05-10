@@ -21,24 +21,32 @@ const TEMPLATE_FIELDS = [
 const toBool = (v) =>
   v === true || String(v).toLowerCase() === 'true' || v === 1 || v === '1';
 
+// Stricter numeric parsing — `parseInt('10abc', 10)` returns 10, which we don't
+// want for an import that the user expects to be validated. `Number(s)` returns
+// NaN unless the entire string is numeric, which is what we want here.
+const toIntStrict = (v) => {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(v);
+  return Number.isInteger(n) ? n : NaN;
+};
+const toDecimalStrict = (v) => {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
+};
+
 function normalizeRow(raw) {
   const get = (k) => (raw[k] === undefined ? raw[k.toUpperCase()] : raw[k]);
   const name = get('name') ? String(get('name')).trim() : '';
   const unit_of_measure = get('unit_of_measure')
     ? String(get('unit_of_measure')).trim()
     : 'pcs';
-  const initial_quantity =
-    get('initial_quantity') !== undefined && get('initial_quantity') !== ''
-      ? parseInt(get('initial_quantity'), 10)
-      : 0;
-  const reorder_level =
-    get('reorder_level') !== undefined && get('reorder_level') !== ''
-      ? parseInt(get('reorder_level'), 10)
-      : 0;
-  const unit_price =
-    get('unit_price') !== undefined && get('unit_price') !== ''
-      ? parseFloat(get('unit_price'))
-      : NaN;
+  const iq = toIntStrict(get('initial_quantity'));
+  const initial_quantity = iq === null ? 0 : iq;
+  const rl = toIntStrict(get('reorder_level'));
+  const reorder_level = rl === null ? 0 : rl;
+  const up = toDecimalStrict(get('unit_price'));
+  const unit_price = up === null ? NaN : up;
   const expRaw = get('expiry_date');
   const expiry_date = expRaw ? String(expRaw).trim() : null;
   return { name, initial_quantity, unit_of_measure, reorder_level, unit_price, expiry_date };
@@ -149,12 +157,9 @@ const commitImportedProducts = async (req, res, next) => {
   const errors = [];
   const cleaned = rows.map((raw, idx) => {
     const r = normalizeRow(raw);
-    const location_id = parseInt(raw.location_id, 10);
-    const category_id = parseInt(raw.category_id, 10);
-    const supplier_id =
-      raw.supplier_id === undefined || raw.supplier_id === null || raw.supplier_id === ''
-        ? null
-        : parseInt(raw.supplier_id, 10);
+    const location_id = toIntStrict(raw.location_id);
+    const category_id = toIntStrict(raw.category_id);
+    const supplier_id = toIntStrict(raw.supplier_id);
 
     const rowErrors = validateRow(r);
     if (!Number.isInteger(location_id) || !validLocs.has(location_id)) {
@@ -163,7 +168,7 @@ const commitImportedProducts = async (req, res, next) => {
     if (!Number.isInteger(category_id) || !validCats.has(category_id)) {
       rowErrors.push('category_id is required and must reference an active category');
     }
-    if (supplier_id !== null && !validSups.has(supplier_id)) {
+    if (supplier_id !== null && (!Number.isInteger(supplier_id) || !validSups.has(supplier_id))) {
       rowErrors.push('supplier_id must reference an active supplier');
     }
     if (rowErrors.length) errors.push({ row: idx + 1, errors: rowErrors });

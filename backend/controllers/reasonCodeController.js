@@ -6,7 +6,7 @@ const { logActivity } = require('../src/utils/logger');
  */
 exports.getAll = async (req, res, next) => {
   try {
-    const codes = await reasonCodeModel.getAll();
+    const codes = await reasonCodeModel.getAll({ type: req.query.type });
     return res.json({ success: true, count: codes.length, data: codes });
   } catch (error) {
     return next(error);

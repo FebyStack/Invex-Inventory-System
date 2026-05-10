@@ -1,3 +1,9 @@
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
 const tableBody = document.getElementById('products-table-body');
 const loadingState = document.getElementById('loading-state');
 const modal = document.getElementById('product-modal');
@@ -105,12 +111,12 @@ async function loadProducts() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
               </span>
               <div class="product-info">
-                <span class="product-name">${p.name}</span>
-                <span class="product-sku">${p.sku}</span>
+                <span class="product-name">${escapeHtml(p.name)}</span>
+                <span class="product-sku">${escapeHtml(p.sku)}</span>
               </div>
             </div>
           </td>
-          <td style="color:var(--fg-3);">${p.category_name || '—'}</td>
+          <td style="color:var(--fg-3);">${escapeHtml(p.category_name || '—')}</td>
           <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">₱${parseFloat(p.unit_price).toFixed(2)}</td>
           <td><span class="stock-badge stock-in">Fetching…</span></td>
           <td style="text-align:right;">
@@ -260,13 +266,15 @@ form.onsubmit = async (e) => {
   }
 
   const trackExpiry = trackExpiryCheckbox.checked;
+  const reorderRaw = document.getElementById('reorder_level').value;
+  const uomRaw = document.getElementById('unit_of_measure').value.trim();
   const basePayload = {
     name: document.getElementById('name').value,
     category_id: parseInt(document.getElementById('category_id').value),
     supplier_id: document.getElementById('supplier_id').value ? parseInt(document.getElementById('supplier_id').value) : null,
     unit_price: parseFloat(document.getElementById('unit_price').value),
-    reorder_level: parseInt(document.getElementById('reorder_level').value),
-    unit_of_measure: document.getElementById('unit_of_measure').value,
+    reorder_level: reorderRaw === '' ? 10 : parseInt(reorderRaw, 10),
+    unit_of_measure: uomRaw || 'pcs',
     track_expiry: trackExpiry
   };
   if (trackExpiry && expiryDateInput.value) {

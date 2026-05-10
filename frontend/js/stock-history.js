@@ -6,6 +6,12 @@
 (function () {
   'use strict';
 
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
   const token = sessionStorage.getItem('token');
   const headers = { 'Authorization': `Bearer ${token}` };
 
@@ -87,16 +93,16 @@
         <div class="timeline-dot ${dotClass}"></div>
         <div class="timeline-row">
           <div class="timeline-main">
-            <div class="timeline-type">${formatSourceType(sourceType)}</div>
+            <div class="timeline-type">${escapeHtml(formatSourceType(sourceType))}</div>
             <div class="timeline-meta">
-              <span>${dateStr} at ${timeStr}</span>
-              <span>${m.location_name || '-'}</span>
-              ${m.performed_by ? `<span>by ${m.performed_by}</span>` : ''}
+              <span>${escapeHtml(dateStr)} at ${escapeHtml(timeStr)}</span>
+              <span>${escapeHtml(m.location_name || '-')}</span>
+              ${m.performed_by ? `<span>by ${escapeHtml(m.performed_by)}</span>` : ''}
             </div>
-            ${m.notes ? `<div class="timeline-notes">${m.notes}</div>` : ''}
+            ${m.notes ? `<div class="timeline-notes">${escapeHtml(m.notes)}</div>` : ''}
           </div>
           <div class="timeline-qty ${isPositive ? 'positive' : 'negative'}">
-            ${isPositive ? '+' : ''}${m.quantity_change}
+            ${isPositive ? '+' : ''}${Number(m.quantity_change) || 0}
           </div>
         </div>
       `;

@@ -1,3 +1,9 @@
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
 const tableBody = document.getElementById('codes-table-body');
 const loadingState = document.getElementById('loading-state');
 const modal = document.getElementById('code-modal');
@@ -20,12 +26,12 @@ async function loadCodes() {
         const allowsClass = allows === 'INCREASE' ? 'status-in-stock' : (allows === 'DECREASE' ? 'status-out-of-stock' : 'status-low-stock');
         const allowsLabel = allows === 'BOTH' ? 'Both' : (allows === 'INCREASE' ? 'Increase' : 'Decrease');
         row.innerHTML = `
-          <td><span class="code-mono">${item.code}</span></td>
-          <td style="color: var(--fg-1);">${item.description}</td>
-          <td><span class="status-badge ${allowsClass}">${allowsLabel}</span></td>
+          <td><span class="code-mono">${escapeHtml(item.code)}</span></td>
+          <td style="color: var(--fg-1);">${escapeHtml(item.description)}</td>
+          <td><span class="status-badge ${allowsClass}">${escapeHtml(allowsLabel)}</span></td>
           <td style="color: var(--fg-3);">${new Date(item.created_at).toLocaleDateString()}</td>
           <td style="text-align: right;">
-            <button class="action-btn delete-btn" data-id="${item.id}" title="Delete">
+            <button class="action-btn delete-btn" data-id="${Number(item.id) || ''}" title="Delete">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
             </button>
           </td>

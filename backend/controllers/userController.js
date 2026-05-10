@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel');
 const { logActivity } = require('../src/utils/logger');
+const { validatePassword } = require('../src/utils/passwordPolicy');
 
 /**
  * GET /api/users
@@ -56,6 +57,15 @@ exports.createUser = async (req, res, next) => {
       });
     }
 
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      return res.status(400).json({
+        success: false,
+        code: 'WEAK_PASSWORD',
+        message: pwCheck.message,
+      });
+    }
+
     const user = await userModel.createUser({ username, full_name, email, password, role });
 
     // Log activity (fire-and-forget)
@@ -91,6 +101,18 @@ exports.updateUser = async (req, res, next) => {
         success: false,
         message: 'Role must be either "admin" or "staff".',
       });
+    }
+
+    // Validate password if provided (admins resetting another user's password)
+    if (password !== undefined && password !== null && password !== '') {
+      const pwCheck = validatePassword(password);
+      if (!pwCheck.ok) {
+        return res.status(400).json({
+          success: false,
+          code: 'WEAK_PASSWORD',
+          message: pwCheck.message,
+        });
+      }
     }
 
     const updated = await userModel.updateUser(req.params.id, {

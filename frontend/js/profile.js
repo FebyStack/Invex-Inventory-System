@@ -5,6 +5,12 @@
 (function () {
   'use strict';
 
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
   const token = sessionStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
@@ -28,7 +34,7 @@
 
         const roleEl = document.getElementById('p-role');
         const roleClass = u.role === 'admin' ? 'role-admin' : 'role-staff';
-        roleEl.innerHTML = `<span class="role-badge ${roleClass}">${u.role}</span>`;
+        roleEl.innerHTML = `<span class="role-badge ${roleClass}">${escapeHtml(u.role)}</span>`;
 
         if (u.created_at) {
           document.getElementById('p-joined').textContent = new Date(u.created_at).toLocaleDateString('en-US', {
@@ -61,8 +67,8 @@
       return;
     }
 
-    if (newPw.length < 6) {
-      pwMsg.textContent = 'Password must be at least 6 characters.';
+    if (newPw.length < 12 || !/[a-z]/.test(newPw) || !/[A-Z]/.test(newPw) || !/[0-9]/.test(newPw)) {
+      pwMsg.textContent = 'Password must be at least 12 characters and include uppercase, lowercase, and a number.';
       pwMsg.className = 'pw-msg error';
       return;
     }

@@ -1,11 +1,28 @@
+// Admin password-reset CLI. Requires the same password policy the API enforces.
+// Refuses to run in production unless ALLOW_PROD_RESET=1 is explicitly set, so
+// this script can't be triggered accidentally on a live deploy.
+require('dotenv').config({ path: __dirname + '/.env' });
 const bcrypt = require('bcrypt');
 const { query, pool } = require('./src/config/db');
+const { validatePassword } = require('./src/utils/passwordPolicy');
+
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_RESET !== '1') {
+  console.error('Refusing to run in production. Set ALLOW_PROD_RESET=1 to override.');
+  process.exit(1);
+}
 
 const [username, newPassword] = process.argv.slice(2);
 
 const main = async () => {
   if (!username || !newPassword) {
     console.error('Usage: node fix-password.js <username> <new-password>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const pwCheck = validatePassword(newPassword);
+  if (!pwCheck.ok) {
+    console.error(pwCheck.message);
     process.exitCode = 1;
     return;
   }

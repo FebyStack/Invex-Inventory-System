@@ -288,8 +288,8 @@ const exportProducts = async (req, res, next) => {
         p.track_expiry, p.unit_of_measure, 
         p.created_at
       FROM invex.active_products p
-      JOIN invex.categories c ON p.category_id = c.id
-      JOIN invex.suppliers s ON p.supplier_id = s.id
+      LEFT JOIN invex.categories c ON p.category_id = c.id
+      LEFT JOIN invex.suppliers s ON p.supplier_id = s.id
       ORDER BY p.id ASC
     `);
 

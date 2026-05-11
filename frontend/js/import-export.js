@@ -175,9 +175,9 @@
     const [locJson, catJson, supJson] = await Promise.all([
       locRes.json(), catRes.json(), supRes.json(),
     ]);
-    locations  = (locJson.success ? locJson.data : []) || [];
-    categories = (catJson.success ? catJson.data : []) || [];
-    suppliers  = (supJson.success ? supJson.data : []) || [];
+    locations  = (locJson.success ? (locJson.data || locJson.locations) : []) || [];
+    categories = (catJson.success ? (catJson.data || catJson.categories) : []) || [];
+    suppliers  = (supJson.success ? (supJson.data || supJson.suppliers) : []) || [];
 
     fillBulkSelect(bulkLoc, 'Location…',          locations);
     fillBulkSelect(bulkCat, 'Category…',          categories);

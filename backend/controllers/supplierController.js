@@ -12,6 +12,7 @@ exports.getAll = async (req, res, next) => {
     return res.json({
       success: true,
       count: suppliers.length,
+      data: suppliers,
       suppliers,
     });
   } catch (error) {
@@ -81,6 +82,7 @@ exports.create = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       message: 'Supplier created successfully.',
+      data: supplier,
       supplier,
     });
   } catch (error) {
@@ -134,6 +136,7 @@ exports.update = async (req, res, next) => {
     return res.json({
       success: true,
       message: 'Supplier updated successfully.',
+      data: supplier,
       supplier,
     });
   } catch (error) {

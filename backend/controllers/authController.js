@@ -18,13 +18,28 @@ const signToken = (user) =>
 
 exports.register = async (req, res, next) => {
   try {
-    const { username, password, full_name, email, role } = req.body;
+    const { username, password, full_name, email, role: requestedRole } = req.body;
+    const role = 'staff'; // Strictly enforce staff role for public registration
 
     // 1. Validate input
-    if (!username || !password || !full_name || !role || !email) {
+    if (!username || !password || !full_name || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Username, password, full name, email, and role are required.',
+        message: 'Username, password, full name, and email are required.',
+      });
+    }
+
+    // Security: Block explicit attempts to register with privileged roles
+    if (requestedRole && requestedRole !== 'staff') {
+      void logActivity(0, 'SECURITY_VIOLATION', 'auth', null, {
+        username,
+        email,
+        attemptedRole: requestedRole,
+        message: 'Unauthorized attempt to register with privileged role via public endpoint.'
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'Registration with privileged roles is not allowed. Please contact an administrator.'
       });
     }
 

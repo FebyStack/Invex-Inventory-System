@@ -22,6 +22,7 @@ exports.getAll = async (req, res, next) => {
     return res.json({
       success: true,
       count: categories.length,
+      data: categories,
       categories,
     });
   } catch (error) {
@@ -102,6 +103,7 @@ exports.create = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       message: 'Category created successfully.',
+      data: category,
       category,
     });
   } catch (error) {
@@ -166,6 +168,7 @@ exports.update = async (req, res, next) => {
     return res.json({
       success: true,
       message: 'Category updated successfully.',
+      data: category,
       category,
     });
   } catch (error) {

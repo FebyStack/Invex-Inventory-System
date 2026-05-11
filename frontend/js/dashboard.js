@@ -274,12 +274,20 @@
   async function loadDashboard(days = currentRange) {
     currentRange = days;
     try {
-      const res = await fetch(`/api/reports/dashboard?days=${days}`, { headers });
-      if (res.status === 401 || res.status === 403) {
-        window.location.href = '/login.html';
-        return;
+      // Check for prefetched cache from login page
+      let json;
+      const cached = sessionStorage.getItem('_dash_cache');
+      if (cached && days === 30) {
+        json = JSON.parse(cached);
+        sessionStorage.removeItem('_dash_cache');
+      } else {
+        const res = await fetch(`/api/reports/dashboard?days=${days}`, { headers });
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '/login.html';
+          return;
+        }
+        json = await res.json();
       }
-      const json = await res.json();
       if (!json.success) throw new Error(json.message || 'dashboard fetch failed');
 
       const { summary, recentActivity, charts } = json.data;
@@ -345,6 +353,49 @@
     }
   }
 
+  // ── Needs attention (with cache support) ──
+  async function loadNeedsAttentionCached() {
+    try {
+      let json;
+      const cached = sessionStorage.getItem('_low_cache');
+      if (cached) {
+        json = JSON.parse(cached);
+        sessionStorage.removeItem('_low_cache');
+      } else {
+        const res = await fetch('/api/reports/low-stock', { headers });
+        json = await res.json();
+      }
+      if (!json.success) throw new Error(json.message || 'low-stock failed');
+      const items = json.data || [];
+      if (items.length === 0) {
+        elAlertsContainer.innerHTML =
+          `<div style="padding:32px;text-align:center;color:var(--fg-4);font-size:13px;">All stock levels healthy</div>`;
+        elAlertsSub.textContent = 'No items below minimum';
+        return;
+      }
+      elAlertsSub.textContent = `${items.length} item${items.length === 1 ? '' : 's'} below minimum stock level`;
+      elAlertsContainer.innerHTML = items.slice(0, 6).map((p) => {
+        const stock = Number(p.current_stock || 0);
+        const isOut = stock === 0;
+        return `
+          <div class="needs-row${isOut ? ' critical' : ''}">
+            <div class="needs-name">${escapeHtml(p.product_name)}</div>
+            <div class="needs-sku">${escapeHtml(p.sku)}</div>
+            <div class="needs-qty" style="color:${isOut ? 'var(--danger)' : 'var(--warning)'}">
+              ${stock}<span class="max">${p.reorder_level}</span>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <span class="status-badge ${isOut ? 'status-out-of-stock' : 'status-low-stock'}">${isOut ? 'OUT' : 'LOW'}</span>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      console.error('Needs attention error:', err);
+      elAlertsContainer.innerHTML =
+        `<div style="padding:24px;text-align:center;color:var(--fg-4);font-size:13px;">Could not load alerts.</div>`;
+    }
+  }
+
   // Range toggle wiring
   rangeBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -357,5 +408,5 @@
   });
 
   loadDashboard();
-  loadNeedsAttention();
+  loadNeedsAttentionCached();
 })();

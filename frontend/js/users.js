@@ -81,12 +81,20 @@
     noDataState.style.display = 'none';
     loadingState.style.display = 'none';
 
+    // Get current logged-in user to prevent self-deletion
+    let currentUserId = null;
+    try {
+      const me = JSON.parse(sessionStorage.getItem('user') || '{}');
+      currentUserId = me.id;
+    } catch {}
+
     users.forEach(u => {
       const status = statusOf(u);
       const roleColor = u.role === 'admin' ? 'var(--accent)' : 'var(--success)';
+      const isSelf = currentUserId && String(u.id) === String(currentUserId);
       const row = document.createElement('div');
       row.className = 'row user-row';
-      row.style.gridTemplateColumns = '1fr 100px 120px 32px';
+      row.style.gridTemplateColumns = '1fr 100px 120px 64px';
       row.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="avatar-with-status">
@@ -100,9 +108,12 @@
         </div>
         <div class="mono" style="font-size:11px;color:${roleColor};letter-spacing:0.06em;text-transform:uppercase;">${escapeHtml(u.role)}</div>
         <div style="font-size:11px;color:var(--fg-4);">${escapeHtml(timeSince(u.updated_at || u.created_at))}</div>
-        <div class="row-actions">
+        <div class="row-actions" style="display:flex;gap:4px;">
           <button class="action-btn edit-btn" data-id="${u.id}" title="Edit user">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="action-btn delete-btn${isSelf ? ' disabled' : ''}" data-id="${u.id}" title="${isSelf ? 'Cannot delete yourself' : 'Delete user'}" ${isSelf ? 'disabled' : ''}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           </button>
         </div>
       `;
@@ -139,6 +150,9 @@
         if (data.success && data.data) openEdit(data.data);
         else alert(data.message || 'Could not load user.');
       } catch { alert('Network error.'); }
+    } else if (btn.classList.contains('delete-btn')) {
+      deleteTargetId = id;
+      deleteModal.style.display = 'flex';
     }
   });
 

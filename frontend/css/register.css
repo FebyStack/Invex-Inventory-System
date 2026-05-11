@@ -132,18 +132,12 @@ body {
     gap: 10px;
     margin-bottom: 40px;
 }
-.logo-icon {
-    width: 26px;
-    height: 26px;
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
     border-radius: 6px;
-    background: var(--fg-1);
-    display: flex; align-items: center; justify-content: center;
-}
-.logo-icon::after {
-    content: '';
-    width: 10px; height: 10px;
-    background: var(--bg);
-    border-radius: 2px;
+    flex-shrink: 0;
 }
 .brand span {
     font-size: 17px;

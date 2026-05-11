@@ -26,7 +26,6 @@ form.addEventListener('submit', async (e) => {
     const full_name = document.getElementById('full_name').value;
     const email = document.getElementById('email').value;
     const username = document.getElementById('username').value;
-    const role = document.getElementById('role').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
 
@@ -36,7 +35,7 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    const payload = { full_name, email, username, role, password };
+    const payload = { full_name, email, username, password };
 
     errorMsg.style.display = 'none';
     successMsg.style.display = 'none';

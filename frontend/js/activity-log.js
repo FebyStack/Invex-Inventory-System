@@ -16,18 +16,47 @@
   }
 
   // Format the stored details field. The backend stores either a plain string
-  // or a JSON-stringified object. For objects, render the keys inline so the
-  // most useful fields are visible without expanding.
+  // or a JSON-stringified object. For objects, render as a pretty-printed,
+  // syntax-highlighted JSON block that is collapsible for long entries.
   function formatDetails(raw) {
     if (raw === null || raw === undefined || raw === '') return '—';
     let parsed = raw;
     if (typeof raw === 'string') {
-      try { parsed = JSON.parse(raw); } catch { return raw; }
+      try { parsed = JSON.parse(raw); } catch { return escapeHtml(raw); }
     }
-    if (typeof parsed !== 'object') return String(parsed);
-    return Object.entries(parsed)
-      .map(([k, v]) => `<span class="kv"><span class="k">${escapeHtml(k)}</span>=<span class="v">${escapeHtml(typeof v === 'object' ? JSON.stringify(v) : v)}</span></span>`)
-      .join(' ');
+    if (typeof parsed !== 'object') return escapeHtml(String(parsed));
+
+    // Syntax-highlight a JSON string: keys, strings, numbers, booleans, null
+    function highlightJson(jsonStr) {
+      return jsonStr
+        // Keys (property names before a colon)
+        .replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
+        // String values (after a colon or inside arrays)
+        .replace(/:\s*"([^"]*?)"/g, ': <span class="json-str">"$1"</span>')
+        // Remaining standalone strings in arrays
+        .replace(/(?<=[\[,]\s*)"([^"]*?)"/g, '<span class="json-str">"$1"</span>')
+        // Numbers
+        .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+        // Booleans & null
+        .replace(/:\s*(true|false|null)/g, ': <span class="json-bool">$1</span>');
+    }
+
+    const pretty = JSON.stringify(parsed, null, 2);
+    const lineCount = pretty.split('\n').length;
+    const highlighted = highlightJson(escapeHtml(pretty));
+
+    // Short objects (≤4 lines) render open; longer ones are collapsed
+    if (lineCount <= 4) {
+      return `<pre class="json-block"><code>${highlighted}</code></pre>`;
+    }
+    return `<details class="json-details">
+              <summary class="json-summary">
+                <span class="json-toggle-icon">▶</span>
+                <span class="json-preview">${escapeHtml(Object.keys(parsed).slice(0, 3).join(', '))}${Object.keys(parsed).length > 3 ? ' …' : ''}</span>
+                <span class="json-count">${Object.keys(parsed).length} fields</span>
+              </summary>
+              <pre class="json-block"><code>${highlighted}</code></pre>
+            </details>`;
   }
 
   function fmtDate(d) {
@@ -175,7 +204,7 @@
         </td>
         <td><span class="status-badge ${actionTone(r.action)}">${escapeHtml(r.action || '—')}</span></td>
         <td style="color:var(--fg-2);font-size:12px;">${entity}</td>
-        <td style="color:var(--fg-2);font-size:12px;max-width:480px;overflow:hidden;text-overflow:ellipsis;">${formatDetails(r.details)}</td>
+        <td style="color:var(--fg-2);font-size:12px;">${formatDetails(r.details)}</td>
         <td>${loc}</td>
       </tr>`;
   }

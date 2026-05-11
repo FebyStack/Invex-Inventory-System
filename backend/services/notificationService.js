@@ -57,10 +57,24 @@ async function sendEmail({ subject, html, text }) {
 // ── Scanners ────────────────────────────────────────────────────────────
 
 async function scanLowStock() {
-  // Per-product stock totals across locations vs reorder_level.
+  // Per-product stock totals across locations vs reorder_level. The SKU
+  // exposed to the notification body is the SKU of wherever the product
+  // currently holds the most stock (or base if nowhere) so the user
+  // recognizes the alert.
   const { rows } = await query(`
     SELECT
-      p.id, p.sku, p.name, p.reorder_level,
+      p.id,
+      COALESCE(
+        (SELECT ps2.location_sku
+           FROM invex.product_stock ps2
+          WHERE ps2.product_id = p.id
+            AND ps2.quantity > 0
+            AND ps2.location_sku IS NOT NULL
+          ORDER BY ps2.quantity DESC, ps2.location_id ASC
+          LIMIT 1),
+        p.sku
+      ) AS sku,
+      p.name, p.reorder_level,
       COALESCE(SUM(ps.quantity), 0)::int AS current_stock
     FROM invex.active_products p
     LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
@@ -97,13 +111,16 @@ async function scanExpiring(daysAhead = 7) {
       pb.expiry_date,
       (pb.expiry_date - CURRENT_DATE)::int AS days_until_expiry,
       p.id            AS product_id,
-      p.sku,
+      COALESCE(ps.location_sku, p.sku) AS sku,
       p.name          AS product_name,
       l.id            AS location_id,
       l.name          AS location_name
     FROM invex.product_batches pb
     JOIN invex.active_products p  ON pb.product_id = p.id
     JOIN invex.active_locations l ON pb.location_id = l.id
+    LEFT JOIN invex.product_stock ps
+      ON ps.product_id = pb.product_id
+     AND ps.location_id = pb.location_id
     WHERE pb.is_deleted = FALSE
       AND pb.quantity > 0
       AND pb.expiry_date <= CURRENT_DATE + ($1 || ' days')::interval

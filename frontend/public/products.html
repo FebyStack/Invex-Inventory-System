@@ -69,6 +69,63 @@
     </section>
   </main>
 
+  <!-- Adjust Stock Modal — per-location stock editing for an existing product -->
+  <div class="modal" id="stock-modal">
+    <div class="modal-content" style="max-width:680px;">
+      <div class="modal-header">
+        <h2 id="stock-modal-title">Adjust stock</h2>
+      </div>
+      <form id="stock-form">
+        <input type="hidden" id="stock-product-id" />
+
+        <div style="padding: 0 0 12px; color: var(--fg-3); font-size: 12px;">
+          <div id="stock-product-line" style="color: var(--fg-1); font-size: 14px; font-weight: 500;"></div>
+          <div id="stock-product-sku" class="mono" style="margin-top: 2px;"></div>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 4px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 80px; gap: 12px; padding: 8px 4px; font-size: 11px; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border);">
+            <div>Location</div>
+            <div style="text-align: right;">Current</div>
+            <div style="text-align: right;">New total</div>
+            <div style="text-align: right;">Δ</div>
+          </div>
+          <div id="stock-rows"></div>
+          <div id="stock-empty-state" style="display:none;padding:24px 4px;text-align:center;color:var(--fg-4);font-size:13px;">
+            This product isn't at any location yet. Add it to one below.
+          </div>
+        </div>
+
+        <!-- Add to a new location -->
+        <details style="margin-top: 16px;">
+          <summary style="cursor: pointer; font-size: 12px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 0; user-select: none;">
+            Add to another location
+          </summary>
+          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; margin-top: 12px; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+              <label for="stock-new-loc">Location</label>
+              <select id="stock-new-loc" class="form-control">
+                <option value="">Select location…</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label for="stock-new-qty">Initial quantity</label>
+              <input type="number" id="stock-new-qty" class="form-control" min="1" placeholder="0" />
+            </div>
+            <button type="button" class="btn btn-ghost" id="stock-add-loc-btn">Add</button>
+          </div>
+        </details>
+
+        <div id="stock-form-error" style="display:none;color:var(--danger);font-size:12px;margin-top:12px;"></div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="stock-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="stock-save-btn">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Product Modal -->
   <div class="modal" id="product-modal">
     <div class="modal-content">

@@ -112,7 +112,7 @@ async function loadProducts() {
               </span>
               <div class="product-info">
                 <span class="product-name">${escapeHtml(p.name)}</span>
-                <span class="product-sku">${escapeHtml(p.sku)}</span>
+                <span class="product-sku">${escapeHtml(p.current_sku || p.sku)}</span>
               </div>
             </div>
           </td>
@@ -122,6 +122,9 @@ async function loadProducts() {
           <td style="text-align:right;">
             <button class="action-btn" title="View History" onclick="window.location.href='/stock-history.html?product_id=${p.id}'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="action-btn adjust-btn" data-id="${p.id}" title="Adjust stock">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             </button>
             <button class="action-btn edit-btn" data-id="${p.id}" title="Edit">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -282,7 +285,8 @@ form.onsubmit = async (e) => {
   }
 
   if (isEdit) {
-    // Edit mode — single PUT, no location change
+    // Edit mode is metadata-only. Stock changes go through the dedicated
+    // "Adjust stock" modal so every change is location-scoped.
     try {
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
@@ -290,12 +294,12 @@ form.onsubmit = async (e) => {
         body: JSON.stringify(basePayload)
       });
       const result = await res.json();
-      if (result.success) {
-        modal.style.display = 'none';
-        loadProducts();
-      } else {
+      if (!result.success) {
         alert('Error: ' + result.message);
+        return;
       }
+      modal.style.display = 'none';
+      loadProducts();
     } catch (err) { alert('Network error.'); }
   } else {
     // Create mode — POST once per selected location
@@ -322,21 +326,34 @@ form.onsubmit = async (e) => {
   }
 };
 
-// ── Table actions (edit / delete) ────────────────────────
+// ── Table actions (edit / delete / adjust stock) ────────────
+// Clicks land on the SVG inside the buttons most of the time, so resolve
+// the actual button via closest() before reading data-id. Without this
+// the modal silently fails to open whenever the user lands on the icon.
 tableBody.onclick = async (e) => {
-  if (e.target.classList.contains('delete-btn')) {
+  const deleteBtn = e.target.closest('.delete-btn');
+  const editBtn = e.target.closest('.edit-btn');
+  const adjustBtn = e.target.closest('.adjust-btn');
+
+  if (deleteBtn) {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    const id = e.target.dataset.id;
+    const id = deleteBtn.dataset.id;
     const token = sessionStorage.getItem('token');
     const res = await fetch(`/api/products/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if ((await res.json()).success) loadProducts();
+    return;
   }
 
-  if (e.target.classList.contains('edit-btn')) {
-    const id = e.target.dataset.id;
+  if (adjustBtn) {
+    openStockModal(adjustBtn.dataset.id);
+    return;
+  }
+
+  if (editBtn) {
+    const id = editBtn.dataset.id;
     const token = sessionStorage.getItem('token');
     const res = await fetch(`/api/products/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -346,17 +363,14 @@ tableBody.onclick = async (e) => {
       const p = data.data;
       document.getElementById('edit-id').value = p.id;
       document.getElementById('name').value = p.name;
-      // Show stock row but make it read-only for editing (since it's a sum)
-      const qtyRow = document.getElementById('initial-qty-row');
-      const qtyInput = document.getElementById('initial_quantity');
-      const qtyLabel = qtyRow.querySelector('label');
-      qtyRow.style.display = '';
-      qtyLabel.textContent = 'Current stock';
-      qtyInput.value = p.total_stock || 0;
-      qtyInput.readOnly = true;
-      qtyInput.style.opacity = '0.7';
 
-      updateSkuPreview(p.sku);
+      // The metadata modal is for *metadata only*. Stock changes go
+      // through the dedicated "Adjust stock" modal, so hide the qty row
+      // entirely here — keeping it would just take up vertical space
+      // without offering any control the user can act on.
+      document.getElementById('initial-qty-row').style.display = 'none';
+
+      updateSkuPreview(p.current_sku || p.sku);
       document.getElementById('category_id').value = p.category_id;
       document.getElementById('supplier_id').value = p.supplier_id || '';
       document.getElementById('unit_price').value = p.unit_price;
@@ -373,6 +387,222 @@ tableBody.onclick = async (e) => {
     }
   }
 }
+
+// ── Adjust Stock Modal ─────────────────────────────────────
+// Opens a dedicated dialog for changing on-hand quantities per location.
+// Shows current stock for every location the product is currently at,
+// lets the user type a new total per row, and (under a disclosure) add
+// the product to a new location. Save submits the full set of changes
+// in one transaction via /api/products/:id/adjust-stock.
+const stockModal = document.getElementById('stock-modal');
+const stockForm = document.getElementById('stock-form');
+const stockRowsEl = document.getElementById('stock-rows');
+const stockEmptyEl = document.getElementById('stock-empty-state');
+const stockErrorEl = document.getElementById('stock-form-error');
+const stockProductLine = document.getElementById('stock-product-line');
+const stockProductSku = document.getElementById('stock-product-sku');
+const stockProductIdInput = document.getElementById('stock-product-id');
+const stockNewLocSelect = document.getElementById('stock-new-loc');
+const stockNewQtyInput = document.getElementById('stock-new-qty');
+const stockAddLocBtn = document.getElementById('stock-add-loc-btn');
+
+// Tracks rows currently displayed in the modal:
+//   { locationId, locationName, locationCode, currentQty, isNew }
+let stockRowState = [];
+
+async function openStockModal(productId) {
+  const token = sessionStorage.getItem('token');
+  stockErrorEl.style.display = 'none';
+  stockErrorEl.textContent = '';
+  stockRowsEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--fg-4);font-size:13px;">Loading…</div>';
+  stockEmptyEl.style.display = 'none';
+  stockProductIdInput.value = productId;
+  stockModal.style.display = 'flex';
+
+  try {
+    const [prodRes, stockRes] = await Promise.all([
+      fetch(`/api/products/${productId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch(`/api/products/${productId}/stock`, { headers: { 'Authorization': `Bearer ${token}` } }),
+    ]);
+    const prodData = await prodRes.json();
+    const stockData = await stockRes.json();
+    if (!prodData.success) throw new Error(prodData.message || 'Failed to load product');
+    if (!stockData.success) throw new Error(stockData.message || 'Failed to load stock');
+
+    const p = prodData.data;
+    stockProductLine.textContent = p.name;
+    stockProductSku.textContent = p.current_sku || p.sku;
+
+    // Show only locations where the product actually holds stock right
+    // now (qty > 0). Drained zombie rows (qty=0 left behind by a transfer)
+    // and locations the product has never been to both end up in the
+    // "Add to another location" dropdown instead.
+    const visibleLocationIds = new Set();
+    stockRowState = (stockData.data || [])
+      .filter((row) => Number(row.quantity || 0) > 0)
+      .map((row) => {
+        visibleLocationIds.add(String(row.location_id));
+        return {
+          locationId: row.location_id,
+          locationName: row.location_name,
+          locationCode: row.location_code,
+          currentQty: Number(row.quantity || 0),
+          isNew: false,
+        };
+      });
+    renderStockRows();
+
+    // Populate the "add to another location" dropdown with every other
+    // location, so the user can extend the product into a location that
+    // either has 0 (a drained zombie) or has never carried it before.
+    stockNewLocSelect.innerHTML = '<option value="">Select location…</option>';
+    locationsCache.forEach((l) => {
+      if (!visibleLocationIds.has(String(l.id))) {
+        stockNewLocSelect.add(new Option(`${l.name} (${l.code})`, l.id));
+      }
+    });
+    stockNewQtyInput.value = '';
+  } catch (err) {
+    stockRowsEl.innerHTML = '';
+    stockErrorEl.textContent = err.message || 'Could not load stock.';
+    stockErrorEl.style.display = 'block';
+  }
+}
+
+function renderStockRows() {
+  if (stockRowState.length === 0) {
+    stockRowsEl.innerHTML = '';
+    stockEmptyEl.style.display = 'block';
+    return;
+  }
+  stockEmptyEl.style.display = 'none';
+  stockRowsEl.innerHTML = stockRowState.map((r, i) => `
+    <div class="stock-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 80px;gap:12px;padding:10px 4px;align-items:center;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="color:var(--fg-1);font-size:13px;">${escapeHtml(r.locationName || '—')}</div>
+        <div class="mono" style="color:var(--fg-4);font-size:11px;">${escapeHtml(r.locationCode || '')}</div>
+      </div>
+      <div class="mono" style="text-align:right;color:var(--fg-2);">${r.currentQty}</div>
+      <div>
+        <input type="number" min="0" class="form-control stock-target-input" data-idx="${i}" value="${r.currentQty}" style="text-align:right;" />
+      </div>
+      <div class="mono stock-delta" data-idx="${i}" style="text-align:right;color:var(--fg-4);">0</div>
+    </div>
+  `).join('');
+
+  stockRowsEl.querySelectorAll('.stock-target-input').forEach((input) => {
+    input.addEventListener('input', () => {
+      const idx = Number(input.dataset.idx);
+      const target = Number(input.value);
+      const deltaEl = stockRowsEl.querySelector(`.stock-delta[data-idx="${idx}"]`);
+      if (!deltaEl) return;
+      if (!Number.isFinite(target)) {
+        deltaEl.textContent = '—';
+        deltaEl.style.color = 'var(--fg-4)';
+        return;
+      }
+      const delta = target - stockRowState[idx].currentQty;
+      deltaEl.textContent = delta > 0 ? `+${delta}` : String(delta);
+      deltaEl.style.color = delta === 0 ? 'var(--fg-4)' : (delta > 0 ? 'var(--success)' : 'var(--danger)');
+    });
+  });
+}
+
+stockAddLocBtn.onclick = () => {
+  stockErrorEl.style.display = 'none';
+  const locId = stockNewLocSelect.value;
+  const qty = parseInt(stockNewQtyInput.value, 10);
+  if (!locId) {
+    stockErrorEl.textContent = 'Pick a location to add this product to.';
+    stockErrorEl.style.display = 'block';
+    return;
+  }
+  if (!Number.isInteger(qty) || qty <= 0) {
+    stockErrorEl.textContent = 'Initial quantity must be a positive whole number.';
+    stockErrorEl.style.display = 'block';
+    return;
+  }
+  const loc = locationsCache.find((l) => String(l.id) === String(locId));
+  if (!loc) return;
+  // Inserts a new row that starts at currentQty=0; the typed quantity
+  // becomes the target so the user can preview/edit the delta like the
+  // existing rows. Keeps one source of truth for the submit.
+  stockRowState.push({
+    locationId: Number(locId),
+    locationName: loc.name,
+    locationCode: loc.code,
+    currentQty: 0,
+    isNew: true,
+  });
+  renderStockRows();
+  // Pre-fill the input we just rendered with the user's target value so
+  // the delta column reflects what they asked for immediately.
+  const idx = stockRowState.length - 1;
+  const input = stockRowsEl.querySelector(`.stock-target-input[data-idx="${idx}"]`);
+  if (input) {
+    input.value = qty;
+    input.dispatchEvent(new Event('input'));
+  }
+  // Remove the chosen option from the dropdown so the user can't re-add it.
+  [...stockNewLocSelect.options].forEach((o) => {
+    if (o.value === locId) o.remove();
+  });
+  stockNewLocSelect.value = '';
+  stockNewQtyInput.value = '';
+};
+
+document.getElementById('stock-cancel-btn').onclick = () => {
+  stockModal.style.display = 'none';
+};
+stockModal.addEventListener('click', (e) => {
+  if (e.target === stockModal) stockModal.style.display = 'none';
+});
+
+stockForm.onsubmit = async (e) => {
+  e.preventDefault();
+  stockErrorEl.style.display = 'none';
+  const productId = stockProductIdInput.value;
+  const token = sessionStorage.getItem('token');
+
+  // Build the changes payload — only rows whose target differs from
+  // current. Skip rows where the user entered the same value.
+  const changes = [];
+  stockRowsEl.querySelectorAll('.stock-target-input').forEach((input) => {
+    const idx = Number(input.dataset.idx);
+    const row = stockRowState[idx];
+    const target = Number(input.value);
+    if (!Number.isFinite(target) || target < 0 || !Number.isInteger(target)) {
+      throw new Error('Quantities must be non-negative whole numbers.');
+    }
+    if (target !== row.currentQty) {
+      changes.push({ location_id: row.locationId, target_quantity: target });
+    }
+  });
+
+  if (changes.length === 0) {
+    stockModal.style.display = 'none';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/products/${productId}/adjust-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ changes }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      stockErrorEl.textContent = data.message || 'Could not save changes.';
+      stockErrorEl.style.display = 'block';
+      return;
+    }
+    stockModal.style.display = 'none';
+    loadProducts();
+  } catch (err) {
+    stockErrorEl.textContent = 'Network error.';
+    stockErrorEl.style.display = 'block';
+  }
+};
 
 loadFilters();
 loadProducts();

@@ -154,10 +154,22 @@ const getDashboardData = async (req, res, next) => {
 // GET /api/reports/low-stock
 const getLowStock = async (req, res, next) => {
   try {
+    // `sku` here is the "current" SKU — the location_sku of wherever the
+    // product currently holds the most stock — so the report matches what
+    // the user sees on the Locations page after transfers.
     const result = await query(`
-      SELECT 
+      SELECT
         p.id as product_id,
-        p.sku,
+        COALESCE(
+          (SELECT ps2.location_sku
+             FROM invex.product_stock ps2
+            WHERE ps2.product_id = p.id
+              AND ps2.quantity > 0
+              AND ps2.location_sku IS NOT NULL
+            ORDER BY ps2.quantity DESC, ps2.location_id ASC
+            LIMIT 1),
+          p.sku
+        ) AS sku,
         p.name as product_name,
         COALESCE(SUM(ps.quantity), 0) as current_stock,
         p.reorder_level
@@ -184,10 +196,13 @@ const getExpiringBatches = async (req, res, next) => {
     const daysStr = req.query.days || '30';
     const days = parseInt(daysStr, 10);
     
+    // Each batch lives at a specific location, so `sku` is the SKU that
+    // location uses for the product (falls back to base SKU if no
+    // location_sku was generated yet).
     const result = await query(`
-      SELECT 
+      SELECT
         pb.batch_no,
-        p.sku,
+        COALESCE(ps.location_sku, p.sku) AS sku,
         p.name as product_name,
         l.name as location_name,
         pb.quantity,
@@ -197,6 +212,9 @@ const getExpiringBatches = async (req, res, next) => {
       FROM invex.product_batches pb
       JOIN invex.active_products p ON pb.product_id = p.id
       JOIN invex.active_locations l ON pb.location_id = l.id
+      LEFT JOIN invex.product_stock ps
+        ON ps.product_id = pb.product_id
+       AND ps.location_id = pb.location_id
       WHERE pb.is_deleted = FALSE
         AND pb.quantity > 0
         AND pb.expiry_date <= CURRENT_DATE + interval '1 day' * $1

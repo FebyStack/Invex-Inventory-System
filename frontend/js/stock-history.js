@@ -37,7 +37,7 @@
       const data = await res.json();
       if (data.success && data.data) {
         document.getElementById('product-name').textContent = data.data.name;
-        document.getElementById('product-sku').textContent = data.data.sku;
+        document.getElementById('product-sku').textContent = data.data.current_sku || data.data.sku;
       }
     } catch (err) {
       console.error('Error loading product info:', err);

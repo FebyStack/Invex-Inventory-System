@@ -54,6 +54,16 @@ const getAllProducts = async ({ search, category_id, supplier_id, location_id } 
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
             ${stockSelect},
+            COALESCE(
+              (SELECT ps2.location_sku
+                 FROM invex.product_stock ps2
+                WHERE ps2.product_id = p.id
+                  AND ps2.quantity > 0
+                  AND ps2.location_sku IS NOT NULL
+                ORDER BY ps2.quantity DESC, ps2.location_id ASC
+                LIMIT 1),
+              p.sku
+            ) AS current_sku,
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id
@@ -67,6 +77,9 @@ const getAllProducts = async ({ search, category_id, supplier_id, location_id } 
 
 /**
  * Get a single active product by ID with category and supplier names.
+ * Returns `current_sku` — the location_sku of wherever the product currently
+ * holds the most stock — so detail pages can show the SKU users will see in
+ * the field, not the immutable base SKU set at creation.
  */
 const getProductById = async (id) => {
   const result = await query(
@@ -75,6 +88,16 @@ const getProductById = async (id) => {
             p.category_id, c.name AS category_name,
             p.supplier_id, s.name AS supplier_name,
             COALESCE((SELECT SUM(ps.quantity) FROM invex.product_stock ps WHERE ps.product_id = p.id), 0) AS total_stock,
+            COALESCE(
+              (SELECT ps2.location_sku
+                 FROM invex.product_stock ps2
+                WHERE ps2.product_id = p.id
+                  AND ps2.quantity > 0
+                  AND ps2.location_sku IS NOT NULL
+                ORDER BY ps2.quantity DESC, ps2.location_id ASC
+                LIMIT 1),
+              p.sku
+            ) AS current_sku,
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id

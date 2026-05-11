@@ -30,6 +30,14 @@ router.post('/', authorize('admin'), asyncHandler(productController.createProduc
 // PUT    /api/products/:id        (admin only)
 router.put('/:id', authorize('admin'), asyncHandler(productController.updateProduct));
 
+// POST   /api/products/:id/set-stock   (admin only)
+// Translates a target total quantity into an INCREASE/DECREASE adjustment.
+router.post('/:id/set-stock', authorize('admin'), asyncHandler(productController.setStock));
+
+// POST   /api/products/:id/adjust-stock   (admin only)
+// Batched per-location stock editor used by the Products page modal.
+router.post('/:id/adjust-stock', authorize('admin'), asyncHandler(productController.adjustStock));
+
 // DELETE /api/products/:id          (admin only)
 router.delete('/:id', authorize('admin'), asyncHandler(productController.deleteProduct));
 

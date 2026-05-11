@@ -7,10 +7,15 @@ const getAllBatches = async () => {
   const result = await query(
     `SELECT pb.id, pb.product_id, pb.location_id, pb.batch_no, pb.quantity, 
             pb.expiry_date, pb.received_date, pb.created_at,
-            p.name AS product_name, p.sku, l.name AS location_name
+            p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
+            l.name AS location_name
      FROM invex.product_batches pb
      JOIN invex.products p ON pb.product_id = p.id
      JOIN invex.locations l ON pb.location_id = l.id
+     LEFT JOIN invex.product_stock ps
+       ON ps.product_id = pb.product_id
+      AND ps.location_id = pb.location_id
      WHERE pb.is_deleted = FALSE
      ORDER BY pb.created_at DESC`
   );
@@ -24,10 +29,15 @@ const getBatchById = async (id) => {
   const result = await query(
     `SELECT pb.id, pb.product_id, pb.location_id, pb.batch_no, pb.quantity, 
             pb.expiry_date, pb.received_date, pb.created_at,
-            p.name AS product_name, p.sku, l.name AS location_name
+            p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
+            l.name AS location_name
      FROM invex.product_batches pb
      JOIN invex.products p ON pb.product_id = p.id
      JOIN invex.locations l ON pb.location_id = l.id
+     LEFT JOIN invex.product_stock ps
+       ON ps.product_id = pb.product_id
+      AND ps.location_id = pb.location_id
      WHERE pb.id = $1 AND pb.is_deleted = FALSE`,
     [id]
   );
@@ -96,10 +106,15 @@ const getExpiringBatches = async (days) => {
   const result = await query(
     `SELECT pb.id, pb.product_id, pb.location_id, pb.batch_no, pb.quantity, 
             pb.expiry_date, pb.received_date, pb.created_at,
-            p.name AS product_name, p.sku, l.name AS location_name
+            p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
+            l.name AS location_name
      FROM invex.product_batches pb
      JOIN invex.products p ON pb.product_id = p.id
      JOIN invex.locations l ON pb.location_id = l.id
+     LEFT JOIN invex.product_stock ps
+       ON ps.product_id = pb.product_id
+      AND ps.location_id = pb.location_id
      WHERE pb.is_deleted = FALSE 
        AND pb.quantity > 0
        AND pb.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + $1::int

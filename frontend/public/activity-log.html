@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Log | Invex Inventory</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/lists.css" />
+  <link rel="stylesheet" href="/css/role-guard.css" />
+  <script src="/js/role-guard.js?v=2"></script>
+</head>
+<body data-admin-only>
+  <div id="sidebar-placeholder"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <div class="header-eyebrow">
+          <span class="he-num">11</span>
+          <span>Audit &middot; Trail</span>
+        </div>
+        <h1>Activity Log</h1>
+        <p>Every action performed in this workspace — logins, edits, deletes, stock movements</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" id="refresh-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <section class="page-shell" style="padding-top:32px;">
+      <!-- Filter bar -->
+      <div class="list-toolbar" style="margin:0 32px 16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:12px;">
+        <input type="text" id="filter-search" class="form-control" placeholder="Search action, user, details…" />
+        <select id="filter-user" class="form-control">
+          <option value="">All users</option>
+        </select>
+        <select id="filter-action" class="form-control">
+          <option value="">All actions</option>
+        </select>
+        <select id="filter-entity" class="form-control">
+          <option value="">All entities</option>
+        </select>
+        <input type="date" id="filter-start" class="form-control" title="Start date" />
+        <input type="date" id="filter-end" class="form-control" title="End date" />
+      </div>
+
+      <div class="section-head">
+        <div>
+          <div class="title">Recent activity</div>
+          <div class="sub" id="result-count">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="list-wrap" style="margin:0 32px;">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th style="width:140px;">When</th>
+              <th style="width:160px;">User</th>
+              <th style="width:180px;">Action</th>
+              <th style="width:120px;">Entity</th>
+              <th>Details</th>
+              <th style="width:120px;">Location</th>
+            </tr>
+          </thead>
+          <tbody id="log-body">
+            <tr id="loading-state"><td colspan="6" class="list-loading">Loading activity…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="empty-state" class="list-empty" style="display:none;margin:24px 32px;">
+        <div class="title">No activity yet</div>
+        <div>Once people start using the system, their actions will appear here.</div>
+      </div>
+
+      <div style="margin:16px 32px 32px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="color:var(--fg-4);font-size:12px;" id="page-info"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" id="prev-btn" disabled>Previous</button>
+          <button class="btn btn-ghost" id="next-btn" disabled>Next</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/activity-log.js"></script>
+</body>
+</html>

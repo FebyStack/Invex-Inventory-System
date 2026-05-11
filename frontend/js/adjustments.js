@@ -18,8 +18,13 @@ const locationSelect   = document.getElementById('location_id');
 const reasonSelect     = document.getElementById('reason_code_id');
 const typeSelect       = document.getElementById('adjustment_type');
 
-// Catalog used by the combobox: [{ id, name, sku, by_location: {locId: qty} }]
+// Catalog used by the combobox: [{ id, name, sku, by_location: {locId: qty},
+//   by_location_sku: {locId: sku} }]. The base `sku` is the product's
+// original SKU; once a source location is chosen, the picker prefers
+// `by_location_sku[srcLocId]` so the user sees the SKU that location
+// actually holds (which may differ from the base after transfers).
 let productCatalog = [];
+let allLocations = [];
 let activeIndex = -1;
 let lastFiltered = [];
 
@@ -143,28 +148,27 @@ async function loadData() {
     const lData = await lRes.json();
 
     if (pData.success) {
-      // Inventory matrix gives us by_location stock counts per product
+      // Inventory matrix gives us by_location stock counts AND the
+      // location-specific SKU for each (product, location) pair.
       productCatalog = (pData.data || []).map(p => ({
         id: p.id,
         name: p.name,
         sku: p.sku,
         by_location: p.by_location || {},
+        by_location_sku: p.by_location_sku || {},
         total: Number(p.total || 0),
       }));
     }
     if (lData.success) {
+      allLocations = lData.data || [];
       locationSelect.innerHTML = '<option value="">Select a location…</option>';
-      const toSel = document.getElementById('to_location_id');
-      toSel.innerHTML = '<option value="">Select destination…</option>';
-      (lData.data || []).forEach(l => {
-        locationSelect.add(new Option(l.name, l.id));
-        toSel.add(new Option(l.name, l.id));
-      });
+      allLocations.forEach(l => locationSelect.add(new Option(l.name, l.id)));
       // Restore last-used location for this user, if still valid
       const lastLoc = localStorage.getItem('invex.adjustments.lastLocation');
       if (lastLoc && [...locationSelect.options].some(o => o.value === lastLoc)) {
         locationSelect.value = lastLoc;
       }
+      refreshToLocationOptions();
     }
     // Initial reason-code load is filtered to the current type.
     await loadReasonCodes(typeSelect.value);
@@ -194,13 +198,43 @@ async function loadReasonCodes(type) {
   }
 }
 
+// Repopulate the destination dropdown so the chosen source can't appear
+// in it. Called when locations first load and whenever the source changes.
+function refreshToLocationOptions() {
+  const toSel = document.getElementById('to_location_id');
+  if (!toSel) return;
+  const previous = toSel.value;
+  const srcId = locationSelect.value;
+  toSel.innerHTML = '<option value="">Select destination…</option>';
+  allLocations.forEach((l) => {
+    if (String(l.id) === String(srcId)) return; // skip the source
+    toSel.add(new Option(l.name, l.id));
+  });
+  // Keep the user's prior pick if still valid; otherwise clear it.
+  if (previous && [...toSel.options].some((o) => o.value === previous)) {
+    toSel.value = previous;
+  }
+}
+
+// Returns the SKU we should display for a product in the combobox.
+// Prefers the location-specific SKU when a source location is known, so
+// after a transfer the user sees the destination-side SKU (not the base).
+function skuForDisplay(p, locId) {
+  if (locId && p.by_location_sku && p.by_location_sku[locId]) {
+    return p.by_location_sku[locId];
+  }
+  return p.sku;
+}
+
 // ── Searchable product combobox ────────────
 function getEligibleProducts() {
-  // For TRANSFER, only show products with stock at the chosen source location.
-  // For INCREASE/DECREASE (or no location chosen), show every product.
-  const isTransfer = typeSelect.value === 'TRANSFER';
+  // TRANSFER and DECREASE both require existing stock at the chosen location
+  // (you can't move what's not there, can't remove what's not there).
+  // INCREASE shows the full catalog so a user can seed stock anywhere.
+  const type = typeSelect.value;
   const srcLocId = locationSelect.value;
-  if (isTransfer && srcLocId) {
+  const needsStock = type === 'TRANSFER' || type === 'DECREASE';
+  if (needsStock && srcLocId) {
     return productCatalog.filter(p => Number(p.by_location[srcLocId] || 0) > 0);
   }
   return productCatalog.slice();
@@ -240,14 +274,18 @@ function renderSuggestions() {
 
   lastFiltered = scored.map(x => x.p);
 
-  // Hint about transfer-source filtering
-  const isTransfer = typeSelect.value === 'TRANSFER';
+  // Hint reflects what the picker is currently filtered by, so the user
+  // never has to guess why a product they expect isn't appearing.
+  const type = typeSelect.value;
+  const needsStock = type === 'TRANSFER' || type === 'DECREASE';
   const hasSrc = !!locationSelect.value;
-  if (isTransfer && !hasSrc) {
-    productHint.textContent = 'Pick a source location below to see its products.';
+  if (needsStock && !hasSrc) {
+    productHint.textContent = type === 'TRANSFER'
+      ? 'Pick a source location below to see its products.'
+      : 'Pick a location below to see its products.';
     productHint.className = 'combobox-hint warn';
     productHint.hidden = false;
-  } else if (isTransfer && hasSrc) {
+  } else if (needsStock && hasSrc) {
     const locName = locationSelect.options[locationSelect.selectedIndex]?.text || '';
     productHint.textContent = `Showing products in stock at ${locName}.`;
     productHint.className = 'combobox-hint';
@@ -270,14 +308,20 @@ function renderSuggestions() {
   const top = lastFiltered.slice(0, MAX);
   activeIndex = 0;
 
+  const srcLocId = locationSelect.value;
   productPanel.innerHTML = top.map((p, i) => {
     const recommended = i === 0 && q.length > 0;
+    const displaySku = skuForDisplay(p, srcLocId);
+    const onHandQty = srcLocId ? Number(p.by_location[srcLocId] || 0) : null;
+    const onHandTag = onHandQty !== null
+      ? `<span class="opt-tag" style="background:var(--bg-3);color:var(--fg-2);">${onHandQty} on hand</span>`
+      : '';
     return `
       <div class="combobox-option ${i === activeIndex ? 'active' : ''} ${recommended ? 'recommended' : ''}"
            data-id="${p.id}" data-index="${i}">
         <div class="opt-main">
           <span class="opt-name">${recommended ? '<span class="opt-tag">Top match</span>' : ''}${highlight(p.name, q)}</span>
-          <span class="opt-sku">${highlight(p.sku, q)}</span>
+          <span class="opt-sku">${highlight(displaySku, q)} ${onHandTag}</span>
         </div>
       </div>`;
   }).join('');
@@ -286,9 +330,35 @@ function renderSuggestions() {
 
 function selectProduct(p) {
   productIdInput.value = p.id;
-  productSearchInp.value = `${p.name} (${p.sku})`;
+  const displaySku = skuForDisplay(p, locationSelect.value);
+  productSearchInp.value = `${p.name} (${displaySku})`;
   productPanel.hidden = true;
   productHint.hidden = true;
+  updateTransferSkuHint();
+}
+
+// When a TRANSFER is set up with both source and destination chosen, show
+// the user what SKU the product will appear under at the destination side.
+// The destination keeps its own location_sku (generated server-side on first
+// transfer), so this clarifies that the SKU changes after the move.
+function updateTransferSkuHint() {
+  const hint = document.getElementById('transfer-sku-hint');
+  if (!hint) return;
+  const isTransfer = typeSelect.value === 'TRANSFER';
+  const productId = productIdInput.value;
+  const toId = document.getElementById('to_location_id').value;
+  if (!isTransfer || !productId || !toId) {
+    hint.hidden = true;
+    return;
+  }
+  const product = productCatalog.find((p) => String(p.id) === String(productId));
+  if (!product) { hint.hidden = true; return; }
+  const existing = product.by_location_sku && product.by_location_sku[toId];
+  const destLocName = (allLocations.find((l) => String(l.id) === String(toId)) || {}).name || 'destination';
+  hint.textContent = existing
+    ? `At ${destLocName} this product is tracked as SKU ${existing}.`
+    : `${destLocName} will assign a new SKU on first arrival (location-specific).`;
+  hint.hidden = false;
 }
 
 function clearProductSelection() {
@@ -351,16 +421,25 @@ function resetProductPicker() {
   productIdInput.value = '';
   productPanel.hidden = true;
   productHint.hidden = true;
+  const skuHint = document.getElementById('transfer-sku-hint');
+  if (skuHint) skuHint.hidden = true;
+}
+
+function resetLocationLabel() {
+  const locLabel = document.getElementById('location-label');
+  if (locLabel) locLabel.textContent = 'Location';
 }
 
 document.getElementById('new-adjustment-btn').onclick = () => {
   resetProductPicker();
+  resetLocationLabel();
   modal.style.display = 'flex';
 };
 document.getElementById('cancel-btn').onclick = () => {
   modal.style.display = 'none';
   document.getElementById('to-location-group').style.display = 'none';
   resetProductPicker();
+  resetLocationLabel();
   form.reset();
 };
 modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
@@ -368,33 +447,52 @@ modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.dis
 typeSelect.addEventListener('change', (e) => {
   const grp = document.getElementById('to-location-group');
   const sel = document.getElementById('to_location_id');
-  if (e.target.value === 'TRANSFER') {
+  const locLabel = document.getElementById('location-label');
+  const isTransfer = e.target.value === 'TRANSFER';
+
+  if (isTransfer) {
     grp.style.display = 'block';
     sel.setAttribute('required', 'required');
   } else {
     grp.style.display = 'none';
     sel.removeAttribute('required');
   }
+
+  // Make the location input self-explain when its meaning changes.
+  if (locLabel) locLabel.textContent = isTransfer ? 'Source location' : 'Location';
+
   // Refilter reason codes to those compatible with the chosen type.
   loadReasonCodes(e.target.value);
+
   // Re-evaluate: if currently picked product is no longer eligible, clear it.
   if (productIdInput.value) {
     const eligible = getEligibleProducts().some(p => String(p.id) === String(productIdInput.value));
     if (!eligible) resetProductPicker();
   }
   if (!productPanel.hidden) renderSuggestions();
+  updateTransferSkuHint();
 });
 
 locationSelect.addEventListener('change', () => {
   if (locationSelect.value) {
     localStorage.setItem('invex.adjustments.lastLocation', locationSelect.value);
   }
+  // Source changed → destination must not equal source; rebuild that list.
+  refreshToLocationOptions();
   if (productIdInput.value) {
     const eligible = getEligibleProducts().some(p => String(p.id) === String(productIdInput.value));
     if (!eligible) resetProductPicker();
+    else {
+      // Refresh the picker text to show the source's location-specific SKU.
+      const p = productCatalog.find((x) => String(x.id) === String(productIdInput.value));
+      if (p) productSearchInp.value = `${p.name} (${skuForDisplay(p, locationSelect.value)})`;
+    }
   }
   if (!productPanel.hidden) renderSuggestions();
+  updateTransferSkuHint();
 });
+
+document.getElementById('to_location_id').addEventListener('change', updateTransferSkuHint);
 
 form.onsubmit = async (e) => {
   e.preventDefault();

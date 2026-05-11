@@ -205,7 +205,14 @@ const getInventoryMatrix = async () => {
                      FILTER (WHERE ps.location_id IS NOT NULL), '{}') AS by_location,
             COALESCE(json_object_agg(ps.location_id, ps.location_sku)
                      FILTER (WHERE ps.location_id IS NOT NULL AND ps.location_sku IS NOT NULL), '{}') AS by_location_sku,
-            COALESCE(SUM(ps.quantity), 0)::bigint AS total
+            COALESCE(SUM(ps.quantity), 0)::bigint AS total,
+            (SELECT ps2.location_sku
+               FROM invex.product_stock ps2
+              WHERE ps2.product_id = p.id
+                AND ps2.quantity > 0
+                AND ps2.location_sku IS NOT NULL
+              ORDER BY ps2.quantity DESC, ps2.location_id ASC
+              LIMIT 1) AS current_sku
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id
      LEFT JOIN invex.product_stock ps ON ps.product_id = p.id
@@ -217,6 +224,7 @@ const getInventoryMatrix = async () => {
     id: r.id,
     name: r.name,
     sku: r.sku,
+    current_sku: r.current_sku || r.sku,
     category_name: r.category_name,
     reorder_level: r.reorder_level,
     unit_price: Number(r.unit_price),

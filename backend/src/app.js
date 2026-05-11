@@ -18,6 +18,7 @@ const importExportRoutes = require('../routes/importExportRoute');
 const userRoutes = require('../routes/userRoute');
 const reasonCodeRoutes = require('../routes/reasonCodeRoute');
 const notificationRoutes = require('../routes/notificationRoute');
+const activityLogRoutes = require('../routes/activityLogRoute');
 
 // Import middleware
 const { errorHandler, asyncHandler } = require('../middleware/errorMiddleware');
@@ -61,6 +62,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reason-codes', reasonCodeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
 
 // ---------------------
 // Health Check

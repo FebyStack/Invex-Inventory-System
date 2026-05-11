@@ -18,14 +18,20 @@ exports.getUrgentBatches = async (req, res, next) => {
       [days]
     );
 
-    // 2. Get top 10 most urgent items
+    // 2. Get top 10 most urgent items. The SKU shown is the SKU at the
+    // batch's own location, since that's where the user would find it.
     const listResult = await query(
       `SELECT pb.id, pb.batch_no, pb.quantity, pb.expiry_date,
-              p.name AS product_name, p.sku, l.name AS location_name
+              p.name AS product_name,
+              COALESCE(ps.location_sku, p.sku) AS sku,
+              l.name AS location_name
        FROM invex.product_batches pb
        JOIN invex.products p ON pb.product_id = p.id
        JOIN invex.locations l ON pb.location_id = l.id
-       WHERE pb.is_deleted = FALSE 
+       LEFT JOIN invex.product_stock ps
+         ON ps.product_id = pb.product_id
+        AND ps.location_id = pb.location_id
+       WHERE pb.is_deleted = FALSE
          AND pb.quantity > 0
        ORDER BY pb.expiry_date ASC
        LIMIT 10`

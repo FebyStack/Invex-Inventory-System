@@ -48,7 +48,8 @@
       'Adjustments': '/adjustments.html',
       'Reports': '/reports.html',
       'Import/Export': '/import-export.html',
-      'Users': '/users.html'
+      'Users': '/users.html',
+      'Activity Log': '/activity-log.html'
     };
 
     const sidebar = document.querySelector('.sidebar');

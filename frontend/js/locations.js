@@ -268,7 +268,7 @@ function renderInventoryMatrix() {
     return `
       <div class="inv-table-row" data-product-id="${p.id}">
         <div class="inv-prod">${escapeHtml(p.name)}</div>
-        <div class="inv-sku">${escapeHtml(p.sku)}</div>
+        <div class="inv-sku">${escapeHtml(p.current_sku || p.sku)}</div>
         <div class="inv-cat">${escapeHtml(p.category_name || '—')}</div>
         ${cells}
         <div class="inv-total">${fmt(total)}</div>
@@ -291,18 +291,19 @@ function renderInventoryMatrix() {
 }
 
 function renderSingleView(loc) {
-  const locCode = (loc.code || '').toUpperCase();
+  // Per-location inventory means "what stock is here right now". A
+  // product_stock row with qty=0 — typically a zombie left behind after a
+  // transfer drained the location — is NOT inventory at this location, so
+  // it doesn't appear in the list. Out-of-stock items still show up in the
+  // headline "Out of stock" KPI for awareness.
   const items = state.matrix.map((p) => {
     const qty = Number(p.by_location[loc.id] || 0);
     const locationSku = (p.by_location_sku && p.by_location_sku[loc.id]) || '';
-    const belongsHere = Boolean(locationSku) || (locCode && p.sku && p.sku.toUpperCase().startsWith(locCode));
-    const status = qty === 0
-      ? { type: 'out-of-stock', label: 'OUT', tone: 'danger' }
-      : qty <= (p.reorder_level || 0)
-        ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
-        : { type: 'in-stock', label: 'IN', tone: '' };
-    return { ...p, qty, status, belongsHere, displaySku: locationSku || p.sku };
-  }).filter((p) => p.qty > 0 || p.belongsHere);
+    const status = qty <= (p.reorder_level || 0)
+      ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
+      : { type: 'in-stock', label: 'IN', tone: '' };
+    return { ...p, qty, status, displaySku: locationSku || p.sku };
+  }).filter((p) => p.qty > 0);
 
   const rows = items.map((p) => {
     const qtyColor = p.status.tone === 'danger'

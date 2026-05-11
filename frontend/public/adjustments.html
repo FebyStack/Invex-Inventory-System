@@ -97,7 +97,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div class="form-group">
-              <label for="location_id">Location</label>
+              <label for="location_id" id="location-label">Location</label>
               <select id="location_id" class="form-control" required>
                 <option value="">Select a location…</option>
               </select>
@@ -117,6 +117,7 @@
             <select id="to_location_id" class="form-control">
               <option value="">Select destination…</option>
             </select>
+            <div id="transfer-sku-hint" class="combobox-hint" hidden style="margin-top:4px;font-size:11px;color:var(--fg-4);"></div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">

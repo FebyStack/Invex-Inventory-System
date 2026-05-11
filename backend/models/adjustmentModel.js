@@ -19,9 +19,13 @@ const createAdjustment = async (client, { product_id, location_id, to_location_i
  * Get all adjustments with optional filters.
  */
 const getAllAdjustments = async ({ product_id, location_id, adjustment_type } = {}) => {
+  // `sku` here is the SKU as the source location knows it, so the list
+  // reads naturally ("DECREASE 5 of WHA-014 at Warehouse A") even after
+  // the product has been transferred and acquired new SKUs elsewhere.
   let sql = `
     SELECT sa.id, sa.adjustment_type, sa.quantity_change, sa.notes, sa.adjustment_date,
-           p.name AS product_name, p.sku,
+           p.name AS product_name,
+           COALESCE(ps.location_sku, p.sku) AS sku,
            l.name AS location_name, l.code AS location_code,
            tl.name AS to_location_name, tl.code AS to_location_code,
            rc.code AS reason_code, rc.description AS reason_description,
@@ -30,6 +34,9 @@ const getAllAdjustments = async ({ product_id, location_id, adjustment_type } = 
     JOIN invex.products p ON sa.product_id = p.id
     JOIN invex.locations l ON sa.location_id = l.id
     LEFT JOIN invex.locations tl ON sa.to_location_id = tl.id
+    LEFT JOIN invex.product_stock ps
+      ON ps.product_id = sa.product_id
+     AND ps.location_id = sa.location_id
     JOIN invex.reason_codes rc ON sa.reason_code_id = rc.id
     JOIN invex.users u ON sa.user_id = u.id
     WHERE sa.is_deleted = FALSE
@@ -61,13 +68,17 @@ const getAllAdjustments = async ({ product_id, location_id, adjustment_type } = 
  */
 const getAdjustmentById = async (id) => {
   const result = await query(
-    `SELECT sa.*, p.name AS product_name, p.sku,
+    `SELECT sa.*, p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
             l.name AS location_name, l.code AS location_code,
             rc.code AS reason_code, rc.description AS reason_description,
             u.full_name AS adjusted_by
      FROM invex.stock_adjustments sa
      JOIN invex.products p ON sa.product_id = p.id
      JOIN invex.locations l ON sa.location_id = l.id
+     LEFT JOIN invex.product_stock ps
+       ON ps.product_id = sa.product_id
+      AND ps.location_id = sa.location_id
      JOIN invex.reason_codes rc ON sa.reason_code_id = rc.id
      JOIN invex.users u ON sa.user_id = u.id
      WHERE sa.id = $1 AND sa.is_deleted = FALSE`,

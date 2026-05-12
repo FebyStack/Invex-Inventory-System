@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/products?page=1&limit=20"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  page: "1"
+  limit: "20"
+order: 1000

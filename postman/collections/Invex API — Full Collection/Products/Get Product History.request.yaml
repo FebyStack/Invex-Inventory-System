@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}/history"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 5000

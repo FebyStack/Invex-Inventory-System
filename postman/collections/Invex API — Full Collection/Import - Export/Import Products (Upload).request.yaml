@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/import/products"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: []
+order: 1000

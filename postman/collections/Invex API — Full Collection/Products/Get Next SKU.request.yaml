@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/products/next-sku"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 2000

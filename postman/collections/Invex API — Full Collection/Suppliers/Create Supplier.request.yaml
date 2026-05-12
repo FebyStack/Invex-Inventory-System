@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/suppliers"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "ACME Supplies",
+      "contact_person": "John Doe",
+      "email": "john@acme.com",
+      "phone": "555-1234",
+      "address": "123 Main St"
+    }
+order: 3000

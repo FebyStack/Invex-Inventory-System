@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/locations"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Main Warehouse",
+      "address": "100 Storage Way",
+      "type": "warehouse"
+    }
+order: 6000

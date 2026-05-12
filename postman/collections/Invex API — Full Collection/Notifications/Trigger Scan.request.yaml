@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/notifications/scan"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 3000

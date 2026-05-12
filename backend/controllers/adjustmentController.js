@@ -112,6 +112,10 @@ exports.createAdjustment = async (req, res, next) => {
       user_id: req.user.id,
     });
 
+    // Get product name for logging
+    const productRes = await client.query('SELECT name FROM invex.products WHERE id = $1', [product_id]);
+    const productName = productRes.rows[0]?.name || `Product #${product_id}`;
+
     // 2. Update product_stock
     if (adjustment_type === 'INCREASE') {
       await stockModel.incrementStock(product_id, location_id, qty, client);
@@ -127,6 +131,7 @@ exports.createAdjustment = async (req, res, next) => {
     // Log activity
     void logActivity(req.user.id, `STOCK_${adjustment_type}`, 'stock_adjustments', adjustment.id, {
       product_id,
+      product_name: productName,
       location_id,
       to_location_id: adjustment_type === 'TRANSFER' ? to_location_id : null,
       quantity_change: qty,

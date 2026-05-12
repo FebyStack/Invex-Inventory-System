@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/notifications/read-all"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 2000

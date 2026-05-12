@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/adjustments"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "product_id": 1,
+      "location_id": 1,
+      "delta": -3,
+      "reason_code_id": 1,
+      "notes": "Damaged stock"
+    }
+order: 3000

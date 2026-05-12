@@ -1,0 +1,3 @@
+$kind: collection
+description: Product CRUD + stock operations
+order: 3000

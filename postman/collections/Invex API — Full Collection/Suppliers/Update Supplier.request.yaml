@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/suppliers/1"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "ACME Supplies Updated"
+    }
+order: 4000

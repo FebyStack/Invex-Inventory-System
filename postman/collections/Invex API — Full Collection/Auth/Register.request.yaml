@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "teststaff",
+      "password": "staff123",
+      "full_name": "Test Staff",
+      "email": "teststaff@invex.com",
+      "role": "staff"
+    }
+order: 3000

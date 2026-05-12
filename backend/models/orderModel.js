@@ -65,11 +65,13 @@ const getAllOrders = async ({ order_type, location_id, date_from, date_to }) => 
   let sql = `
     SELECT o.id, o.order_type, o.order_date, o.reference_no, o.notes,
            sl.name AS source_location_name, dl.name AS destination_location_name,
+           sup.name AS supplier_name,
            u.full_name AS created_by,
            (SELECT COUNT(*) FROM invex.order_items oi WHERE oi.order_id = o.id AND oi.is_deleted = FALSE)::int AS item_count
     FROM invex.orders o
     LEFT JOIN invex.locations sl ON o.source_location_id = sl.id
     LEFT JOIN invex.locations dl ON o.destination_location_id = dl.id
+    LEFT JOIN invex.suppliers sup ON o.supplier_id = sup.id
     JOIN invex.users u ON o.user_id = u.id
     WHERE o.is_deleted = FALSE
   `;

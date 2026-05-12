@@ -1,35 +1,18 @@
 {
   "info": {
-    "name": "Invex API — Users & Products",
-    "_postman_id": "invex-collection-001",
-    "description": "Day 5 — Full CRUD tests for Users and Products modules.\n\nSetup: Run '1. Login (Admin)' first to populate the adminToken variable.",
+    "name": "Invex API \u2014 Full Collection",
+    "_postman_id": "invex-collection-full-001",
+    "description": "Complete Postman collection covering every endpoint in the Invex backend.\n\nSetup:\n1. Import Invex_Environment.json and select the 'Invex Local' environment.\n2. Run 'Auth \u2192 Login (Admin)' first to populate {{adminToken}}.\n3. Set {{userId}} and {{productId}} as needed for entity-specific calls.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [],
   "item": [
     {
       "name": "Auth",
-      "description": "Login to get tokens for testing",
+      "description": "Authentication & current-user endpoints",
       "item": [
         {
-          "name": "1. Login (Admin)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const res = pm.response.json();",
-                  "if (res.success && res.token) {",
-                  "    pm.environment.set('adminToken', res.token);",
-                  "    pm.test('Login successful — token saved', () => pm.expect(res.success).to.be.true);",
-                  "} else {",
-                  "    pm.test('Login failed', () => pm.expect.fail(res.message));",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "Login (Admin)",
           "request": {
             "method": "POST",
             "header": [
@@ -38,10 +21,6 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
-            },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": [
@@ -51,11 +30,13 @@
                 "auth",
                 "login"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
             }
-          }
-        },
-        {
-          "name": "2. Register Staff User (for 403 tests)",
+          },
+          "response": [],
           "event": [
             {
               "listen": "test",
@@ -63,11 +44,17 @@
                 "type": "text/javascript",
                 "exec": [
                   "const res = pm.response.json();",
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                  "if (res.success && res.token) {",
+                  "  pm.environment.set('adminToken', res.token);",
+                  "  pm.test('Login successful \u2014 adminToken saved', () => pm.expect(res.success).to.be.true);",
+                  "} else { pm.test('Login failed', () => pm.expect.fail(res.message || 'no token')); }"
                 ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Login (Staff)",
           "request": {
             "method": "POST",
             "header": [
@@ -76,10 +63,45 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"teststaff\",\n  \"password\": \"staff123\",\n  \"full_name\": \"Test Staff\",\n  \"email\": \"teststaff@invex.com\",\n  \"role\": \"staff\"\n}"
-            },
+              "raw": "{\n  \"username\": \"teststaff\",\n  \"password\": \"staff123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.token) { pm.environment.set('staffToken', res.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/register",
               "host": [
@@ -89,76 +111,99 @@
                 "auth",
                 "register"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"teststaff\",\n  \"password\": \"staff123\",\n  \"full_name\": \"Test Staff\",\n  \"email\": \"teststaff@invex.com\",\n  \"role\": \"staff\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "3. Login (Staff)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const res = pm.response.json();",
-                  "if (res.success && res.token) {",
-                  "    pm.environment.set('staffToken', res.token);",
-                  "    pm.test('Staff login successful — token saved', () => pm.expect(res.success).to.be.true);",
-                  "} else {",
-                  "    pm.test('Staff login failed', () => pm.expect.fail(res.message));",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "Logout",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"teststaff\",\n  \"password\": \"staff123\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{baseUrl}}/auth/logout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "auth",
-                "login"
+                "logout"
               ]
             }
-          }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"admin123\",\n  \"newPassword\": \"newpass123\"\n}"
+            }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Users",
-      "description": "CRUD operations for Users module",
+      "description": "User CRUD (admin)",
       "item": [
         {
-          "name": "GET All Users (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns array', () => {",
-                  "    const res = pm.response.json();",
-                  "    pm.expect(res.success).to.be.true;",
-                  "    pm.expect(res.data).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Get All Users",
           "request": {
             "method": "GET",
             "header": [
@@ -176,183 +221,11 @@
                 "users"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET All Users — No Token (401)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create User (201)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.test('User created', () => {",
-                  "    pm.expect(res.success).to.be.true;",
-                  "    pm.expect(res.data).to.have.property('id');",
-                  "    pm.expect(res.data).to.not.have.property('password');",
-                  "});",
-                  "pm.environment.set('userId', res.data.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"newuser_test\",\n  \"full_name\": \"New Test User\",\n  \"email\": \"newuser@invex.com\",\n  \"password\": \"securePass123\",\n  \"role\": \"staff\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create User — Missing Fields (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Has error message', () => {",
-                  "    pm.expect(pm.response.json().success).to.be.false;",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"incomplete\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create User — Staff Token (403)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{staffToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"forbidden_user\",\n  \"full_name\": \"Should Fail\",\n  \"password\": \"pass123\",\n  \"role\": \"staff\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET User By ID (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns user', () => {",
-                  "    const res = pm.response.json();",
-                  "    pm.expect(res.data).to.have.property('username');",
-                  "    pm.expect(res.data).to.not.have.property('password');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Get User by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -371,68 +244,72 @@
                 "{{userId}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "PUT Update User (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Name updated', () => {",
-                  "    pm.expect(pm.response.json().data.full_name).to.eql('Updated Name');",
-                  "});"
-                ]
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"pass123\",\n  \"full_name\": \"New User\",\n  \"email\": \"new@invex.com\",\n  \"role\": \"staff\"\n}"
             }
-          ],
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
           "request": {
             "method": "PUT",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Updated Name\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "{{userId}}"
-              ]
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"email\": \"updated@invex.com\",\n  \"role\": \"staff\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "DELETE User (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Soft deleted', () => {",
-                  "    pm.expect(pm.response.json().success).to.be.true;",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Delete User",
           "request": {
             "method": "DELETE",
             "header": [
@@ -451,96 +328,17 @@
                 "{{userId}}"
               ]
             }
-          }
-        },
-        {
-          "name": "DELETE User — Staff Token (403)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{staffToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Deleted User — Should Not Appear (404)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 404 — soft deleted', () => pm.response.to.have.status(404));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "{{userId}}"
-              ]
-            }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Products",
-      "description": "CRUD operations for Products module",
+      "description": "Product CRUD + stock operations",
       "item": [
         {
-          "name": "GET All Products (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns array', () => {",
-                  "    pm.expect(pm.response.json().data).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Get All Products",
           "request": {
             "method": "GET",
             "header": [
@@ -550,39 +348,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Products — Search Filter (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/products?search=test",
+              "raw": "{{baseUrl}}/products?page=1&limit=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -591,223 +357,43 @@
               ],
               "query": [
                 {
-                  "key": "search",
-                  "value": "test"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Products — Category Filter (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/products?category_id=1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products"
-              ],
-              "query": [
-                {
-                  "key": "category_id",
+                  "key": "page",
                   "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET All Products — No Token (401)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
-                ]
-              }
-            }
-          ],
+          "name": "Get Next SKU",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Product (201)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.test('Product created', () => {",
-                  "    pm.expect(res.success).to.be.true;",
-                  "    pm.expect(res.data).to.have.property('id');",
-                  "    pm.expect(res.data).to.have.property('sku');",
-                  "});",
-                  "pm.environment.set('productId', res.data.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Test Product\",\n  \"sku\": \"TST-001\",\n  \"category_id\": 1,\n  \"supplier_id\": 1,\n  \"unit_price\": 150.00,\n  \"reorder_level\": 10,\n  \"track_expiry\": false,\n  \"unit_of_measure\": \"pcs\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/products",
+              "raw": "{{baseUrl}}/products/next-sku",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "products"
+                "products",
+                "next-sku"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "POST Create Product — Missing Fields (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Incomplete Product\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Product — Staff Token (403)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{staffToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Should Fail\",\n  \"sku\": \"FAIL-001\",\n  \"category_id\": 1,\n  \"supplier_id\": 1,\n  \"unit_price\": 50.00\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Product By ID (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Has product data', () => {",
-                  "    const res = pm.response.json();",
-                  "    pm.expect(res.data).to.have.property('sku');",
-                  "    pm.expect(res.data).to.have.property('category_name');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Get Product by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -826,24 +412,11 @@
                 "{{productId}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Product Stock (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns stock array', () => {",
-                  "    pm.expect(pm.response.json().data).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "Get Product Stock",
           "request": {
             "method": "GET",
             "header": [
@@ -863,134 +436,11 @@
                 "stock"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "PUT Update Product (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Price updated', () => {",
-                  "    pm.expect(pm.response.json().data.unit_price).to.eql('200.00');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"unit_price\": 200.00,\n  \"reorder_level\": 20\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/products/{{productId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products",
-                "{{productId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE Product (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Soft deleted', () => {",
-                  "    pm.expect(pm.response.json().success).to.be.true;",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/products/{{productId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products",
-                "{{productId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE Product — Staff Token (403)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{staffToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/products/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Deleted Product — Should Not Appear (404)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 404 — soft deleted', () => pm.response.to.have.status(404));"
-                ]
-              }
-            }
-          ],
+          "name": "Get Product History",
           "request": {
             "method": "GET",
             "header": [
@@ -1000,6 +450,155 @@
               }
             ],
             "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"SKU-001\",\n  \"name\": \"Sample Product\",\n  \"category_id\": 1,\n  \"supplier_id\": 1,\n  \"unit_price\": 9.99,\n  \"reorder_level\": 10\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"unit_price\": 12.5\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Product Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/set-stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "set-stock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"quantity\": 100,\n  \"reason_code_id\": 1,\n  \"notes\": \"Initial stock set\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Adjust Product Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/adjust-stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "adjust-stock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"delta\": 5,\n  \"reason_code_id\": 1,\n  \"notes\": \"Manual adjustment\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
               "raw": "{{baseUrl}}/products/{{productId}}",
               "host": [
                 "{{baseUrl}}"
@@ -1009,28 +608,794 @@
                 "{{productId}}"
               ]
             }
-          }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beverages\",\n  \"description\": \"Drinks\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Category\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "description": "",
+      "item": [
+        {
+          "name": "Get All Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Supplier by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ACME Supplies\",\n  \"contact_person\": \"John Doe\",\n  \"email\": \"john@acme.com\",\n  \"phone\": \"555-1234\",\n  \"address\": \"123 Main St\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Supplier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ACME Supplies Updated\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Purchase orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier_id\": 1,\n  \"location_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10,\n      \"unit_cost\": 5.5\n    }\n  ],\n  \"notes\": \"PO #001\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"received\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Batches",
+      "description": "Batch / lot tracking",
+      "item": [
+        {
+          "name": "Get All Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expiring Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/expiring?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches",
+                "expiring"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Batch by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"batch_number\": \"BATCH-001\",\n  \"quantity\": 50,\n  \"manufacture_date\": \"2026-01-01\",\n  \"expiry_date\": \"2027-01-01\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Batch",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 45\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Batch",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "batches",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Adjustments",
+      "description": "Stock adjustments",
+      "item": [
+        {
+          "name": "Get All Adjustments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Adjustment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Adjustment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"delta\": -3,\n  \"reason_code_id\": 1,\n  \"notes\": \"Damaged stock\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Adjustment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adjustments/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adjustments",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transfers",
+      "description": "Location-to-location transfers",
+      "item": [
+        {
+          "name": "Get All Transfers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transfer by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"from_location_id\": 1,\n  \"to_location_id\": 2,\n  \"quantity\": 5,\n  \"notes\": \"Restock\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Transfer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transfers/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transfers",
+                "1"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Locations",
-      "description": "CRUD operations for Locations module",
+      "description": "",
       "item": [
         {
-          "name": "GET All Locations (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns array', () => { pm.expect(pm.response.json().data).to.be.an('array'); });"
-                ]
-              }
-            }
-          ],
+          "name": "Get All Locations",
           "request": {
             "method": "GET",
             "header": [
@@ -1048,63 +1413,88 @@
                 "locations"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "POST Create Location (201)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "const res = pm.response.json();",
-                  "pm.environment.set('locationId', res.data.id);"
-                ]
+          "name": "Get Location Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
               }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "locations",
+                "summary"
+              ]
             }
-          ],
+          },
+          "response": []
+        },
+        {
+          "name": "Get Inventory Matrix",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations/inventory-matrix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "locations",
+                "inventory-matrix"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import Stock",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Main Warehouse\",\n  \"code\": \"WH-MAIN\",\n  \"address_line\": \"123 Storage Rd\",\n  \"type\": \"warehouse\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/locations",
+              "raw": "{{baseUrl}}/locations/import-stock",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "locations"
+                "locations",
+                "import-stock"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 50\n    }\n  ]\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Location By ID (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "Get Location by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -1114,71 +1504,81 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "raw": "{{baseUrl}}/locations/1",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "locations",
-                "{{locationId}}"
+                "1"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "PUT Update Location (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Warehouse\",\n  \"address\": \"100 Storage Way\",\n  \"type\": \"warehouse\"\n}"
             }
-          ],
+          },
+          "response": []
+        },
+        {
+          "name": "Update Location",
           "request": {
             "method": "PUT",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Warehouse\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "raw": "{{baseUrl}}/locations/1",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "locations",
-                "{{locationId}}"
+                "1"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Warehouse\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "DELETE Location (200)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "Delete Location",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1188,147 +1588,26 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "raw": "{{baseUrl}}/locations/1",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "locations",
-                "{{locationId}}"
+                "1"
               ]
             }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Import/Export",
-      "description": "Bulk data operations",
-      "item": [
-        {
-          "name": "POST Import Products",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": ""
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/import/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "import",
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Export Products (CSV)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/export/products?format=csv",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "export",
-                "products"
-              ],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "csv"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Export Stock Report",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/export/stock-report?format=csv",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "export",
-                "stock-report"
-              ],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "csv"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET Export Movement Log",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/export/movement-log?format=csv",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "export",
-                "movement-log"
-              ],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "csv"
-                }
-              ]
-            }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Reports",
-      "description": "Dashboard and Analytics endpoints",
+      "description": "",
       "item": [
         {
-          "name": "GET Dashboard Data",
+          "name": "Dashboard Data",
           "request": {
             "method": "GET",
             "header": [
@@ -1347,10 +1626,11 @@
                 "dashboard"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Low Stock Report",
+          "name": "Low Stock Report",
           "request": {
             "method": "GET",
             "header": [
@@ -1369,10 +1649,11 @@
                 "low-stock"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Expiring Batches",
+          "name": "Expiring Batches Report",
           "request": {
             "method": "GET",
             "header": [
@@ -1397,10 +1678,11 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Stock Summary",
+          "name": "Stock Summary",
           "request": {
             "method": "GET",
             "header": [
@@ -1419,10 +1701,11 @@
                 "stock-summary"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Movement Log (Report)",
+          "name": "Movement Log",
           "request": {
             "method": "GET",
             "header": [
@@ -1432,7 +1715,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/movement-log?limit=100&offset=0",
+              "raw": "{{baseUrl}}/reports/movement-log?from=2026-01-01&to=2026-12-31",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1442,45 +1725,26 @@
               ],
               "query": [
                 {
-                  "key": "limit",
-                  "value": "100"
+                  "key": "from",
+                  "value": "2026-01-01"
                 },
                 {
-                  "key": "offset",
-                  "value": "0"
+                  "key": "to",
+                  "value": "2026-12-31"
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Categories",
+      "name": "Import / Export",
+      "description": "",
       "item": [
         {
-          "name": "GET All Categories",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "categories"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Category",
+          "name": "Import Products (Upload)",
           "request": {
             "method": "POST",
             "header": [
@@ -1490,158 +1754,62 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/categories",
+              "raw": "{{baseUrl}}/import/products",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "categories"
+                "import",
+                "products"
               ]
             },
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Gadgets and devices\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
                 }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET Category By ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/categories/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "categories",
-                "1"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "PUT Update Category",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/categories/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "categories",
-                "1"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Electronics\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "DELETE Category",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/categories/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "categories",
-                "1"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Suppliers",
-      "item": [
-        {
-          "name": "GET All Suppliers",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/suppliers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "suppliers"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Supplier",
+          "name": "Commit Imported Products",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/suppliers",
+              "raw": "{{baseUrl}}/import/products/commit",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "suppliers"
+                "import",
+                "products",
+                "commit"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Global Tech\",\n  \"contact_person\": \"John Doe\",\n  \"email\": \"john@tech.com\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"rows\": []\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Supplier By ID",
+          "name": "Export Products",
           "request": {
             "method": "GET",
             "header": [
@@ -1651,21 +1819,22 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/suppliers/1",
+              "raw": "{{baseUrl}}/export/products",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "suppliers",
-                "1"
+                "export",
+                "products"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "PUT Update Supplier",
+          "name": "Export Stock Report",
           "request": {
-            "method": "PUT",
+            "method": "GET",
             "header": [
               {
                 "key": "Authorization",
@@ -1673,30 +1842,22 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/suppliers/1",
+              "raw": "{{baseUrl}}/export/stock-report",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "suppliers",
-                "1"
+                "export",
+                "stock-report"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Global Tech\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "DELETE Supplier",
+          "name": "Export Movement Log",
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
               {
                 "key": "Authorization",
@@ -1704,24 +1865,26 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/suppliers/1",
+              "raw": "{{baseUrl}}/export/movement-log",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "suppliers",
-                "1"
+                "export",
+                "movement-log"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Reason Codes",
+      "description": "",
       "item": [
         {
-          "name": "GET All Reason Codes",
+          "name": "Get All Reason Codes",
           "request": {
             "method": "GET",
             "header": [
@@ -1739,16 +1902,44 @@
                 "reason-codes"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "POST Create Reason Code",
+          "name": "Get Reason Code by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reason-codes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reason-codes",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Reason Code",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
             "url": {
@@ -1762,70 +1953,13 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"DAMAGED\",\n  \"description\": \"Damaged on arrival\",\n  \"adjustment_type\": \"DECREASE\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"code\": \"DAMAGE\",\n  \"description\": \"Damaged goods\",\n  \"type\": \"adjustment\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Reason Code By ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reason-codes/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reason-codes",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PUT Update Reason Code",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reason-codes/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reason-codes",
-                "1"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"description\": \"Updated description\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "DELETE Reason Code",
+          "name": "Delete Reason Code",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1844,15 +1978,17 @@
                 "1"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Batches",
+      "name": "Notifications",
+      "description": "",
       "item": [
         {
-          "name": "GET All Batches",
+          "name": "List Notifications",
           "request": {
             "method": "GET",
             "header": [
@@ -1862,18 +1998,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/batches",
+              "raw": "{{baseUrl}}/notifications",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "batches"
+                "notifications"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "POST Create Batch",
+          "name": "Mark All Read",
           "request": {
             "method": "POST",
             "header": [
@@ -1883,106 +2020,20 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/batches",
+              "raw": "{{baseUrl}}/notifications/read-all",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "batches"
+                "notifications",
+                "read-all"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"batch_number\": \"B-001\",\n  \"expiry_date\": \"2026-12-31\",\n  \"initial_quantity\": 100\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Batch By ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/batches/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "batches",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PUT Update Batch",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/batches/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "batches",
-                "1"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"batch_number\": \"B-001-UPDATED\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Orders",
-      "item": [
-        {
-          "name": "GET All Orders",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Order (IN)",
+          "name": "Trigger Scan",
           "request": {
             "method": "POST",
             "header": [
@@ -1992,75 +2043,20 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders",
+              "raw": "{{baseUrl}}/notifications/scan",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders"
+                "notifications",
+                "scan"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_type\": \"IN\",\n  \"destination_location_id\": 1,\n  \"supplier_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 50,\n      \"unit_price\": 100\n    }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "GET Order By ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/orders/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders",
-                "1"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Adjustments",
-      "item": [
-        {
-          "name": "GET All Adjustments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/adjustments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "adjustments"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST Create Adjustment (DECREASE)",
+          "name": "Mark One Read",
           "request": {
             "method": "POST",
             "header": [
@@ -2070,27 +2066,27 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/adjustments",
+              "raw": "{{baseUrl}}/notifications/1/read",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "adjustments"
+                "notifications",
+                "1",
+                "read"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"location_id\": 1,\n  \"adjustment_type\": \"DECREASE\",\n  \"quantity_change\": 5,\n  \"reason_code_id\": 1,\n  \"notes\": \"Spoilage\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
-          }
-        },
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "",
+      "item": [
         {
-          "name": "GET Adjustment By ID",
+          "name": "Urgent Batches",
           "request": {
             "method": "GET",
             "header": [
@@ -2100,16 +2096,78 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/adjustments/1",
+              "raw": "{{baseUrl}}/dashboard/urgent-batches",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "adjustments",
-                "1"
+                "dashboard",
+                "urgent-batches"
               ]
             }
-          }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Activity Logs",
+      "description": "",
+      "item": [
+        {
+          "name": "List Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity-logs?page=1&limit=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activity Log Facets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activity-logs/facets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity-logs",
+                "facets"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     }

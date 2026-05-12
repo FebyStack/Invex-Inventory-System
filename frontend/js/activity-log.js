@@ -15,10 +15,10 @@
     })[c]);
   }
 
-  // Format the stored details field. The backend stores either a plain string
-  // or a JSON-stringified object. For objects, render as a pretty-printed,
-  // syntax-highlighted JSON block that is collapsible for long entries.
-  function formatDetails(raw) {
+  /**
+   * Translates raw activity details into a human-readable sentence.
+   */
+  function formatDetails(raw, action) {
     if (raw === null || raw === undefined || raw === '') return '—';
     let parsed = raw;
     if (typeof raw === 'string') {
@@ -26,37 +26,100 @@
     }
     if (typeof parsed !== 'object') return escapeHtml(String(parsed));
 
-    // Syntax-highlight a JSON string: keys, strings, numbers, booleans, null
-    function highlightJson(jsonStr) {
-      return jsonStr
-        // Keys (property names before a colon)
-        .replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
-        // String values (after a colon or inside arrays)
-        .replace(/:\s*"([^"]*?)"/g, ': <span class="json-str">"$1"</span>')
-        // Remaining standalone strings in arrays
-        .replace(/(?<=[\[,]\s*)"([^"]*?)"/g, '<span class="json-str">"$1"</span>')
-        // Numbers
-        .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
-        // Booleans & null
-        .replace(/:\s*(true|false|null)/g, ': <span class="json-bool">$1</span>');
+    // Mapping of common actions to sentence templates
+    switch (action) {
+      case 'LOGIN':
+        return `Successfully logged into the system.`;
+      case 'LOGOUT':
+        return `Logged out of the session.`;
+      case 'CREATE_IN_ORDER':
+        return `Created stock-in order <strong>${escapeHtml(parsed.reference_no || '—')}</strong> with ${parsed.itemCount || 0} item(s).`;
+      case 'CREATE_OUT_ORDER':
+        return `Created stock-out order <strong>${escapeHtml(parsed.reference_no || '—')}</strong> with ${parsed.itemCount || 0} item(s).`;
+      case 'CREATE_TRANSFER_ORDER':
+        return `Created internal transfer <strong>${escapeHtml(parsed.reference_no || '—')}</strong> moving ${parsed.itemCount || 0} item(s).`;
+      case 'UPDATE_ORDER':
+        return `Updated order details for <strong>${escapeHtml(parsed.reference_no || '—')}</strong>.`;
+      case 'DELETE_ORDER':
+        return `Deleted order and reversed stock movements.`;
+      case 'CREATE_PRODUCT':
+        return `Registered new product: <strong>${escapeHtml(parsed.name || '—')}</strong> (${escapeHtml(parsed.sku || '—')}).`;
+      case 'UPDATE_PRODUCT':
+        return `Modified product details for <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'DELETE_PRODUCT':
+        return `Removed product from catalog.`;
+      case 'CREATE_CATEGORY':
+        return `Created new category: <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'UPDATE_CATEGORY':
+        return `Updated category details for <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'DELETE_CATEGORY':
+        return `Removed category from the system.`;
+      case 'CREATE_SUPPLIER':
+        return `Added new supplier: <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'UPDATE_SUPPLIER':
+        return `Updated supplier info for <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'DELETE_SUPPLIER':
+        return `Removed supplier record.`;
+      case 'CREATE_LOCATION':
+        return `Created new location: <strong>${escapeHtml(parsed.name || '—')}</strong> (${escapeHtml(parsed.code || '—')}).`;
+      case 'UPDATE_LOCATION':
+        return `Modified location details for <strong>${escapeHtml(parsed.name || '—')}</strong>.`;
+      case 'DELETE_LOCATION':
+        return `Removed location from the system.`;
+      case 'STOCK_INCREASE':
+      case 'STOCK_DECREASE':
+      case 'STOCK_ADJUSTMENT':
+        const prod = parsed.product_name || `product #${parsed.product_id}`;
+        const direction = parsed.adjustment_type === 'INCREASE' || action === 'STOCK_INCREASE' ? 'Added' : 'Removed';
+        return `${direction} ${parsed.quantity_change || parsed.quantity} unit(s) of <strong>${escapeHtml(prod)}</strong> due to ${escapeHtml(parsed.reason || 'manual adjustment')}.`;
+      case 'STOCK_TRANSFER':
+        const transferProd = parsed.product_name || `product #${parsed.product_id}`;
+        return `Transferred ${parsed.quantity_change} unit(s) of <strong>${escapeHtml(transferProd)}</strong> between locations.`;
+      case 'IMPORT_PRODUCTS':
+      case 'CREATE_BATCH':
+        return `Created new batch <strong>${escapeHtml(parsed.batch_no || '—')}</strong> for <strong>${escapeHtml(parsed.product_name || 'product')}</strong>.`;
+      case 'UPDATE_BATCH':
+        return `Updated batch details for <strong>${escapeHtml(parsed.batch_no || '—')}</strong>.`;
+      case 'DELETE_BATCH':
+        return `Removed product batch from the system.`;
+      case 'CREATE_USER':
+        return `Created new user account: <strong>${escapeHtml(parsed.username || '—')}</strong> with role <strong>${escapeHtml(parsed.role || 'staff')}</strong>.`;
+      case 'UPDATE_USER':
+        return `Updated account details for <strong>${escapeHtml(parsed.username || '—')}</strong>.`;
+      case 'DELETE_USER':
+        return `Deactivated user account.`;
+      case 'CHANGE_PASSWORD':
+        return `Successfully changed account password.`;
+      case 'REGISTER':
+        return `New user account registered: <strong>${escapeHtml(parsed.username || '—')}</strong>.`;
+      case 'SECURITY_VIOLATION':
+        return `<span style="color:var(--danger)">Security alert: ${escapeHtml(parsed.message || 'Suspicious activity detected')}.</span>`;
+      case 'CREATE_REASON_CODE':
+        return `Added new reason code: <strong>${escapeHtml(parsed.code || '—')}</strong>.`;
+      case 'DELETE_REASON_CODE':
+        return `Removed reason code from the system.`;
+      case 'DELETE_TRANSFER':
+        return `Deleted transfer record and reversed stock movements.`;
+      case 'DELETE_ADJUSTMENT':
+        return `Deleted manual stock adjustment.`;
+      case 'ADJUST_STOCK_BATCH':
+        return `Applied a batch of stock adjustments to <strong>${escapeHtml(parsed.product_name || 'product')}</strong> across ${parsed.applied?.length || 0} location(s).`;
+      case 'IMPORT_PRODUCTS':
+      case 'IMPORT_STOCK':
+        return `Bulk imported ${parsed.count || parsed.total_units || 0} items into the system.`;
+      case 'EXPORT_PRODUCTS':
+        return `Generated product export file.`;
+      default:
+        // Smart fallback sentence builder
+        const name = parsed.name || parsed.full_name || parsed.username || parsed.reference_no || parsed.code;
+        if (action.startsWith('CREATE')) return `Created new entry${name ? `: <strong>${escapeHtml(name)}</strong>` : ''}.`;
+        if (action.startsWith('UPDATE')) return `Updated details for ${name ? `<strong>${escapeHtml(name)}</strong>` : 'an entry'}.`;
+        if (action.startsWith('DELETE')) return `Deleted entry from the system.`;
+        
+        return `<span style="color:var(--fg-4); font-family: 'DM Mono', monospace; font-size: 11px;">
+          ${escapeHtml(JSON.stringify(parsed)).slice(0, 80)}${JSON.stringify(parsed).length > 80 ? '...' : ''}
+        </span>`;
     }
-
-    const pretty = JSON.stringify(parsed, null, 2);
-    const lineCount = pretty.split('\n').length;
-    const highlighted = highlightJson(escapeHtml(pretty));
-
-    // Short objects (≤4 lines) render open; longer ones are collapsed
-    if (lineCount <= 4) {
-      return `<pre class="json-block"><code>${highlighted}</code></pre>`;
-    }
-    return `<details class="json-details">
-              <summary class="json-summary">
-                <span class="json-toggle-icon">▶</span>
-                <span class="json-preview">${escapeHtml(Object.keys(parsed).slice(0, 3).join(', '))}${Object.keys(parsed).length > 3 ? ' …' : ''}</span>
-                <span class="json-count">${Object.keys(parsed).length} fields</span>
-              </summary>
-              <pre class="json-block"><code>${highlighted}</code></pre>
-            </details>`;
   }
 
   function fmtDate(d) {
@@ -183,9 +246,25 @@
 
   function rowHtml(r) {
     const userLabel = r.full_name || r.username || `User #${r.user_id}`;
-    const entity = r.entity_type
-      ? `${escapeHtml(r.entity_type)}${r.entity_id ? ` #${escapeHtml(r.entity_id)}` : ''}`
-      : '—';
+    let entityLabel = r.entity_type ? escapeHtml(r.entity_type) : '—';
+    if (r.entity_id) {
+      // Try to find a more readable name in the details JSON (reference_no, name, username, etc.)
+      try {
+        const p = typeof r.details === 'string' ? JSON.parse(r.details) : r.details;
+        if (p) {
+          const name = p.reference_no || p.full_name || p.name || p.username || p.code;
+          if (name) {
+            entityLabel = `<strong>${escapeHtml(name)}</strong> <span style="color:var(--fg-4); font-size:10px;">(${escapeHtml(r.entity_type)})</span>`;
+          } else {
+            entityLabel += ` <span style="color:var(--fg-4);">#${escapeHtml(r.entity_id)}</span>`;
+          }
+        } else {
+          entityLabel += ` <span style="color:var(--fg-4);">#${escapeHtml(r.entity_id)}</span>`;
+        }
+      } catch {
+        entityLabel += ` <span style="color:var(--fg-4);">#${escapeHtml(r.entity_id)}</span>`;
+      }
+    }
     const loc = r.location_name
       ? `<span class="mono" style="font-size:11px;color:var(--fg-3);">${escapeHtml(r.location_code || '—')}</span> <span style="color:var(--fg-2);font-size:12px;">${escapeHtml(r.location_name)}</span>`
       : '<span style="color:var(--fg-4);">—</span>';
@@ -203,8 +282,8 @@
           </div>
         </td>
         <td><span class="status-badge ${actionTone(r.action)}">${escapeHtml(r.action || '—')}</span></td>
-        <td style="color:var(--fg-2);font-size:12px;">${entity}</td>
-        <td style="color:var(--fg-2);font-size:12px;">${formatDetails(r.details)}</td>
+        <td style="color:var(--fg-2);font-size:12px;">${entityLabel}</td>
+        <td style="color:var(--fg-2);font-size:12px;">${formatDetails(r.details, r.action)}</td>
         <td>${loc}</td>
       </tr>`;
   }

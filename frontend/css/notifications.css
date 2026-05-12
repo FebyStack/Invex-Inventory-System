@@ -1,5 +1,33 @@
-/* ── Notifications: bell dropdown ── */
-.notif-anchor { position: relative; }
+.notif-anchor { position: relative; display: inline-flex; }
+ 
+/* The bell button itself */
+.icon-btn[title="Notifications"] {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 150ms ease;
+  padding: 0; /* Reset for some browsers */
+}
+.icon-btn[title="Notifications"]:hover {
+  background: var(--hover);
+  color: var(--fg-1);
+  border-color: var(--border-strong);
+}
+.icon-btn[title="Notifications"] .dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 6px var(--accent-line);
+}
 
 .notif-panel {
   position: absolute;

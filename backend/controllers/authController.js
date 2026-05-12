@@ -78,6 +78,7 @@ exports.register = async (req, res, next) => {
     // 5. Log activity (async)
     void logActivity(newUser.id, 'REGISTER', 'users', newUser.id, {
       username: newUser.username,
+      full_name: newUser.full_name,
       message: 'New user registered successfully.',
     });
 
@@ -133,6 +134,7 @@ exports.login = async (req, res, next) => {
     const token = signToken(user);
     void logActivity(user.id, 'LOGIN', 'users', user.id, {
       username: user.username,
+      full_name: user.full_name,
       message: 'User logged in successfully.',
     });
 
@@ -157,6 +159,7 @@ exports.logout = async (req, res, next) => {
   try {
     void logActivity(req.user.id, 'LOGOUT', 'users', req.user.id, {
       username: req.user.username,
+      full_name: req.user.full_name,
       message: 'User logged out successfully.',
     });
 

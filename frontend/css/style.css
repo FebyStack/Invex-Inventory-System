@@ -250,6 +250,34 @@ button { cursor: pointer; }
 .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
 .btn-lg { height: 42px; padding: 0 20px; font-size: 14px; }
 
+/* Icon button (used for notification bell and other small actions) */
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 150ms ease;
+}
+.icon-btn:hover {
+  background: var(--hover);
+  color: var(--fg-1);
+  border-color: var(--border-strong);
+}
+.icon-btn .dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 6px var(--accent-line);
+}
+
 /* Main content area — responds to sidebar */
 .main-content {
   flex: 1;

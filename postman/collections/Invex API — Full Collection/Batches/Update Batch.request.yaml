@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/batches/1"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "quantity": 45
+    }
+order: 5000

@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "supplier_id": 1,
+      "location_id": 1,
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 10,
+          "unit_cost": 5.5
+        }
+      ],
+      "notes": "PO #001"
+    }
+order: 3000

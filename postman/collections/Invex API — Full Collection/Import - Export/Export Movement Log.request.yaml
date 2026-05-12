@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/export/movement-log"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 5000

@@ -1,0 +1,200 @@
+{
+	"info": {
+		"_postman_id": "invex-full-api",
+		"name": "Invex - Full System API",
+		"description": "Comprehensive API collection for the Invex Inventory System covering all 16 modules. Includes automated token capture.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 Authentication",
+			"item": [
+				{
+					"name": "Login (Captures Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.token) {",
+									"    pm.environment.set(\"token\", res.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\": \"bonglee\", \"password\": \"bingbong321\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/auth/login" }
+					}
+				},
+				{
+					"name": "Register Staff",
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"full_name\": \"New Staff\", \"email\": \"staff@invex.co\", \"username\": \"newstaff\", \"password\": \"Password123!\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/auth/register" }
+					}
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/auth/me" }
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"current_password\": \"bingbong321\", \"new_password\": \"NewSecurePass123!\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/auth/change-password" }
+					}
+				}
+			]
+		},
+		{
+			"name": "02 Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/dashboard/stats" }
+					}
+				},
+				{
+					"name": "Get Activity Chart",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/dashboard/activity" }
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Products",
+			"item": [
+				{
+					"name": "List All Products",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/products" }
+					}
+				},
+				{
+					"name": "Get Product Stock",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/products/1/stock" }
+					}
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Sample Product\", \"sku\": \"PROD-001\", \"category_id\": 1, \"supplier_id\": 1, \"unit_price\": 100, \"reorder_level\": 10, \"unit_of_measure\": \"pcs\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/products" }
+					}
+				}
+			]
+		},
+		{
+			"name": "06 Locations",
+			"item": [
+				{
+					"name": "List All Locations",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/locations" }
+					}
+				},
+				{
+					"name": "Inventory Matrix",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/locations/inventory-matrix" }
+					}
+				},
+				{
+					"name": "Import Stock (Multi-alloc)",
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"product_id\": 1, \"allocations\": [{\"location_id\": 1, \"quantity\": 50}, {\"location_id\": 2, \"quantity\": 30}], \"notes\": \"Initial stock import\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/locations/import-stock" }
+					}
+				}
+			]
+		},
+		{
+			"name": "10 Orders (In/Out)",
+			"item": [
+				{
+					"name": "List All Orders",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/orders" }
+					}
+				},
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"order_type\": \"IN\", \"supplier_id\": 1, \"items\": [{\"product_id\": 1, \"quantity\": 100, \"unit_price\": 80}], \"notes\": \"Purchase order\"}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{base_url}}/api/orders" }
+					}
+				}
+			]
+		},
+		{
+			"name": "15 Import & Export",
+			"item": [
+				{
+					"name": "Export Products CSV",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/export/products?format=csv" }
+					}
+				},
+				{
+					"name": "Export Stock Report",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/api/export/stock-report?format=csv" }
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+	}
+}

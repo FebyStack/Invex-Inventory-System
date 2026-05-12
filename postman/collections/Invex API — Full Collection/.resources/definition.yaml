@@ -1,0 +1,8 @@
+$kind: collection
+description: |-
+  Complete Postman collection covering every endpoint in the Invex backend.
+
+  Setup:
+  1. Import Invex_Environment.json and select the 'Invex Local' environment.
+  2. Run 'Auth → Login (Admin)' first to populate {{adminToken}}.
+  3. Set {{userId}} and {{productId}} as needed for entity-specific calls.

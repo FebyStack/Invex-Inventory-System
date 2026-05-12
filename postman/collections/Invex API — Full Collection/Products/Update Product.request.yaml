@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Updated Product",
+      "unit_price": 12.5
+    }
+order: 7000

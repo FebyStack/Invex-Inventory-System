@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/users/{{userId}}"
+method: DELETE
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 5000

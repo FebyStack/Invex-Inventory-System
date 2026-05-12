@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/activity-logs?page=1&limit=50"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  page: "1"
+  limit: "50"
+order: 1000

@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/batches"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "product_id": 1,
+      "location_id": 1,
+      "batch_number": "BATCH-001",
+      "quantity": 50,
+      "manufacture_date": "2026-01-01",
+      "expiry_date": "2027-01-01"
+    }
+order: 4000

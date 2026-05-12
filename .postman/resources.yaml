@@ -2,9 +2,11 @@
 workspace:
   id: 75c87531-6399-4e46-8c2a-4d35d75dd9cb
 
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
 cloudResources:
   collections:
-    ../postman/collections/Invex API — Users & Products: 25475bf3-1869-4ef8-839a-954f18c7c648
+    ../postman/collections/Invex API — Full Collection: e0934013-7cca-45c3-a3dd-d5bcba293492
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

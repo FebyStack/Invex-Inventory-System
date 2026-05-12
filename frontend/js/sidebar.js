@@ -97,7 +97,6 @@
       sys.innerHTML = `
         <span class="sys-dot" aria-hidden="true"></span>
         <span class="sys-label">SYS &middot; ONLINE</span>
-        <span class="sys-build">v1.04</span>
       `;
       footerForSys.parentNode.insertBefore(sys, footerForSys);
     }

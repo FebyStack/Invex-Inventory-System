@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/export/stock-report"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 4000

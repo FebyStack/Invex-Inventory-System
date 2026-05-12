@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/reports/expiring?days=30"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  days: "30"
+order: 3000

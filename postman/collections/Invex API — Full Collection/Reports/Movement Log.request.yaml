@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/reports/movement-log?from=2026-01-01&to=2026-12-31"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  from: 2026-01-01
+  to: 2026-12-31
+order: 5000

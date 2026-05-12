@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/users/{{userId}}"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "full_name": "Updated Name",
+      "email": "updated@invex.com",
+      "role": "staff"
+    }
+order: 4000

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/users"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "newuser",
+      "password": "pass123",
+      "full_name": "New User",
+      "email": "new@invex.com",
+      "role": "staff"
+    }
+order: 3000

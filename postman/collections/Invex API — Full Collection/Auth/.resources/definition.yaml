@@ -1,0 +1,3 @@
+$kind: collection
+description: Authentication & current-user endpoints
+order: 1000

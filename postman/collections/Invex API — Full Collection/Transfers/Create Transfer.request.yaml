@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/transfers"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "product_id": 1,
+      "from_location_id": 1,
+      "to_location_id": 2,
+      "quantity": 5,
+      "notes": "Restock"
+    }
+order: 3000

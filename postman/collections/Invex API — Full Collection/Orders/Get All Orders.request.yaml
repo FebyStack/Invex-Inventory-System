@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/orders"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 1000

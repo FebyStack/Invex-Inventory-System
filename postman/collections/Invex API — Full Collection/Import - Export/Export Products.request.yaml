@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/export/products"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 3000

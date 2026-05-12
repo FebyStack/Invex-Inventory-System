@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/locations/import-stock"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "location_id": 1,
+      "items": [
+        {
+          "product_id": 1,
+          "quantity": 50
+        }
+      ]
+    }
+order: 4000

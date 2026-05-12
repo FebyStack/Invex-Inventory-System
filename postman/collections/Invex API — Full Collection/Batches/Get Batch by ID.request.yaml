@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/batches/1"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 3000

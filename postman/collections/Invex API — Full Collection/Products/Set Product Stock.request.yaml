@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}/set-stock"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "location_id": 1,
+      "quantity": 100,
+      "reason_code_id": 1,
+      "notes": "Initial stock set"
+    }
+order: 8000

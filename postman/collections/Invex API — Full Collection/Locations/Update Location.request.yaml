@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/locations/1"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Updated Warehouse"
+    }
+order: 7000

@@ -24,6 +24,16 @@ const getAllProducts = async ({ search, category_id, supplier_id, location_id } 
     conditions.push(`p.supplier_id = $${idx++}`);
     values.push(supplier_id);
   }
+  if (location_id) {
+    // Only return products that are "at" this location (have stock or a location SKU)
+    conditions.push(`EXISTS (
+      SELECT 1 FROM invex.product_stock ps_filter
+      WHERE ps_filter.product_id = p.id 
+        AND ps_filter.location_id = $${idx++}
+        AND (ps_filter.quantity > 0 OR ps_filter.location_sku IS NOT NULL)
+    )`);
+    values.push(location_id);
+  }
 
   let stockSelect = `COALESCE((
               SELECT SUM(ps.quantity)

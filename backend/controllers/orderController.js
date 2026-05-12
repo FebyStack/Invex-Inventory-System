@@ -131,6 +131,22 @@ exports.createOrder = async (req, res, next) => {
         await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
         const stock = await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
         itemSkuRefs.push(stock.location_sku);
+
+        // Record in location_transfer_logs for centralized transfer history
+        await client.query(
+          `INSERT INTO invex.location_transfer_logs 
+             (from_location_id, to_location_id, product_id, batch_id, quantity, transferred_by, notes)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            source_location_id,
+            destination_location_id,
+            item.product_id,
+            batchId, // from above (if any)
+            item.quantity,
+            req.user.id,
+            `Order ${order.reference_no || order.id} transfer`
+          ]
+        );
       }
     }
 

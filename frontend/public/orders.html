@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Orders | Invex Inventory</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/style.css?v=2" />
   <link rel="stylesheet" href="/css/sidebar.css" />
   <link rel="stylesheet" href="/css/lists.css" />
   <link rel="stylesheet" href="/css/orders.css" />
+  <link rel="stylesheet" href="/css/notifications.css?v=2" />
   <link rel="stylesheet" href="/css/role-guard.css" />
   <script src="/js/role-guard.js?v=2"></script>
 </head>
@@ -25,6 +26,14 @@
         <p>Inbound receipts, outbound dispatches, and internal transfers</p>
       </div>
       <div class="header-actions">
+        <button class="icon-btn" title="Notifications">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="dot"></span>
+        </button>
         <button class="btn btn-accent" id="new-order-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New order
@@ -36,7 +45,7 @@
       <!-- Tabs -->
       <div class="tab-bar" id="order-tabs">
         <button data-tab="all" class="active">All orders <span class="count-pill" data-c="all">0</span></button>
-        <button data-tab="IN">Purchase orders <span class="count-pill" data-c="IN">0</span></button>
+        <button data-tab="IN">Stock in <span class="count-pill" data-c="IN">0</span></button>
         <button data-tab="OUT">Sales orders <span class="count-pill" data-c="OUT">0</span></button>
         <button data-tab="TRANSFER">Transfers <span class="count-pill" data-c="TRANSFER">0</span></button>
       </div>
@@ -103,6 +112,12 @@
                 <option value="">Select destination…</option>
               </select>
             </div>
+            <div class="form-group" id="supplier-group" style="display: none;">
+              <label for="supplier_id">Supplier</label>
+              <select id="supplier_id" class="form-control">
+                <option value="">Select supplier…</option>
+              </select>
+            </div>
           </div>
 
           <div id="items-container">
@@ -130,6 +145,7 @@
   </div>
 
   <script src="/js/sidebar.js"></script>
+  <script src="/js/notifications.js?v=2"></script>
   <script src="/js/orders.js"></script>
 </body>
 </html>

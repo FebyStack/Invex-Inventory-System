@@ -1,3 +1,0 @@
-$kind: collection
-description: Register and login as a STAFF user. The staff token is saved to Globals for testing role-based access denial (403).
-order: 3000

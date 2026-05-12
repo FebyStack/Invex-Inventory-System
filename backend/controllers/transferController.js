@@ -127,25 +127,8 @@ exports.createTransfer = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Insufficient stock at source location' });
     }
 
-    await client.query(
-      `UPDATE invex.product_stock
-       SET quantity = quantity - $3,
-           last_updated = NOW()
-       WHERE product_id = $1 AND location_id = $2`,
-      [product_id, from_location_id, transferQuantity]
-    );
-
-    const destinationStockResult = await client.query(
-      `UPDATE invex.product_stock
-       SET quantity = quantity + $3,
-           last_updated = NOW()
-       WHERE product_id = $1 AND location_id = $2`,
-      [product_id, to_location_id, transferQuantity]
-    );
-
-    if (destinationStockResult.rowCount === 0) {
-      throw new Error('Destination stock record not found for this product and location.');
-    }
+    await stockModel.decrementStock(product_id, from_location_id, transferQuantity, client);
+    await stockModel.incrementStock(product_id, to_location_id, transferQuantity, client);
 
     if (batch_id) {
       const sourceBatchResult = await client.query(

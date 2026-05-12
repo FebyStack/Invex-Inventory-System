@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}/adjust-stock"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "location_id": 1,
+      "delta": 5,
+      "reason_code_id": 1,
+      "notes": "Manual adjustment"
+    }
+order: 9000

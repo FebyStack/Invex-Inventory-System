@@ -13,6 +13,7 @@ const itemsList    = document.getElementById('items-list');
 const typeSelect  = document.getElementById('order_type');
 const sourceGroup = document.getElementById('source-loc-group');
 const destGroup   = document.getElementById('dest-loc-group');
+const supplierGroup = document.getElementById('supplier-group');
 const referenceInput = document.getElementById('reference_no');
 
 let ordersCache = [];
@@ -82,7 +83,7 @@ function render() {
   filtered.forEach(o => {
     const typeLabel  = o.order_type === 'IN' ? 'IN' : o.order_type === 'OUT' ? 'OUT' : 'XFER';
     const typeKlass  = o.order_type === 'IN' ? 'success' : o.order_type === 'OUT' ? 'info' : 'warning';
-    const path       = o.order_type === 'IN'  ? `→ ${escapeHtml(o.destination_location_name || '—')}`
+    const path       = o.order_type === 'IN'  ? `From: ${escapeHtml(o.supplier_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`
                      : o.order_type === 'OUT' ? `${escapeHtml(o.source_location_name || '—')} →`
                                               : `${escapeHtml(o.source_location_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`;
 
@@ -119,6 +120,20 @@ async function loadCache() {
   productsCache  = (await pRes.json()).data || [];
   scopedProductsCache = productsCache;
   locationsCache = (await lRes.json()).data || [];
+ 
+  // Fetch suppliers
+  try {
+    const sRes = await fetch('/api/suppliers', { headers });
+    const sData = await sRes.json();
+    const suppliers = sData.data || [];
+    const supplierSel = document.getElementById('supplier_id');
+    if (supplierSel) {
+      supplierSel.innerHTML = '<option value="">Select supplier…</option>';
+      suppliers.forEach(s => {
+        supplierSel.add(new Option(s.name, s.id));
+      });
+    }
+  } catch (err) { console.error('Failed to load suppliers:', err); }
 
   const sourceSel = document.getElementById('source_location_id');
   const destSel   = document.getElementById('destination_location_id');
@@ -134,6 +149,7 @@ typeSelect.onchange = () => {
   const v = typeSelect.value;
   sourceGroup.style.display = (v === 'OUT' || v === 'TRANSFER') ? 'block' : 'none';
   destGroup.style.display   = (v === 'IN'  || v === 'TRANSFER') ? 'block' : 'none';
+  supplierGroup.style.display = (v === 'IN') ? 'block' : 'none';
   updateProductOptionsForLocation();
   updateReferenceHint();
 };
@@ -171,6 +187,11 @@ async function updateProductOptionsForLocation() {
       });
       const data = await res.json();
       scopedProductsCache = data.data || productsCache;
+      
+      // Secondary filter: for outbound or transfer, only show products that have physical stock
+      if (typeSelect.value === 'OUT' || typeSelect.value === 'TRANSFER') {
+        scopedProductsCache = scopedProductsCache.filter(p => (p.location_stock || 0) > 0);
+      }
     } else {
       scopedProductsCache = productsCache;
     }
@@ -258,6 +279,7 @@ form.onsubmit = async (e) => {
     reference_no: document.getElementById('reference_no').value || null,
     source_location_id: parseInt(document.getElementById('source_location_id').value, 10) || null,
     destination_location_id: parseInt(document.getElementById('destination_location_id').value, 10) || null,
+    supplier_id: typeSelect.value === 'IN' ? (parseInt(document.getElementById('supplier_id').value, 10) || null) : null,
     notes: document.getElementById('notes').value || null,
     items,
   };

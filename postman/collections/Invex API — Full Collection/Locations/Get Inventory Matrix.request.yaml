@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/locations/inventory-matrix"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 3000

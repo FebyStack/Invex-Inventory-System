@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/orders/1"
+method: PUT
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "status": "received"
+    }
+order: 4000

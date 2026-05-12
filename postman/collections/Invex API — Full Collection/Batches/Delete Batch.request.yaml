@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/batches/1"
+method: DELETE
+headers:
+  Authorization: Bearer {{adminToken}}
+order: 6000

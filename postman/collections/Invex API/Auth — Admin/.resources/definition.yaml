@@ -1,3 +1,0 @@
-$kind: collection
-description: Register and login as an ADMIN user. The admin token is saved to Globals and used by all protected routes.
-order: 2000

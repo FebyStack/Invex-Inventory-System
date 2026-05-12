@@ -299,11 +299,13 @@ function renderSingleView(loc) {
   const items = state.matrix.map((p) => {
     const qty = Number(p.by_location[loc.id] || 0);
     const locationSku = (p.by_location_sku && p.by_location_sku[loc.id]) || '';
-    const status = qty <= (p.reorder_level || 0)
-      ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
-      : { type: 'in-stock', label: 'IN', tone: '' };
+    const status = qty === 0
+      ? { type: 'out-of-stock', label: 'OUT', tone: 'danger' }
+      : qty <= (p.reorder_level || 0)
+        ? { type: 'low-stock', label: 'LOW', tone: 'warn' }
+        : { type: 'in-stock', label: 'IN', tone: '' };
     return { ...p, qty, status, displaySku: locationSku || p.sku };
-  }).filter((p) => p.qty > 0);
+  }).filter((p) => p.qty > 0 || (p.by_location_sku && p.by_location_sku[loc.id]));
 
   const rows = items.map((p) => {
     const qtyColor = p.status.tone === 'danger'

@@ -431,8 +431,12 @@ function resetLocationLabel() {
 }
 
 document.getElementById('new-adjustment-btn').onclick = () => {
+  form.reset();
   resetProductPicker();
   resetLocationLabel();
+  document.getElementById('to-location-group').style.display = 'none';
+  document.getElementById('notes-group').style.display = 'none';
+  document.getElementById('notes').removeAttribute('required');
   modal.style.display = 'flex';
 };
 document.getElementById('cancel-btn').onclick = () => {
@@ -440,6 +444,8 @@ document.getElementById('cancel-btn').onclick = () => {
   document.getElementById('to-location-group').style.display = 'none';
   resetProductPicker();
   resetLocationLabel();
+  document.getElementById('notes-group').style.display = 'none';
+  document.getElementById('notes').removeAttribute('required');
   form.reset();
 };
 modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
@@ -493,6 +499,20 @@ locationSelect.addEventListener('change', () => {
 });
 
 document.getElementById('to_location_id').addEventListener('change', updateTransferSkuHint);
+
+reasonSelect.addEventListener('change', () => {
+  const selectedText = reasonSelect.options[reasonSelect.selectedIndex]?.text || '';
+  const notesGroup = document.getElementById('notes-group');
+  const notesInp = document.getElementById('notes');
+  if (selectedText.includes('OTHER')) {
+    notesGroup.style.display = 'block';
+    notesInp.setAttribute('required', 'required');
+    notesInp.focus();
+  } else {
+    notesGroup.style.display = 'none';
+    notesInp.removeAttribute('required');
+  }
+});
 
 form.onsubmit = async (e) => {
   e.preventDefault();

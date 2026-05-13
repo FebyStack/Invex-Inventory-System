@@ -511,3 +511,42 @@
   .loc-table-row .num-col,
   .loc-table-row .arrow { display: none; }
 }
+
+/* Product Search Bar */
+.loc-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.loc-search-bar:focus-within {
+  border-color: var(--accent);
+}
+
+.loc-search-bar svg {
+  color: var(--fg-4);
+  flex-shrink: 0;
+}
+
+.loc-search-bar input {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--fg-1);
+  width: 100%;
+}
+
+.loc-search-bar input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.loc-search-bar input::placeholder {
+  color: var(--fg-4);
+}

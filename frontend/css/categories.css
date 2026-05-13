@@ -2,7 +2,7 @@
    Categories — card grid layout (per Invex Dark spec)
    ============================================ */
 
-.cat-shell { padding: 32px; max-width: 1200px; }
+.cat-shell { padding: 32px; width: 100%; box-sizing: border-box; }
 
 .cat-toolbar {
   display: flex;

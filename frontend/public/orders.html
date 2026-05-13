@@ -42,6 +42,23 @@
     </header>
 
     <section class="page-shell">
+      <div class="order-legend" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+        <div>
+          <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-4); margin-bottom: 8px;">Understanding Order Types</h3>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--fg-2);">
+            <div><span class="pill success" style="margin-right: 8px; width: 45px; display: inline-block; text-align: center;">IN</span> <strong>Stock In:</strong> Products arriving from suppliers into a destination location.</div>
+            <div><span class="pill info" style="margin-right: 8px; width: 45px; display: inline-block; text-align: center;">OUT</span> <strong>Sales Order:</strong> Products being dispatched from a source location to customers.</div>
+            <div><span class="pill warning" style="margin-right: 8px; width: 45px; display: inline-block; text-align: center;">XFER</span> <strong>Internal Transfer:</strong> Moving products between your own locations.</div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-4); margin-bottom: 8px;">Reference System & SKUs</h3>
+          <p style="font-size: 12px; color: var(--fg-3); line-height: 1.5; margin: 0;">
+            The <strong>Reference</strong> field uses a smart auto-naming system: <code>TYPE-SKU-ID</code>. 
+            Note that <strong>SKUs are location-specific</strong>; the system automatically tracks the unique SKU assigned to a product at its source or destination to ensure physical accuracy.
+          </p>
+        </div>
+      </div>
       <!-- Tabs -->
       <div class="tab-bar" id="order-tabs">
         <button data-tab="all" class="active">All orders <span class="count-pill" data-c="all">0</span></button>

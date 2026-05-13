@@ -93,18 +93,6 @@ function renderSelector() {
   addBtn.onclick = openAddLocation;
   sel.appendChild(addBtn);
 
-  const spacer = document.createElement('div');
-  spacer.className = 'spacer';
-  sel.appendChild(spacer);
-
-  const importBtn = document.createElement('button');
-  importBtn.className = 'btn btn-sm';
-  importBtn.type = 'button';
-  importBtn.innerHTML = `
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    Import stock`;
-  importBtn.onclick = () => openImportStock();
-  sel.appendChild(importBtn);
 }
 
 function chipFor(loc, idx) {
@@ -232,6 +220,10 @@ function renderAllView() {
         <div class="loc-section-sub">Stock summed across all locations</div>
       </div>
     </div>
+    <div class="loc-search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="loc-product-search" class="form-control" placeholder="Search products by name, SKU, or category…" style="max-width:360px;height:34px;font-size:12px;">
+    </div>
     ${matrix}`;
 
   $('loc-body').querySelectorAll('.loc-table-row').forEach((row) => {
@@ -243,6 +235,7 @@ function renderAllView() {
   });
 
   wireProductRows();
+  wireProductSearch();
 }
 
 function renderInventoryMatrix() {
@@ -337,6 +330,10 @@ function renderSingleView(loc) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </span>
     </div>
+    <div class="loc-search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="loc-product-search" class="form-control" placeholder="Search products by name, SKU, or category…" style="max-width:360px;height:34px;font-size:12px;">
+    </div>
     <div class="inv-table single">
       <div class="inv-table-head">
         <div>Product</div>
@@ -354,11 +351,53 @@ function renderSingleView(loc) {
   const link = $('see-all-link');
   if (link) link.onclick = () => { state.activeLoc = 'all'; renderSelector(); renderActive(); };
   wireProductRows();
+  wireProductSearch();
 }
 
 function wireProductRows() {
   $('loc-body').querySelectorAll('.inv-table-row').forEach((row) => {
     row.onclick = () => { window.location.href = `/products.html?focus=${row.dataset.productId}`; };
+  });
+}
+
+function wireProductSearch() {
+  const searchInput = $('loc-product-search');
+  if (!searchInput) return;
+
+  let debounceTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const query = searchInput.value.trim().toLowerCase();
+      const rows = $('loc-body').querySelectorAll('.inv-table-row');
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const productName = (row.querySelector('.inv-prod')?.textContent || '').toLowerCase();
+        const sku = (row.querySelector('.inv-sku')?.textContent || '').toLowerCase();
+        const category = (row.querySelector('.inv-cat')?.textContent || '').toLowerCase();
+
+        const match = !query || productName.includes(query) || sku.includes(query) || category.includes(query);
+        row.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+
+      // Show/hide "no results" message
+      let noResult = $('loc-body').querySelector('.search-no-results');
+      if (visibleCount === 0 && query) {
+        if (!noResult) {
+          noResult = document.createElement('div');
+          noResult.className = 'search-no-results empty-state';
+          noResult.style.padding = '32px 0';
+          const invTable = $('loc-body').querySelector('.inv-table');
+          if (invTable) invTable.appendChild(noResult);
+        }
+        noResult.textContent = `No products matching "${searchInput.value.trim()}"`;
+        noResult.style.display = 'block';
+      } else if (noResult) {
+        noResult.style.display = 'none';
+      }
+    }, 150);
   });
 }
 

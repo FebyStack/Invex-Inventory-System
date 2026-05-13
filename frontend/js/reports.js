@@ -150,6 +150,9 @@
             <td style="text-align:right;font-family:'DM Mono',monospace">${Number(loc.total_unique_products) || 0}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace">${parseInt(loc.total_items).toLocaleString()}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace">₱${parseFloat(loc.total_value).toLocaleString('en',{minimumFractionDigits:2})}</td>
+            <td style="text-align:right">
+              <button class="export-btn" style="padding:2px 8px;font-size:10px;" onclick="exportReport('stock-report','xlsx',${loc.location_id})">⬇ XLSX</button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -197,70 +200,46 @@
     }
   }
 
-  async function loadOverview() {
-    try {
-      const res = await fetch('/api/reports/dashboard', { headers });
-      const data = await res.json();
-      if (!data.success) return;
-
-      const cats = (data.data.charts && data.data.charts.stockByCategory) || [];
-      const totalQty = cats.reduce((s, c) => s + parseInt(c.total_quantity || 0, 10), 0);
-
-      // Subtitle: total items
-      const catSub = document.getElementById('cat-sub');
-      if (catSub) {
-        catSub.textContent = `Distribution across ${totalQty.toLocaleString()} items`;
-      }
-
-      // Category list
-      const list = document.getElementById('cat-list');
-      if (list) {
-        if (cats.length === 0) {
-          list.innerHTML = '<div class="empty-state" style="padding:40px 0">No category data.</div>';
-        } else {
-          const top = cats.slice(0, 6);
-          const max = Math.max(...top.map(c => parseInt(c.total_quantity || 0, 10)), 1);
-          list.innerHTML = top.map(c => {
-            const qty = parseInt(c.total_quantity || 0, 10);
-            const pct = totalQty > 0 ? Math.round((qty / totalQty) * 100) : 0;
-            const barW = (qty / max) * 100;
-            return `
-              <div class="cat-row">
-                <div class="cat-row-head">
-                  <span class="cat-name">${escapeHtml(c.category_name)}</span>
-                  <span class="cat-meta">${qty.toLocaleString()}<span class="dot">·</span>${pct}%</span>
-                </div>
-                <div class="cat-bar"><span style="width:${barW}%"></span></div>
-              </div>`;
-          }).join('');
-        }
-      }
-    } catch (err) {
-      console.error('Overview error:', err);
-    }
-  }
-
   // Load all tabs
-  loadOverview();
   loadLowStock();
-  loadExpiring(30);
+  loadExpiring(document.getElementById('expiry-days').value);
   loadStockSummary();
   loadMovementLog();
 
   // Export helper (globally accessible)
-  window.exportReport = function (type, format) {
-    const url = `/api/export/${type}?format=${format}`;
+  window.exportReport = function (type, format, locationId) {
+    let url = `/api/export/${type}?format=${format}`;
+    if (locationId) url += `&location_id=${locationId}`;
     const a = document.createElement('a');
     a.href = url;
     a.style.display = 'none';
 
     // Use fetch with auth header to download
     fetch(url, { headers })
-      .then(res => res.blob())
-      .then(blob => {
+      .then(res => {
+        if (!res.ok) {
+          alert('Export failed — the server returned an error.');
+          throw new Error('Export failed');
+        }
+        const disposition = res.headers.get('Content-Disposition');
+        let filename = `${type}.${format}`;
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          const matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+        return res.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        if (blob.size === 0) {
+          alert('No data to export for this location.');
+          return;
+        }
         const objUrl = URL.createObjectURL(blob);
         a.href = objUrl;
-        a.download = `${type}.${format}`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         URL.revokeObjectURL(objUrl);

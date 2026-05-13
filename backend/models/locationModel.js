@@ -123,6 +123,7 @@ const getLocationSummary = async () => {
        SELECT ps.location_id,
               ps.product_id,
               ps.quantity,
+              ps.location_sku,
               p.unit_price,
               p.reorder_level
        FROM invex.product_stock ps
@@ -133,7 +134,7 @@ const getLocationSummary = async () => {
             COALESCE(SUM(s.quantity), 0)::bigint AS units,
             COUNT(DISTINCT CASE WHEN s.quantity > 0 THEN s.product_id END)::int AS skus,
             COUNT(CASE WHEN s.quantity > 0 AND s.quantity <= s.reorder_level THEN 1 END)::int AS low,
-            COUNT(CASE WHEN s.quantity = 0 THEN 1 END)::int AS out_of_stock,
+            COUNT(CASE WHEN s.quantity = 0 AND s.location_sku IS NOT NULL THEN 1 END)::int AS out_of_stock,
             COALESCE(SUM(s.quantity * s.unit_price), 0)::numeric AS value
      FROM invex.locations l
      LEFT JOIN stock s ON s.location_id = l.id
@@ -160,6 +161,21 @@ const getLocationSummary = async () => {
   );
 
   const g = globalResult.rows[0];
+  const locations = perLocResult.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+    color: r.color,
+    city: r.city,
+    region: r.region,
+    type: r.type,
+    units: Number(r.units),
+    skus: Number(r.skus),
+    low: Number(r.low),
+    out: Number(r.out_of_stock),
+    value: Number(r.value),
+  }));
+
   return {
     global: {
       id: 'all',
@@ -170,24 +186,11 @@ const getLocationSummary = async () => {
       region: '—',
       units: Number(g.units),
       skus: Number(g.skus),
-      low: Number(g.low),
-      out: Number(g.out_of_stock),
+      low: locations.reduce((sum, loc) => sum + loc.low, 0),
+      out: locations.reduce((sum, loc) => sum + loc.out, 0),
       value: Number(g.value),
     },
-    locations: perLocResult.rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      code: r.code,
-      color: r.color,
-      city: r.city,
-      region: r.region,
-      type: r.type,
-      units: Number(r.units),
-      skus: Number(r.skus),
-      low: Number(r.low),
-      out: Number(r.out_of_stock),
-      value: Number(r.value),
-    })),
+    locations,
   };
 };
 

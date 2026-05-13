@@ -108,6 +108,12 @@ const getProductById = async (id) => {
                 LIMIT 1),
               p.sku
             ) AS current_sku,
+            (SELECT pb.expiry_date::text
+               FROM invex.product_batches pb
+              WHERE pb.product_id = p.id
+                AND pb.batch_no LIKE 'INIT-%'
+              ORDER BY pb.created_at ASC
+              LIMIT 1) AS initial_expiry_date,
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id

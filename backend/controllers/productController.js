@@ -210,6 +210,46 @@ exports.updateProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
+    if (track_expiry && req.body.expiry_date) {
+      // Check if an INIT- batch already exists for this product
+      const existingBatch = await pool.query(
+        `SELECT id FROM invex.product_batches WHERE product_id = $1 AND batch_no LIKE 'INIT-%' LIMIT 1`,
+        [req.params.id]
+      );
+
+      if (existingBatch.rows.length > 0) {
+        // Update the existing initial batch
+        await pool.query(
+          `UPDATE invex.product_batches 
+           SET expiry_date = $1
+           WHERE product_id = $2 AND batch_no LIKE 'INIT-%'`,
+          [req.body.expiry_date, req.params.id]
+        );
+      } else {
+        // No INIT- batch exists yet — create one using the product's primary location
+        const locResult = await pool.query(
+          `SELECT location_id FROM invex.product_stock 
+           WHERE product_id = $1 AND quantity > 0
+           ORDER BY quantity DESC LIMIT 1`,
+          [req.params.id]
+        );
+        const locationId = locResult.rows.length > 0
+          ? locResult.rows[0].location_id
+          : (await pool.query(
+              `SELECT location_id FROM invex.product_stock WHERE product_id = $1 ORDER BY location_id ASC LIMIT 1`,
+              [req.params.id]
+            )).rows[0]?.location_id;
+
+        if (locationId) {
+          await pool.query(
+            `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
+             VALUES ($1, $2, 'INIT-' || (SELECT sku FROM invex.products WHERE id = $1), 0, $3)`,
+            [req.params.id, locationId, req.body.expiry_date]
+          );
+        }
+      }
+    }
+
     // Log activity (fire-and-forget)
     void logActivity(req.user.id, 'UPDATE_PRODUCT', 'products', updated.id, {
       updatedFields: Object.keys(req.body),

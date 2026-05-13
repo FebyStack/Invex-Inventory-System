@@ -229,12 +229,14 @@ exports.importStock = async (req, res, next) => {
 
     await client.query('COMMIT');
 
+    const total = valid.reduce((s, a) => s + a.quantity, 0);
     void logActivity(req.user.id, 'IMPORT_STOCK', 'stock_adjustments', null, {
       product_id,
-      allocations: valid,
+      count: valid.length,
+      total_units: total,
+      location_count: valid.length
     });
 
-    const total = valid.reduce((s, a) => s + a.quantity, 0);
     return res.status(201).json({
       success: true,
       data: { imported: results.length, total_units: total, adjustments: results },

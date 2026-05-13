@@ -105,8 +105,9 @@
       case 'ADJUST_STOCK_BATCH':
         return `Applied a batch of stock adjustments to <strong>${escapeHtml(parsed.product_name || 'product')}</strong> across ${parsed.applied?.length || 0} location(s).`;
       case 'IMPORT_PRODUCTS':
+        return `Bulk imported <strong>${parsed.count || 0}</strong> new product(s) into the catalog.`;
       case 'IMPORT_STOCK':
-        return `Bulk imported ${parsed.count || parsed.total_units || 0} items into the system.`;
+        return `Bulk imported <strong>${parsed.total_units || parsed.count || 0}</strong> unit(s) across <strong>${parsed.location_count || 1}</strong> location(s).`;
       case 'EXPORT_PRODUCTS':
         return `Generated product export file.`;
       default:

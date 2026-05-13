@@ -2,17 +2,17 @@
 // Backend response: { success, data: [{ id, order_type, reference_no, order_date,
 //                       source_location_name, destination_location_name, item_count, notes }] }
 
-const tableBody    = document.getElementById('orders-table-body');
+const tableBody = document.getElementById('orders-table-body');
 const loadingState = document.getElementById('loading-state');
-const emptyState   = document.getElementById('empty-state');
-const tabBar       = document.getElementById('order-tabs');
-const modal        = document.getElementById('order-modal');
-const form         = document.getElementById('order-form');
-const itemsList    = document.getElementById('items-list');
+const emptyState = document.getElementById('empty-state');
+const tabBar = document.getElementById('order-tabs');
+const modal = document.getElementById('order-modal');
+const form = document.getElementById('order-form');
+const itemsList = document.getElementById('items-list');
 
-const typeSelect  = document.getElementById('order_type');
+const typeSelect = document.getElementById('order_type');
 const sourceGroup = document.getElementById('source-loc-group');
-const destGroup   = document.getElementById('dest-loc-group');
+const destGroup = document.getElementById('dest-loc-group');
 const supplierGroup = document.getElementById('supplier-group');
 const referenceInput = document.getElementById('reference_no');
 
@@ -81,11 +81,11 @@ function render() {
   }
 
   filtered.forEach(o => {
-    const typeLabel  = o.order_type === 'IN' ? 'IN' : o.order_type === 'OUT' ? 'OUT' : 'XFER';
-    const typeKlass  = o.order_type === 'IN' ? 'success' : o.order_type === 'OUT' ? 'info' : 'warning';
-    const path       = o.order_type === 'IN'  ? `From: ${escapeHtml(o.supplier_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`
-                     : o.order_type === 'OUT' ? `${escapeHtml(o.source_location_name || '—')} →`
-                                              : `${escapeHtml(o.source_location_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`;
+    const typeLabel = o.order_type === 'IN' ? 'IN' : o.order_type === 'OUT' ? 'OUT' : 'XFER';
+    const typeKlass = o.order_type === 'IN' ? 'success' : o.order_type === 'OUT' ? 'info' : 'warning';
+    const path = o.order_type === 'IN' ? `From: ${escapeHtml(o.supplier_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`
+      : o.order_type === 'OUT' ? `${escapeHtml(o.source_location_name || '—')} →`
+        : `${escapeHtml(o.source_location_name || '—')} → ${escapeHtml(o.destination_location_name || '—')}`;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -93,7 +93,7 @@ function render() {
       <td><span class="pill ${typeKlass}">${typeLabel}</span></td>
       <td class="mono" style="font-size:12px;color:var(--fg-3);">${escapeHtml(o.reference_no || '—')}</td>
       <td style="color:var(--fg-1);">${path}</td>
-      <td class="num">${o.item_count ?? 0}</td>
+      <td class="num" style="font-weight:500;color:var(--fg-1);">${o.total_quantity ?? o.item_count ?? 0}</td>
       <td class="muted">${fmtDate(o.order_date || o.created_at)}</td>
       <td><span class="pill success">COMPLETED</span></td>
     `;
@@ -114,13 +114,13 @@ async function loadCache() {
   const token = sessionStorage.getItem('token');
   const headers = { 'Authorization': `Bearer ${token}` };
   const [pRes, lRes] = await Promise.all([
-    fetch('/api/products',  { headers }),
+    fetch('/api/products', { headers }),
     fetch('/api/locations', { headers }),
   ]);
-  productsCache  = (await pRes.json()).data || [];
+  productsCache = (await pRes.json()).data || [];
   scopedProductsCache = productsCache;
   locationsCache = (await lRes.json()).data || [];
- 
+
   // Fetch suppliers
   try {
     const sRes = await fetch('/api/suppliers', { headers });
@@ -136,9 +136,9 @@ async function loadCache() {
   } catch (err) { console.error('Failed to load suppliers:', err); }
 
   const sourceSel = document.getElementById('source_location_id');
-  const destSel   = document.getElementById('destination_location_id');
+  const destSel = document.getElementById('destination_location_id');
   sourceSel.innerHTML = '<option value="">Select source…</option>';
-  destSel.innerHTML   = '<option value="">Select destination…</option>';
+  destSel.innerHTML = '<option value="">Select destination…</option>';
   locationsCache.forEach(l => {
     sourceSel.add(new Option(l.name, l.id));
     destSel.add(new Option(l.name, l.id));
@@ -148,7 +148,7 @@ async function loadCache() {
 typeSelect.onchange = () => {
   const v = typeSelect.value;
   sourceGroup.style.display = (v === 'OUT' || v === 'TRANSFER') ? 'block' : 'none';
-  destGroup.style.display   = (v === 'IN'  || v === 'TRANSFER') ? 'block' : 'none';
+  destGroup.style.display = (v === 'IN' || v === 'TRANSFER') ? 'block' : 'none';
   supplierGroup.style.display = (v === 'IN') ? 'block' : 'none';
   updateProductOptionsForLocation();
   updateReferenceHint();
@@ -187,7 +187,7 @@ async function updateProductOptionsForLocation() {
       });
       const data = await res.json();
       scopedProductsCache = data.data || productsCache;
-      
+
       // Secondary filter: for outbound or transfer, only show products that have physical stock
       if (typeSelect.value === 'OUT' || typeSelect.value === 'TRANSFER') {
         scopedProductsCache = scopedProductsCache.filter(p => (p.location_stock || 0) > 0);
@@ -230,10 +230,6 @@ function addItemRow() {
       <input type="number" class="form-control qty-input" required min="1">
     </div>
     <div class="form-group">
-      <label>Price (₱)</label>
-      <input type="number" class="form-control price-input" required step="0.01" min="0">
-    </div>
-    <div class="form-group">
       <label>&nbsp;</label>
       <button type="button" class="btn btn-ghost btn-sm remove-btn">✕</button>
     </div>
@@ -268,11 +264,15 @@ document.getElementById('destination_location_id').onchange = () => {
 form.onsubmit = async (e) => {
   e.preventDefault();
   const token = sessionStorage.getItem('token');
-  const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
-    product_id: parseInt(row.querySelector('.product-select').value, 10),
-    quantity:   parseInt(row.querySelector('.qty-input').value, 10),
-    unit_price: parseFloat(row.querySelector('.price-input').value),
-  }));
+  const items = Array.from(document.querySelectorAll('.item-row')).map(row => {
+    const productId = parseInt(row.querySelector('.product-select').value, 10);
+    const product = productsCache.find(p => p.id === productId);
+    return {
+      product_id: productId,
+      quantity: parseInt(row.querySelector('.qty-input').value, 10),
+      unit_price: product ? parseFloat(product.unit_price) : 0,
+    };
+  });
 
   const payload = {
     order_type: typeSelect.value,

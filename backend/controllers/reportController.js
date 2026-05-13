@@ -175,6 +175,7 @@ const getLowStock = async (req, res, next) => {
         p.reorder_level
       FROM invex.active_products p
       LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
+      WHERE p.reorder_level > 0
       GROUP BY p.id, p.sku, p.name, p.reorder_level
       HAVING COALESCE(SUM(ps.quantity), 0) <= p.reorder_level
       ORDER BY (COALESCE(SUM(ps.quantity), 0) - p.reorder_level) ASC, p.name ASC
@@ -216,7 +217,6 @@ const getExpiringBatches = async (req, res, next) => {
         ON ps.product_id = pb.product_id
        AND ps.location_id = pb.location_id
       WHERE pb.is_deleted = FALSE
-        AND pb.quantity > 0
         AND pb.expiry_date <= CURRENT_DATE + interval '1 day' * $1
       ORDER BY pb.expiry_date ASC
     `, [days]);

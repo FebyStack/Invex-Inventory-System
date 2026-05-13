@@ -185,19 +185,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="unit_of_measure">Unit <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(defaults to pcs)</span></label>
-            <input type="text" id="unit_of_measure" class="form-control" list="unit-options" placeholder="pcs">
-            <datalist id="unit-options">
-              <option value="pcs">Pieces</option>
-              <option value="box">Box / Case</option>
-              <option value="kg">Kilograms</option>
-              <option value="grams">Grams</option>
-              <option value="liters">Liters</option>
-              <option value="packs">Packs</option>
-              <option value="units">Units</option>
-              <option value="rolls">Rolls</option>
-              <option value="set">Set</option>
-            </datalist>
+            <label for="unit_search">Unit <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(standardized)</span></label>
+            <div class="combobox" id="unit-combobox">
+              <input type="text" id="unit_search" class="form-control" placeholder="e.g. pcs, kg..." autocomplete="off" spellcheck="false" required>
+              <input type="hidden" id="unit_of_measure" required>
+              <div class="combobox-panel" id="unit-suggestions" style="display:none;"></div>
+            </div>
           </div>
         </div>
 

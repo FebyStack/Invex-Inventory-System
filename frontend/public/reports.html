@@ -43,20 +43,6 @@
         </button>
       </div>
     </header>
-    <section>
-      <!-- Overview: Stock by category -->
-      <div class="reports-overview">
-        <div class="overview-block">
-          <div class="overview-head">
-            <div class="overview-title">Stock by category</div>
-            <div class="overview-sub" id="cat-sub">Distribution across — items</div>
-          </div>
-          <div class="cat-list" id="cat-list">
-            <div class="empty-state" style="padding:40px 0">Loading…</div>
-          </div>
-        </div>
-      </div>
-    </section>
     <section style="padding: 0 32px;">
       <div class="tabs">
         <button class="tab-btn active" data-tab="low-stock">Low Stock</button>
@@ -82,8 +68,8 @@
       <div class="tab-panel" id="tab-expiring">
         <div class="report-actions">
           <select id="expiry-days" class="form-control" style="max-width:150px;height:32px;font-size:12px">
-            <option value="7">Next 7 days</option>
-            <option value="30" selected>Next 30 days</option>
+            <option value="7" selected>Next 7 days</option>
+            <option value="30">Next 30 days</option>
             <option value="60">Next 60 days</option>
             <option value="90">Next 90 days</option>
           </select>
@@ -103,7 +89,7 @@
         </div>
         <div class="stat-row" id="summary-stats"></div>
         <table><thead><tr>
-          <th>Location</th><th style="text-align:right">Products</th><th style="text-align:right">Items</th><th style="text-align:right">Value</th>
+          <th>Location</th><th style="text-align:right">Products</th><th style="text-align:right">Items</th><th style="text-align:right">Value</th><th style="text-align:right">Action</th>
         </tr></thead><tbody id="stock-summary-body"></tbody></table>
         <div id="summary-loading" class="empty-state">Loading…</div>
       </div>

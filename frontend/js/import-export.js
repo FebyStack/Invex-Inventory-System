@@ -361,19 +361,28 @@
     });
   }
 
-  // ── Export download (unchanged) ──
+  // ── Export download ──
   function downloadExport(type, format) {
     const url = `/api/export/${type}?format=${format}`;
     fetch(url, { headers })
       .then((res) => {
         if (!res.ok) throw new Error('Export failed');
-        return res.blob();
+        const disposition = res.headers.get('Content-Disposition');
+        let filename = `${type}.${format}`;
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          const matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+        return res.blob().then(blob => ({ blob, filename }));
       })
-      .then((blob) => {
+      .then(({ blob, filename }) => {
         const objUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = objUrl;
-        a.download = `${type}.${format}`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         URL.revokeObjectURL(objUrl);

@@ -25,6 +25,60 @@ const pickerLabel = document.getElementById('location-picker-label');
 const pickerDropdown = document.getElementById('location-dropdown');
 const pickerOptions = document.getElementById('location-options');
 
+// Unit combobox state
+const unitSearch = document.getElementById('unit_search');
+const unitHidden = document.getElementById('unit_of_measure');
+const unitPanel  = document.getElementById('unit-suggestions');
+let unitActiveIndex = -1;
+const unitCatalog = [
+  { v: 'pcs', l: 'Pieces (pcs)', c: 'Count' },
+  { v: 'units', l: 'Units', c: 'Count' },
+  { v: 'sets', l: 'Sets', c: 'Count' },
+  { v: 'pairs', l: 'Pairs', c: 'Count' },
+  { v: 'dozen', l: 'Dozen', c: 'Count' },
+  { v: 'gross', l: 'Gross', c: 'Count' },
+  { v: 'ream', l: 'Ream (Paper)', c: 'Count' },
+  { v: 'sheet', l: 'Sheet', c: 'Count' },
+  { v: 'pad', l: 'Pad', c: 'Count' },
+  { v: 'box', l: 'Box / Case', c: 'Packaging' },
+  { v: 'pack', l: 'Pack / Sachet', c: 'Packaging' },
+  { v: 'bundle', l: 'Bundle / Crate', c: 'Packaging' },
+  { v: 'roll', l: 'Roll / Spool', c: 'Packaging' },
+  { v: 'bag', l: 'Bag / Pouch', c: 'Packaging' },
+  { v: 'carton', l: 'Carton', c: 'Packaging' },
+  { v: 'pallet', l: 'Pallet', c: 'Packaging' },
+  { v: 'tray', l: 'Tray', c: 'Packaging' },
+  { v: 'tube', l: 'Tube', c: 'Packaging' },
+  { v: 'bottle', l: 'Bottle / Vial', c: 'Packaging' },
+  { v: 'can', l: 'Can / Jar', c: 'Packaging' },
+  { v: 'drum', l: 'Drum / Barrel', c: 'Packaging' },
+  { v: 'bin', l: 'Bin / Tank', c: 'Packaging' },
+  { v: 'kg', l: 'Kilograms (kg)', c: 'Weight' },
+  { v: 'g', l: 'Grams (g)', c: 'Weight' },
+  { v: 'mg', l: 'Milligrams (mg)', c: 'Weight' },
+  { v: 'ton', l: 'Metric Ton (t)', c: 'Weight' },
+  { v: 'lb', l: 'Pounds (lb)', c: 'Weight' },
+  { v: 'oz', l: 'Ounces (oz)', c: 'Weight' },
+  { v: 'L', l: 'Liters (L)', c: 'Volume' },
+  { v: 'ml', l: 'Milliliters (ml)', c: 'Volume' },
+  { v: 'gal', l: 'Gallons (gal)', c: 'Volume' },
+  { v: 'fl-oz', l: 'Fluid Ounces (fl oz)', c: 'Volume' },
+  { v: 'cup', l: 'Cup', c: 'Volume' },
+  { v: 'pint', l: 'Pint', c: 'Volume' },
+  { v: 'qt', l: 'Quart', c: 'Volume' },
+  { v: 'm', l: 'Meters (m)', c: 'Length' },
+  { v: 'cm', l: 'Centimeters (cm)', c: 'Length' },
+  { v: 'mm', l: 'Millimeters (mm)', c: 'Length' },
+  { v: 'km', l: 'Kilometers (km)', c: 'Length' },
+  { v: 'ft', l: 'Feet (ft)', c: 'Length' },
+  { v: 'in', l: 'Inches (in)', c: 'Length' },
+  { v: 'yd', l: 'Yards (yd)', c: 'Length' },
+  { v: 'sq-m', l: 'Square Meters (sq m)', c: 'Area' },
+  { v: 'sq-ft', l: 'Square Feet (sq ft)', c: 'Area' },
+  { v: 'acre', l: 'Acre', c: 'Area' }
+];
+let unitFiltered = [];
+
 // ── Location multi-select ────────────────────────────────
 function renderLocationOptions() {
   pickerOptions.innerHTML = locationsCache.map(l => {
@@ -73,7 +127,14 @@ pickerBtn.onclick = (e) => {
 function toggleExpiryDate() {
   const show = trackExpiryCheckbox.checked;
   expiryDateGroup.style.display = show ? '' : 'none';
-  if (!show) expiryDateInput.value = '';
+  if (show) {
+    // Prevent selecting dates in the past or with absurd years
+    const today = new Date().toISOString().split('T')[0];
+    expiryDateInput.setAttribute('min', today);
+    expiryDateInput.setAttribute('max', '9999-12-31');
+  } else {
+    expiryDateInput.value = '';
+  }
 }
 trackExpiryCheckbox.onchange = toggleExpiryDate;
 toggleExpiryDate();
@@ -242,14 +303,97 @@ document.getElementById('new-product-btn').onclick = () => {
   qtyInput.value = '0';
   qtyInput.readOnly = false;
   qtyInput.style.opacity = '1';
-  trackExpiryCheckbox.checked = true;
+  trackExpiryCheckbox.checked = false;
   expiryDateInput.value = '';
   toggleExpiryDate();
   updatePickerLabel();
   renderLocationOptions();
   updateSkuPreview();
+  resetUnitCombobox();
   modal.style.display = 'flex';
 };
+
+// ── Unit Combobox Logic ──────────────────
+function renderUnitSuggestions() {
+  const q = unitSearch.value.trim().toLowerCase();
+  unitFiltered = unitCatalog.filter(u => 
+    u.l.toLowerCase().includes(q) || u.v.toLowerCase().includes(q)
+  );
+
+  if (unitFiltered.length === 0) {
+    unitPanel.innerHTML = '<div class="combobox-empty">No matching units.</div>';
+    unitPanel.style.display = 'block';
+    unitActiveIndex = -1;
+    return;
+  }
+
+  unitFiltered = unitFiltered.slice(0, 4);
+  unitActiveIndex = 0;
+  unitPanel.innerHTML = unitFiltered.map((u, i) => `
+    <div class="combobox-option ${i === 0 ? 'active' : ''}" data-index="${i}">
+      <span class="opt-label">${escapeHtml(u.l)}</span>
+      <span class="opt-category">${escapeHtml(u.c)}</span>
+    </div>
+  `).join('');
+  unitPanel.style.display = 'block';
+}
+
+function selectUnit(u) {
+  unitSearch.value = u.l;
+  unitHidden.value = u.v;
+  unitPanel.style.display = 'none';
+}
+
+function resetUnitCombobox() {
+  unitSearch.value = '';
+  unitHidden.value = '';
+  unitPanel.style.display = 'none';
+  unitActiveIndex = -1;
+}
+
+unitSearch.oninput = () => {
+  unitHidden.value = ''; // Force selection
+  renderUnitSuggestions();
+};
+unitSearch.onfocus = renderUnitSuggestions;
+
+unitSearch.onkeydown = (e) => {
+  if (unitPanel.style.display === 'none') return;
+  const items = unitPanel.querySelectorAll('.combobox-option');
+  if (e.key === 'ArrowDown') {
+    unitActiveIndex = (unitActiveIndex + 1) % unitFiltered.length;
+    updateUnitActive(items);
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    unitActiveIndex = (unitActiveIndex - 1 + unitFiltered.length) % unitFiltered.length;
+    updateUnitActive(items);
+    e.preventDefault();
+  } else if (e.key === 'Enter') {
+    if (unitActiveIndex >= 0) {
+      selectUnit(unitFiltered[unitActiveIndex]);
+      e.preventDefault();
+    }
+  }
+};
+
+function updateUnitActive(items) {
+  items.forEach((item, i) => item.classList.toggle('active', i === unitActiveIndex));
+  const active = unitPanel.querySelector('.combobox-option.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+unitPanel.onmousedown = (e) => {
+  const opt = e.target.closest('.combobox-option');
+  if (opt) {
+    selectUnit(unitFiltered[parseInt(opt.dataset.index)]);
+  }
+};
+
+document.addEventListener('mousedown', (e) => {
+  if (!document.getElementById('unit-combobox').contains(e.target)) {
+    unitPanel.style.display = 'none';
+  }
+});
 
 document.getElementById('cancel-btn').onclick = () => {
   modal.style.display = 'none';
@@ -270,18 +414,38 @@ form.onsubmit = async (e) => {
 
   const trackExpiry = trackExpiryCheckbox.checked;
   const reorderRaw = document.getElementById('reorder_level').value;
-  const uomRaw = document.getElementById('unit_of_measure').value.trim();
+  const uom = unitHidden.value;
+
+  if (!uom) {
+    unitSearch.focus();
+    alert('Please select a valid unit from the list.');
+    return;
+  }
+
   const basePayload = {
     name: document.getElementById('name').value,
     category_id: parseInt(document.getElementById('category_id').value),
     supplier_id: document.getElementById('supplier_id').value ? parseInt(document.getElementById('supplier_id').value) : null,
     unit_price: parseFloat(document.getElementById('unit_price').value),
     reorder_level: reorderRaw === '' ? 10 : parseInt(reorderRaw, 10),
-    unit_of_measure: uomRaw || 'pcs',
+    unit_of_measure: uom,
     track_expiry: trackExpiry
   };
   if (trackExpiry && expiryDateInput.value) {
-    basePayload.expiry_date = expiryDateInput.value;
+    const dateVal = expiryDateInput.value;
+    const year = parseInt(dateVal.split('-')[0], 10);
+    const today = new Date().toISOString().split('T')[0];
+    if (year < 2000 || year > 9999) {
+      alert('Please enter a valid expiry year (4 digits).');
+      expiryDateInput.focus();
+      return;
+    }
+    if (dateVal < today) {
+      alert('Expiry date cannot be in the past.');
+      expiryDateInput.focus();
+      return;
+    }
+    basePayload.expiry_date = dateVal;
   }
 
   if (isEdit) {
@@ -375,12 +539,18 @@ tableBody.onclick = async (e) => {
       document.getElementById('supplier_id').value = p.supplier_id || '';
       document.getElementById('unit_price').value = p.unit_price;
       document.getElementById('reorder_level').value = p.reorder_level;
-      document.getElementById('unit_of_measure').value = p.unit_of_measure || 'pcs';
+      
+      const unit = unitCatalog.find(u => u.v === p.unit_of_measure) || { v: 'pcs', l: 'Pieces (pcs)' };
+      unitSearch.value = unit.l;
+      unitHidden.value = unit.v;
+
       document.getElementById('track_expiry').checked = p.track_expiry;
-      expiryDateInput.value = '';
+      if (p.initial_expiry_date) {
+        expiryDateInput.value = p.initial_expiry_date.split('T')[0];
+      } else {
+        expiryDateInput.value = '';
+      }
       toggleExpiryDate();
-      // On edit, hide the expiry date input — expiry is managed per-batch
-      expiryDateGroup.style.display = 'none';
 
       document.getElementById('modal-title').textContent = 'Edit product';
       modal.style.display = 'flex';

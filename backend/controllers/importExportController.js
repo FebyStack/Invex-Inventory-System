@@ -237,6 +237,12 @@ const commitImportedProducts = async (req, res, next) => {
     }
 
     await client.query('COMMIT');
+
+    void logActivity(req.user.id, 'IMPORT_PRODUCTS', 'products', null, {
+      count: created.length,
+      message: `Imported ${created.length} products via file`
+    });
+
     return res.status(201).json({
       success: true,
       message: `Successfully imported ${created.length} product${created.length === 1 ? '' : 's'}.`,
@@ -258,17 +264,15 @@ const commitImportedProducts = async (req, res, next) => {
 
 // Helper for exporting
 const sendExportFile = async (res, data, format, filenameBase) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  
   if (format === 'xlsx') {
     const buffer = await excelHelper.toExcel(data);
-    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}-${timestamp}.xlsx"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.xlsx"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     return res.send(buffer);
   } else {
     // Default to CSV
     const csvStr = csvHelper.toCSV(data);
-    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}-${timestamp}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.csv"`);
     res.setHeader('Content-Type', 'text/csv');
     return res.send(csvStr);
   }
@@ -278,6 +282,23 @@ const sendExportFile = async (res, data, format, filenameBase) => {
 const exportProducts = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
+    const { location_id } = req.query;
+    const values = [];
+    let whereClause = '';
+    let joinClause = '';
+    let filenameBase = 'products';
+
+    if (location_id) {
+      joinClause = 'JOIN invex.product_stock ps ON p.id = ps.product_id';
+      whereClause = 'WHERE ps.location_id = $1 AND ps.quantity > 0';
+      values.push(location_id);
+      
+      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
+      if (locRes.rows.length > 0) {
+        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
+        filenameBase += `-${safeName}`;
+      }
+    }
     
     const result = await query(`
       SELECT 
@@ -290,10 +311,12 @@ const exportProducts = async (req, res, next) => {
       FROM invex.active_products p
       LEFT JOIN invex.categories c ON p.category_id = c.id
       LEFT JOIN invex.suppliers s ON p.supplier_id = s.id
+      ${joinClause}
+      ${whereClause}
       ORDER BY p.id ASC
-    `);
+    `, values);
 
-    await sendExportFile(res, result.rows, format, 'products');
+    await sendExportFile(res, result.rows, format, filenameBase);
   } catch (error) {
     next(error);
   }
@@ -303,6 +326,22 @@ const exportProducts = async (req, res, next) => {
 const exportStockReport = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
+    const { location_id } = req.query;
+    const values = [];
+    let whereClause = '';
+    let filenameBase = 'stock-report';
+
+    if (location_id) {
+      whereClause = 'WHERE ps.location_id = $1 AND ps.quantity > 0';
+      values.push(location_id);
+      
+      // Fetch location name for the filename
+      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
+      if (locRes.rows.length > 0) {
+        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
+        filenameBase += `-${safeName}`;
+      }
+    }
     
     const result = await query(`
       SELECT 
@@ -316,10 +355,11 @@ const exportStockReport = async (req, res, next) => {
       FROM invex.product_stock ps
       JOIN invex.active_products p ON ps.product_id = p.id
       JOIN invex.active_locations l ON ps.location_id = l.id
+      ${whereClause}
       ORDER BY l.name ASC, p.name ASC
-    `);
+    `, values);
 
-    await sendExportFile(res, result.rows, format, 'stock-report');
+    await sendExportFile(res, result.rows, format, filenameBase);
   } catch (error) {
     next(error);
   }
@@ -332,10 +372,18 @@ const exportMovementLog = async (req, res, next) => {
     const { location_id } = req.query;
     const values = [];
     let whereClause = '';
+    let filenameBase = 'movement-log';
 
     if (location_id) {
       whereClause = 'WHERE sm.location_id = $1';
       values.push(location_id);
+
+      // Fetch location name for the filename
+      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
+      if (locRes.rows.length > 0) {
+        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
+        filenameBase += `-${safeName}`;
+      }
     }
     
     const result = await query(`
@@ -360,7 +408,7 @@ const exportMovementLog = async (req, res, next) => {
       ORDER BY sm.movement_date DESC
     `, values);
 
-    await sendExportFile(res, result.rows, format, 'movement-log');
+    await sendExportFile(res, result.rows, format, filenameBase);
   } catch (error) {
     next(error);
   }

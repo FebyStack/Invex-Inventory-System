@@ -57,11 +57,21 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="••••••••" minlength="6">
+                    <div class="password-wrapper">
+                        <input type="password" id="password" required placeholder="••••••••" minlength="6" class="form-control">
+                        <button type="button" class="password-toggle" tabindex="-1">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="confirm_password">Confirm</label>
-                    <input type="password" id="confirm_password" required placeholder="••••••••" minlength="6">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm_password" required placeholder="••••••••" minlength="6" class="form-control">
+                        <button type="button" class="password-toggle" tabindex="-1">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -77,5 +87,6 @@
     </div>
 
     <script src="/js/register.js"></script>
+    <script src="/js/password-toggle.js"></script>
 </body>
 </html>

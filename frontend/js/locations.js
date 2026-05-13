@@ -8,6 +8,7 @@ const state = {
   summary: null,   // { global, locations: [...] } from /api/locations/summary
   products: [],    // raw products from /api/products
   matrix: [],      // products with by_location stock map
+  deleteResolve: null, // resolver for delete confirmation
 };
 
 const SWATCHES = ['#7C7CFF', '#5EEAD4', '#FBBF24', '#F472B6', '#A78BFA', '#F87171', '#4ADE80', '#60A5FA'];
@@ -403,11 +404,14 @@ function wireProductSearch() {
 
 // ── Delete Location ─────────────────────────────────────
 async function confirmDeleteLocation(loc) {
-  const ok = window.confirm(
-    `Delete "${loc.name}" (${loc.code})?\n\n` +
-    `This will be a soft delete — the location is hidden but its history is kept.\n` +
-    `Locations with products still in stock cannot be deleted.`
-  );
+  const modal = $('delete-modal');
+  $('delete-modal-desc').innerHTML = `Are you sure you want to delete <strong>"${escapeHtml(loc.name)}"</strong>?`;
+  modal.style.display = 'flex';
+
+  const ok = await new Promise((resolve) => {
+    state.deleteResolve = resolve;
+  });
+
   if (!ok) return;
 
   try {
@@ -706,5 +710,19 @@ $('import-form').onsubmit = async (e) => {
 // ── Header buttons ──────────────────────────────────────
 $('receive-btn').onclick = () => openImportStock();
 $('export-btn').onclick = () => { window.location.href = '/import-export.html'; };
+
+// Delete modal wiring
+if ($('delete-modal-cancel')) {
+  $('delete-modal-cancel').onclick = () => {
+    $('delete-modal').style.display = 'none';
+    if (state.deleteResolve) state.deleteResolve(false);
+  };
+}
+if ($('delete-modal-confirm')) {
+  $('delete-modal-confirm').onclick = () => {
+    $('delete-modal').style.display = 'none';
+    if (state.deleteResolve) state.deleteResolve(true);
+  };
+}
 
 load();

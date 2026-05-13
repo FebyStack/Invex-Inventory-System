@@ -416,6 +416,51 @@ input[inputmode="numeric"].form-control { font-family: 'DM Mono', monospace; let
 
 textarea.form-control { height: auto; padding: 10px 12px; min-height: 80px; resize: vertical; }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper .form-control {
+  padding-right: 40px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--fg-4);
+  cursor: pointer;
+  padding: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-speed), transform 0.1s ease;
+  z-index: 2;
+  height: auto !important;
+  min-height: 0 !important;
+  width: auto !important;
+}
+
+.password-toggle:hover {
+  color: var(--fg-2);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
 select.form-control {
   cursor: pointer;
   background-color: transparent;

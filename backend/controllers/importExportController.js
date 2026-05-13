@@ -290,7 +290,7 @@ const exportProducts = async (req, res, next) => {
 
     if (location_id) {
       joinClause = 'JOIN invex.product_stock ps ON p.id = ps.product_id';
-      whereClause = 'WHERE ps.location_id = $1 AND ps.quantity > 0';
+      whereClause = 'WHERE ps.location_id = $1';
       values.push(location_id);
       
       const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
@@ -332,7 +332,7 @@ const exportStockReport = async (req, res, next) => {
     let filenameBase = 'stock-report';
 
     if (location_id) {
-      whereClause = 'WHERE ps.location_id = $1 AND ps.quantity > 0';
+      whereClause = 'WHERE ps.location_id = $1';
       values.push(location_id);
       
       // Fetch location name for the filename
@@ -355,7 +355,8 @@ const exportStockReport = async (req, res, next) => {
       FROM invex.product_stock ps
       JOIN invex.active_products p ON ps.product_id = p.id
       JOIN invex.active_locations l ON ps.location_id = l.id
-      ${whereClause}
+      WHERE (ps.quantity > 0 OR ps.location_sku IS NOT NULL)
+        ${location_id ? `AND ps.location_id = $1` : ''}
       ORDER BY l.name ASC, p.name ASC
     `, values);
 

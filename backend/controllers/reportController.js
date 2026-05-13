@@ -18,13 +18,20 @@ const getDashboardData = async (req, res, next) => {
     const totalProducts = totalProductsRes.rows[0].total;
     const productsAdded7d = totalProductsRes.rows[0].added_7d;
 
-    // 2. Low stock and Out of stock counts
+    // 2. Low stock and Out of stock counts (Unique Products)
+    // A product is "Low Stock" if its TOTAL quantity across all locations is <= reorder_level.
+    // A product is "Out of Stock" if its TOTAL quantity is 0.
     const stockStatusRes = await query(`
+      WITH totals AS (
+        SELECT p.id, p.reorder_level, COALESCE(SUM(ps.quantity), 0) as total_qty
+        FROM invex.active_products p
+        LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
+        GROUP BY p.id, p.reorder_level
+      )
       SELECT
-        COUNT(*) FILTER (WHERE ps.quantity < p.reorder_level AND ps.quantity > 0)::int AS low_stock,
-        COUNT(*) FILTER (WHERE ps.quantity = 0)::int                                   AS out_of_stock
-      FROM invex.active_products p
-      LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
+        COUNT(*) FILTER (WHERE total_qty <= reorder_level AND total_qty > 0)::int AS low_stock,
+        COUNT(*) FILTER (WHERE total_qty = 0)::int                               AS out_of_stock
+      FROM totals
     `);
     const lowStock = stockStatusRes.rows[0].low_stock;
     const outOfStock = stockStatusRes.rows[0].out_of_stock;
@@ -154,9 +161,15 @@ const getDashboardData = async (req, res, next) => {
 // GET /api/reports/low-stock
 const getLowStock = async (req, res, next) => {
   try {
-    // `sku` here is the "current" SKU — the location_sku of wherever the
-    // product currently holds the most stock — so the report matches what
-    // the user sees on the Locations page after transfers.
+    const { location_id } = req.query;
+    const values = [];
+    let whereClause = 'WHERE p.reorder_level > 0';
+    
+    if (location_id) {
+      whereClause += ' AND ps.location_id = $1';
+      values.push(location_id);
+    }
+
     const result = await query(`
       SELECT
         p.id as product_id,
@@ -175,11 +188,11 @@ const getLowStock = async (req, res, next) => {
         p.reorder_level
       FROM invex.active_products p
       LEFT JOIN invex.product_stock ps ON p.id = ps.product_id
-      WHERE p.reorder_level > 0
+      ${whereClause}
       GROUP BY p.id, p.sku, p.name, p.reorder_level
       HAVING COALESCE(SUM(ps.quantity), 0) <= p.reorder_level
       ORDER BY (COALESCE(SUM(ps.quantity), 0) - p.reorder_level) ASC, p.name ASC
-    `);
+    `, values);
 
     res.json({
       success: true,
@@ -196,10 +209,19 @@ const getExpiringBatches = async (req, res, next) => {
   try {
     const daysStr = req.query.days || '30';
     const days = parseInt(daysStr, 10);
+    const { location_id } = req.query;
     
-    // Each batch lives at a specific location, so `sku` is the SKU that
-    // location uses for the product (falls back to base SKU if no
-    // location_sku was generated yet).
+    const conditions = ['pb.is_deleted = FALSE', 'p.is_deleted = FALSE'];
+    const values = [days];
+    let idx = 2;
+
+    if (location_id) {
+      conditions.push(`pb.location_id = $${idx++}`);
+      values.push(location_id);
+    }
+
+    conditions.push(`pb.expiry_date <= CURRENT_DATE + interval '1 day' * $1`);
+
     const result = await query(`
       SELECT
         pb.batch_no,
@@ -211,15 +233,14 @@ const getExpiringBatches = async (req, res, next) => {
         CURRENT_DATE as today,
         (pb.expiry_date - CURRENT_DATE) as days_until_expiry
       FROM invex.product_batches pb
-      JOIN invex.active_products p ON pb.product_id = p.id
-      JOIN invex.active_locations l ON pb.location_id = l.id
+      JOIN invex.products p ON pb.product_id = p.id
+      JOIN invex.locations l ON pb.location_id = l.id
       LEFT JOIN invex.product_stock ps
         ON ps.product_id = pb.product_id
        AND ps.location_id = pb.location_id
-      WHERE pb.is_deleted = FALSE
-        AND pb.expiry_date <= CURRENT_DATE + interval '1 day' * $1
+      WHERE ${conditions.join(' AND ')}
       ORDER BY pb.expiry_date ASC
-    `, [days]);
+    `, values);
 
     res.json({
       success: true,
@@ -238,9 +259,12 @@ const getStockSummary = async (req, res, next) => {
       SELECT 
         l.id as location_id,
         l.name as location_name,
-        COUNT(DISTINCT ps.product_id) as total_unique_products,
-        COALESCE(SUM(ps.quantity), 0) as total_items,
-        COALESCE(SUM(ps.quantity * p.unit_price), 0) as total_value
+        -- Count unique active products that have a stock record at this location with quantity > 0
+        COUNT(DISTINCT p.id) FILTER (WHERE ps.quantity > 0) as total_unique_products,
+        -- Sum quantities only for active products
+        COALESCE(SUM(ps.quantity) FILTER (WHERE p.id IS NOT NULL), 0) as total_items,
+        -- Calculate value only for active products
+        COALESCE(SUM(ps.quantity * p.unit_price) FILTER (WHERE p.id IS NOT NULL), 0) as total_value
       FROM invex.active_locations l
       LEFT JOIN invex.product_stock ps ON l.id = ps.location_id
       LEFT JOIN invex.active_products p ON ps.product_id = p.id

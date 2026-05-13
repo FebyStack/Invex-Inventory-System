@@ -219,6 +219,22 @@
     </div>
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="delete-modal">
+    <div class="modal-content" style="max-width: 400px; padding: 24px;">
+      <div class="modal-header" style="margin-bottom: 16px;">
+        <h2 id="delete-modal-title">Delete location?</h2>
+      </div>
+      <div class="modal-body">
+        <p id="delete-modal-desc" style="font-size: 13px; color: var(--fg-3); line-height: 1.5;"></p>
+      </div>
+      <div class="modal-footer" style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-ghost" id="delete-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="delete-modal-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/sidebar.js"></script>
   <script src="/js/notifications.js?v=2"></script>
   <script src="/js/locations.js"></script>

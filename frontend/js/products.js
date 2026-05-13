@@ -124,15 +124,47 @@ pickerBtn.onclick = (e) => {
 };
 
 // ── Expiry toggle ────────────────────────────────────────
+const expMonth = document.getElementById('exp_month');
+const expDay = document.getElementById('exp_day');
+const expYear = document.getElementById('exp_year');
+
+function populateExpiryYears() {
+  const currentYear = new Date().getFullYear();
+  expYear.innerHTML = '<option value="">Year</option>';
+  for (let i = 0; i <= 100; i++) {
+    const y = currentYear + i;
+    const opt = new Option(y, y);
+    expYear.add(opt);
+  }
+}
+populateExpiryYears();
+
+function syncExpiryDate() {
+  const m = expMonth.value;
+  const d = expDay.value;
+  const y = expYear.value;
+  if (m === '' || d === '' || y === '') {
+    expiryDateInput.value = '';
+    return;
+  }
+  // Construct YYYY-MM-DD manually to avoid timezone shift issues
+  const yyyy = y;
+  const mm = String(parseInt(m) + 1).padStart(2, '0');
+  const dd = String(parseInt(d)).padStart(2, '0');
+  expiryDateInput.value = `${yyyy}-${mm}-${dd}`;
+}
+
+[expMonth, expDay, expYear].forEach(el => {
+  el.onchange = syncExpiryDate;
+});
+
 function toggleExpiryDate() {
   const show = trackExpiryCheckbox.checked;
   expiryDateGroup.style.display = show ? '' : 'none';
-  if (show) {
-    // Prevent selecting dates in the past or with absurd years
-    const today = new Date().toISOString().split('T')[0];
-    expiryDateInput.setAttribute('min', today);
-    expiryDateInput.setAttribute('max', '9999-12-31');
-  } else {
+  if (!show) {
+    expMonth.value = '';
+    expDay.value = '';
+    expYear.value = '';
     expiryDateInput.value = '';
   }
 }
@@ -165,6 +197,22 @@ async function loadProducts() {
       tableBody.innerHTML = '';
       data.data.forEach(p => {
         const row = document.createElement('tr');
+        
+        let expHtml = '<span style="color:var(--fg-4);">—</span>';
+        if (p.earliest_expiry) {
+          const expDate = new Date(p.earliest_expiry);
+          const today = new Date(); today.setHours(0,0,0,0);
+          expDate.setHours(0,0,0,0);
+          const diff = Math.floor((expDate - today) / 86400000);
+          
+          let color = 'var(--success)';
+          if (diff < 0) color = 'var(--danger)';
+          else if (diff < 30) color = 'var(--warning)';
+          
+          const formatted = expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          expHtml = `<span class="mono" style="font-size:12px;color:${color};">${formatted}</span>`;
+        }
+
         row.innerHTML = `
           <td>
             <div style="display:flex;align-items:center;">
@@ -180,6 +228,7 @@ async function loadProducts() {
           <td style="color:var(--fg-3);">${escapeHtml(p.category_name || '—')}</td>
           <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-2);">₱${parseFloat(p.unit_price).toFixed(2)}</td>
           <td><span class="stock-badge stock-in">Fetching…</span></td>
+          <td>${expHtml}</td>
           <td style="text-align:right;">
             <button class="action-btn" title="View History" onclick="window.location.href='/stock-history.html?product_id=${p.id}'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -304,6 +353,9 @@ document.getElementById('new-product-btn').onclick = () => {
   qtyInput.readOnly = false;
   qtyInput.style.opacity = '1';
   trackExpiryCheckbox.checked = false;
+  expMonth.value = '';
+  expDay.value = '';
+  expYear.value = '';
   expiryDateInput.value = '';
   toggleExpiryDate();
   updatePickerLabel();
@@ -546,8 +598,15 @@ tableBody.onclick = async (e) => {
 
       document.getElementById('track_expiry').checked = p.track_expiry;
       if (p.initial_expiry_date) {
+        const date = new Date(p.initial_expiry_date);
+        expMonth.value = date.getMonth();
+        expDay.value = date.getDate();
+        expYear.value = date.getFullYear();
         expiryDateInput.value = p.initial_expiry_date.split('T')[0];
       } else {
+        expMonth.value = '';
+        expDay.value = '';
+        expYear.value = '';
         expiryDateInput.value = '';
       }
       toggleExpiryDate();

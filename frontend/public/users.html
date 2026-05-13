@@ -106,7 +106,12 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div class="form-group">
               <label for="password">Password <span id="pw-hint" style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0"></span></label>
-              <input type="password" id="password" class="form-control" placeholder="••••••" />
+              <div class="password-wrapper">
+                <input type="password" id="password" class="form-control" placeholder="••••••" />
+                <button type="button" class="password-toggle" tabindex="-1">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="role">Role</label>
@@ -142,5 +147,6 @@
   <script src="/js/sidebar.js"></script>
   <script src="/js/notifications.js?v=2"></script>
   <script src="/js/users.js"></script>
+  <script src="/js/password-toggle.js"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ const getAllBatches = async () => {
      LEFT JOIN invex.product_stock ps
        ON ps.product_id = pb.product_id
       AND ps.location_id = pb.location_id
-     WHERE pb.is_deleted = FALSE
+     WHERE pb.is_deleted = FALSE AND p.is_deleted = FALSE
      ORDER BY pb.created_at DESC`
   );
   return result.rows;
@@ -38,7 +38,7 @@ const getBatchById = async (id) => {
      LEFT JOIN invex.product_stock ps
        ON ps.product_id = pb.product_id
       AND ps.location_id = pb.location_id
-     WHERE pb.id = $1 AND pb.is_deleted = FALSE`,
+     WHERE pb.id = $1 AND pb.is_deleted = FALSE AND p.is_deleted = FALSE`,
     [id]
   );
   return result.rows[0] || null;
@@ -116,6 +116,7 @@ const getExpiringBatches = async (days) => {
        ON ps.product_id = pb.product_id
       AND ps.location_id = pb.location_id
      WHERE pb.is_deleted = FALSE 
+       AND p.is_deleted = FALSE
        AND pb.quantity > 0
        AND pb.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + $1::int
      ORDER BY pb.expiry_date ASC`,

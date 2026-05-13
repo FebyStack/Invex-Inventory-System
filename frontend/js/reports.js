@@ -37,10 +37,30 @@
     if (h) activateTab(h);
   });
 
+  const locationFilter = document.getElementById('report-location-filter');
+
+  async function loadLocations() {
+    try {
+      const res = await fetch('/api/locations', { headers });
+      const data = await res.json();
+      if (data.success) {
+        data.data.forEach(loc => {
+          const opt = new Option(loc.name, loc.id);
+          locationFilter.add(opt);
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load locations for filter:', err);
+    }
+  }
+
   // ── Low Stock ──
   async function loadLowStock() {
+    const locId = locationFilter.value;
     try {
-      const res = await fetch('/api/reports/low-stock', { headers });
+      let url = '/api/reports/low-stock';
+      if (locId) url += `?location_id=${locId}`;
+      const res = await fetch(url, { headers });
       const data = await res.json();
       document.getElementById('low-stock-loading').style.display = 'none';
 
@@ -75,13 +95,16 @@
     const tbody = document.getElementById('expiring-body');
     const loading = document.getElementById('expiring-loading');
     const empty = document.getElementById('expiring-empty');
+    const locId = locationFilter.value;
 
     loading.style.display = 'block';
     empty.style.display = 'none';
     tbody.innerHTML = '';
 
     try {
-      const res = await fetch(`/api/reports/expiring?days=${days}`, { headers });
+      let url = `/api/reports/expiring?days=${days}`;
+      if (locId) url += `&location_id=${locId}`;
+      const res = await fetch(url, { headers });
       const data = await res.json();
       loading.style.display = 'none';
 
@@ -165,8 +188,11 @@
 
   // ── Movement Log ──
   async function loadMovementLog() {
+    const locId = locationFilter.value;
     try {
-      const res = await fetch('/api/reports/movement-log?limit=200', { headers });
+      let url = '/api/reports/movement-log?limit=200';
+      if (locId) url += `&location_id=${locId}`;
+      const res = await fetch(url, { headers });
       const data = await res.json();
       document.getElementById('movement-loading').style.display = 'none';
 
@@ -200,16 +226,25 @@
     }
   }
 
-  // Load all tabs
-  loadLowStock();
-  loadExpiring(document.getElementById('expiry-days').value);
-  loadStockSummary();
-  loadMovementLog();
+  function refreshAll() {
+    loadLowStock();
+    loadExpiring(document.getElementById('expiry-days').value);
+    loadMovementLog();
+    // Stock Summary stays global-ish or reflects the single location row
+    loadStockSummary();
+  }
+
+  // Load initial data
+  loadLocations();
+  refreshAll();
+
+  locationFilter.addEventListener('change', refreshAll);
 
   // Export helper (globally accessible)
-  window.exportReport = function (type, format, locationId) {
+  window.exportReport = function (type, format, locationIdOverride) {
+    const locId = locationIdOverride || locationFilter.value;
     let url = `/api/export/${type}?format=${format}`;
-    if (locationId) url += `&location_id=${locationId}`;
+    if (locId) url += `&location_id=${locId}`;
     const a = document.createElement('a');
     a.href = url;
     a.style.display = 'none';

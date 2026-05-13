@@ -55,8 +55,13 @@ async function loadBatches() {
 
 function render() {
   // Update filter counts
-  const counts = { all: cache.length, active: 0, expiring: 0, expired: 0 };
-  cache.forEach(b => { counts[statusOf(b)]++; });
+  const counts = { 
+    all: cache.length, 
+    active: cache.filter(b => statusOf(b) !== 'expired').length, 
+    expiring: cache.filter(b => statusOf(b) === 'expiring').length, 
+    expired: cache.filter(b => statusOf(b) === 'expired').length 
+  };
+  
   filterBar.querySelectorAll('.count-pill').forEach(el => {
     el.textContent = counts[el.dataset.c] ?? 0;
   });
@@ -66,7 +71,15 @@ function render() {
 
   const q = searchInput.value.toLowerCase().trim();
   const filtered = cache.filter(b => {
-    if (activeFilter !== 'all' && statusOf(b) !== activeFilter) return false;
+    const status = statusOf(b);
+
+    // Filter logic: 'active' shows everything not expired
+    if (activeFilter === 'active') {
+      if (status === 'expired') return false;
+    } else if (activeFilter !== 'all') {
+      if (status !== activeFilter) return false;
+    }
+
     if (!q) return true;
     return (b.product_name || '').toLowerCase().includes(q) ||
            (b.sku || '').toLowerCase().includes(q) ||
@@ -76,10 +89,10 @@ function render() {
   tableBody.innerHTML = '';
 
   if (cache.length === 0) {
-    emptyState.style.display = '';
+    if (emptyState) emptyState.style.display = '';
     return;
   }
-  emptyState.style.display = 'none';
+  if (emptyState) emptyState.style.display = 'none';
 
   if (filtered.length === 0) {
     tableBody.innerHTML = '<tr><td colspan="7" class="list-loading">No batches match the current filter.</td></tr>';

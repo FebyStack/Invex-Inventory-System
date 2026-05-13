@@ -65,15 +65,30 @@
           <form id="password-form">
             <div class="form-group">
               <label for="current_password">Current Password</label>
-              <input type="password" id="current_password" class="form-control" required placeholder="••••••" />
+              <div class="password-wrapper">
+                <input type="password" id="current_password" class="form-control" required placeholder="••••••" />
+                <button type="button" class="password-toggle" tabindex="-1">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="new_password">New Password</label>
-              <input type="password" id="new_password" class="form-control" required placeholder="••••••" minlength="6" />
+              <div class="password-wrapper">
+                <input type="password" id="new_password" class="form-control" required placeholder="••••••" minlength="6" />
+                <button type="button" class="password-toggle" tabindex="-1">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="confirm_password">Confirm New Password</label>
-              <input type="password" id="confirm_password" class="form-control" required placeholder="••••••" />
+              <div class="password-wrapper">
+                <input type="password" id="confirm_password" class="form-control" required placeholder="••••••" />
+                <button type="button" class="password-toggle" tabindex="-1">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%">Update Password</button>
             <div class="pw-msg" id="pw-msg"></div>
@@ -85,5 +100,6 @@
   <script src="/js/sidebar.js"></script>
   <script src="/js/notifications.js?v=2"></script>
   <script src="/js/profile.js"></script>
+  <script src="/js/password-toggle.js"></script>
 </body>
 </html>

@@ -185,6 +185,45 @@ h1 {
     outline: none;
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--fg-2); }
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 40px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--fg-4);
+  cursor: pointer;
+  padding: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms ease;
+  z-index: 2;
+  height: 38px;
+  width: 38px;
+}
+
+.password-toggle:hover {
+  color: var(--fg-2);
+}
+
+.password-toggle svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
 .form-group select {
     cursor: pointer;
     appearance: none;

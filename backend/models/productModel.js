@@ -74,6 +74,12 @@ const getAllProducts = async ({ search, category_id, supplier_id, location_id } 
                 LIMIT 1),
               p.sku
             ) AS current_sku,
+            (SELECT pb.expiry_date
+               FROM invex.product_batches pb
+              WHERE pb.product_id = p.id
+                AND pb.is_deleted = FALSE
+              ORDER BY (pb.quantity > 0) DESC, pb.expiry_date ASC
+              LIMIT 1) AS earliest_expiry,
             p.created_at
      FROM invex.products p
      LEFT JOIN invex.categories c ON p.category_id = c.id

@@ -1,7 +1,7 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 .product-info { display: flex; flex-direction: column; }
 .product-name { font-weight: 500; color: var(--fg-1); letter-spacing: -0.005em; }

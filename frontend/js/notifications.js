@@ -2,9 +2,9 @@
  * notifications.js — bell dropdown for low-stock + expiring-batch alerts.
  *
  * Wires every header bell on the page (button.icon-btn[title="Notifications"]).
- * Polls /api/notifications every 60s; clicking an item marks it read and
- * routes to the linked page. The bell's red dot is driven by unread count,
- * not the static markup.
+ * Maintains a live WebSocket to /ws so new alerts (and read events from other
+ * tabs) push the bell to refetch immediately. A slow poll runs as a fallback
+ * in case the socket can't connect.
  */
 (function () {
   'use strict';
@@ -13,7 +13,8 @@
   if (!token) return;
   const headers = { 'Authorization': `Bearer ${token}` };
 
-  const POLL_MS = 60_000;
+  // Slow poll is just a safety net; the WebSocket carries the real signal.
+  const POLL_MS = 5 * 60_000;
 
   const TYPE_LABEL = {
     LOW_STOCK: 'Low stock',
@@ -150,6 +151,63 @@
   });
   if (bells.length === 0) return;
 
+  // ── Realtime push ─────────────────────────────────────────────────────
+  // Open a WebSocket so the bell reacts the instant the notification
+  // scanner creates a row (or another tab marks one read).
+  let ws = null;
+  let reconnectDelay = 1000;
+  let reconnectTimer = null;
+
+  function connectWS() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`;
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch {
+      scheduleReconnect();
+      return;
+    }
+
+    ws.addEventListener('open', () => {
+      reconnectDelay = 1000;
+    });
+
+    ws.addEventListener('message', (evt) => {
+      let msg;
+      try { msg = JSON.parse(evt.data); } catch { return; }
+      switch (msg.type) {
+        case 'notification:new':
+        case 'notification:read':
+        case 'notification:read-all':
+          fetchNotifications();
+          break;
+        default:
+          break;
+      }
+    });
+
+    ws.addEventListener('close', scheduleReconnect);
+    ws.addEventListener('error', () => {
+      try { ws.close(); } catch { /* ignore */ }
+    });
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      // Capped exponential backoff so a downed server doesn't hammer the
+      // client into a tight loop.
+      reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
+      connectWS();
+    }, reconnectDelay);
+  }
+
   fetchNotifications();
+  connectWS();
   setInterval(fetchNotifications, POLL_MS);
 })();

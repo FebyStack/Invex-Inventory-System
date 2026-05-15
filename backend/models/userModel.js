@@ -87,6 +87,70 @@ const updateUser = async (id, { username, full_name, email, password, role }) =>
 };
 
 /**
+ * Look up a user by username, including the password hash. Used by auth
+ * for login + uniqueness checks. Returns null if no active row exists.
+ */
+const findByUsernameWithPassword = async (username) => {
+  const result = await query(
+    `SELECT id, username, password, full_name, email, role
+     FROM invex.users
+     WHERE username = $1 AND is_deleted = FALSE
+     LIMIT 1`,
+    [username]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Check whether a username is already taken (active rows only).
+ */
+const usernameExists = async (username) => {
+  const result = await query(
+    `SELECT id FROM invex.users WHERE username = $1 LIMIT 1`,
+    [username]
+  );
+  return result.rows.length > 0;
+};
+
+/**
+ * Insert a new user with an already-hashed password. Used by the auth
+ * controller, which handles hashing alongside its own password-policy checks.
+ */
+const createWithHashedPassword = async ({ username, password, full_name, email, role }) => {
+  const result = await query(
+    `INSERT INTO invex.users (username, password, full_name, email, role)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, username, full_name, email, role, created_at`,
+    [username, password, full_name, email, role]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Read an active user's row with the password hash. Used by change-password
+ * flows to verify the current password before updating.
+ */
+const getUserWithPasswordById = async (id) => {
+  const result = await query(
+    `SELECT id, password
+     FROM invex.users
+     WHERE id = $1 AND is_deleted = FALSE`,
+    [id]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Update the password hash on a user. Caller is responsible for hashing.
+ */
+const updatePasswordHash = async (id, hashedPassword) => {
+  await query(
+    `UPDATE invex.users SET password = $1 WHERE id = $2`,
+    [hashedPassword, id]
+  );
+};
+
+/**
  * Soft-delete a user by setting is_deleted = TRUE.
  * The deleted_at timestamp is set automatically by the database trigger.
  */
@@ -100,4 +164,15 @@ const softDeleteUser = async (id) => {
   return result.rows[0] || null;
 };
 
-module.exports = { getAllUsers, getUserById, createUser, updateUser, softDeleteUser };
+module.exports = {
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  softDeleteUser,
+  findByUsernameWithPassword,
+  usernameExists,
+  createWithHashedPassword,
+  getUserWithPasswordById,
+  updatePasswordHash,
+};

@@ -125,11 +125,53 @@ const getExpiringBatches = async (days) => {
   return result.rows;
 };
 
+/**
+ * Count batches expiring within the given window that still have stock.
+ */
+const countExpiringWithStock = async (days) => {
+  const result = await query(
+    `SELECT COUNT(*)::int AS expiring_count
+     FROM invex.product_batches
+     WHERE is_deleted = FALSE
+       AND quantity > 0
+       AND expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + $1::int`,
+    [days]
+  );
+  return result.rows[0].expiring_count;
+};
+
+/**
+ * Return the top-N batches still holding stock, ordered by soonest expiry.
+ * Used by the dashboard "most urgent" tile.
+ */
+const getMostUrgentBatches = async (limit = 10) => {
+  const result = await query(
+    `SELECT pb.id, pb.batch_no, pb.quantity, pb.expiry_date,
+            p.name AS product_name,
+            COALESCE(ps.location_sku, p.sku) AS sku,
+            l.name AS location_name
+     FROM invex.product_batches pb
+     JOIN invex.products p ON pb.product_id = p.id
+     JOIN invex.locations l ON pb.location_id = l.id
+     LEFT JOIN invex.product_stock ps
+       ON ps.product_id = pb.product_id
+      AND ps.location_id = pb.location_id
+     WHERE pb.is_deleted = FALSE
+       AND pb.quantity > 0
+     ORDER BY pb.expiry_date ASC
+     LIMIT $1`,
+    [limit]
+  );
+  return result.rows;
+};
+
 module.exports = {
   getAllBatches,
   getBatchById,
   createBatch,
   updateBatch,
   softDeleteBatch,
-  getExpiringBatches
+  getExpiringBatches,
+  countExpiringWithStock,
+  getMostUrgentBatches,
 };

@@ -15,25 +15,6 @@
   margin-bottom: 40px;
   position: relative;
 }
-/* Top "barcode" strip — instant inventory signal */
-.dash-stats::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 0;
-  height: 2px;
-  width: 220px;
-  background: repeating-linear-gradient(
-    to right,
-    var(--accent) 0 4px,
-    transparent 4px 6px,
-    var(--accent) 6px 7px,
-    transparent 7px 11px,
-    var(--accent) 11px 14px,
-    transparent 14px 18px
-  );
-  opacity: 0.55;
-}
 .dash-stats .stat {
   padding: 22px 24px 24px;
   border-right: 1px solid var(--border);

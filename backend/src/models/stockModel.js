@@ -93,10 +93,57 @@ const decrementStock = async (productId, locationId, qty, dbClient) => {
   return result.rows[0];
 };
 
+/**
+ * Pick the (location_id, quantity) row currently holding the most stock for
+ * a product. Used when a caller needs *some* default location to operate on.
+ */
+const getPrimaryLocationStock = async (productId, dbClient) => {
+  const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+  const result = await executeQuery(
+    `SELECT location_id, quantity
+       FROM invex.product_stock
+      WHERE product_id = $1
+      ORDER BY quantity DESC, location_id ASC
+      LIMIT 1`,
+    [productId]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Read the current quantity for a product at a location, without locking.
+ */
+const getQuantityAt = async (productId, locationId, dbClient) => {
+  const executeQuery = dbClient ? dbClient.query.bind(dbClient) : query;
+  const result = await executeQuery(
+    `SELECT quantity FROM invex.product_stock
+      WHERE product_id = $1 AND location_id = $2`,
+    [productId, locationId]
+  );
+  return Number(result.rows[0]?.quantity || 0);
+};
+
+/**
+ * Lock and read the current quantity for a product at a location. Caller
+ * must already be inside a transaction.
+ */
+const lockQuantityAt = async (client, productId, locationId) => {
+  const result = await client.query(
+    `SELECT quantity FROM invex.product_stock
+      WHERE product_id = $1 AND location_id = $2
+      FOR UPDATE`,
+    [productId, locationId]
+  );
+  return Number(result.rows[0]?.quantity || 0);
+};
+
 module.exports = {
   getStockByProduct,
   getStockByLocation,
   incrementStock,
   decrementStock,
   ensureLocationSku,
+  getPrimaryLocationStock,
+  getQuantityAt,
+  lockQuantityAt,
 };

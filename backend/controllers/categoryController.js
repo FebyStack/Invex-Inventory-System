@@ -184,6 +184,22 @@ exports.remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Check if category has products before deleting
+    const category = await categoryModel.getById(id);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Category not found.',
+      });
+    }
+
+    if (category.product_count > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Cannot delete: ${category.product_count} product${category.product_count === 1 ? '' : 's'} are currently assigned to this category. Reassign or remove the products before deleting the category.`,
+      });
+    }
+
     const deleted = await categoryModel.softDelete(id);
     if (!deleted) {
       return res.status(404).json({

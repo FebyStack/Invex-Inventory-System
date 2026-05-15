@@ -1,6 +1,7 @@
 const { query } = require('../src/config/db');
 const env = require('../src/config/env');
 const notificationModel = require('../models/notificationModel');
+const realtimeService = require('./realtimeService');
 
 // ── Email transport (lazy + optional) ─────────────────────────────────
 // nodemailer is optional. If the package isn't installed (or SMTP isn't
@@ -207,6 +208,23 @@ async function runScan({ silent = false } = {}) {
     } catch (err) {
       console.error('[notifications] upsert failed for', n.dedup_key, err.message);
     }
+  }
+
+  // Push new notifications to every connected bell so it lights up
+  // immediately instead of waiting for the next poll.
+  if (newlyCreated.length > 0) {
+    realtimeService.broadcast({
+      type: 'notification:new',
+      data: newlyCreated.map((n) => ({
+        id: n.id,
+        type: n.type,
+        severity: n.severity,
+        title: n.title,
+        body: n.body,
+        link: n.link,
+        created_at: n.created_at,
+      })),
+    });
   }
 
   let emailResult = { sent: false, reason: 'no-new-notifications' };

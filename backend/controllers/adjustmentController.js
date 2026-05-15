@@ -1,8 +1,10 @@
 const { pool } = require('../src/config/db');
 const adjustmentModel = require('../models/adjustmentModel');
+const productModel = require('../models/productModel');
 const reasonCodeModel = require('../models/reasonCodeModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
+const notificationService = require('../services/notificationService');
 
 /**
  * GET /api/adjustments
@@ -113,8 +115,7 @@ exports.createAdjustment = async (req, res, next) => {
     });
 
     // Get product name for logging
-    const productRes = await client.query('SELECT name FROM invex.products WHERE id = $1', [product_id]);
-    const productName = productRes.rows[0]?.name || `Product #${product_id}`;
+    const productName = (await productModel.getProductName(product_id, client)) || `Product #${product_id}`;
 
     // 2. Update product_stock
     if (adjustment_type === 'INCREASE') {
@@ -137,6 +138,9 @@ exports.createAdjustment = async (req, res, next) => {
       quantity_change: qty,
       reason: reasonCode.code,
     });
+
+    // Trigger notification scan
+    void notificationService.runScan({ silent: true });
 
     return res.status(201).json({ success: true, data: adjustment });
   } catch (error) {
@@ -183,6 +187,9 @@ exports.deleteAdjustment = async (req, res, next) => {
     await client.query('COMMIT');
 
     void logActivity(req.user.id, 'DELETE_ADJUSTMENT', 'stock_adjustments', deleted.id);
+
+    // Trigger notification scan after reversal
+    void notificationService.runScan({ silent: true });
 
     return res.json({ success: true, message: 'Adjustment deleted and stock reversed.' });
   } catch (error) {

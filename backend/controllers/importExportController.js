@@ -1,9 +1,13 @@
 const path = require('path');
 const fs = require('fs');
-const { pool, query } = require('../src/config/db');
+const { pool } = require('../src/config/db');
 const csvHelper = require('../src/utils/csvHelper');
 const excelHelper = require('../src/utils/excelHelper');
 const productModel = require('../models/productModel');
+const locationModel = require('../models/locationModel');
+const reportModel = require('../models/reportModel');
+const { logActivity } = require('../src/utils/logger');
+const notificationService = require('../services/notificationService');
 
 // ── Import-template fields ─────────────────────────────────────────────
 // SKU, category_id, supplier_id are *intentionally* not in the template.
@@ -145,14 +149,10 @@ const commitImportedProducts = async (req, res, next) => {
   }
 
   // Pre-flight reference checks so we fail fast before opening a tx.
-  const [catRes, supRes, locRes] = await Promise.all([
-    query('SELECT id FROM invex.categories WHERE is_deleted = false'),
-    query('SELECT id FROM invex.suppliers WHERE is_deleted = false'),
-    query('SELECT id FROM invex.locations WHERE is_deleted = false'),
-  ]);
-  const validCats = new Set(catRes.rows.map((r) => r.id));
-  const validSups = new Set(supRes.rows.map((r) => r.id));
-  const validLocs = new Set(locRes.rows.map((r) => r.id));
+  const { categoryIds, supplierIds, locationIds } = await productModel.getActiveImportReferenceIds();
+  const validCats = new Set(categoryIds);
+  const validSups = new Set(supplierIds);
+  const validLocs = new Set(locationIds);
 
   const errors = [];
   const cleaned = rows.map((raw, idx) => {
@@ -196,44 +196,61 @@ const commitImportedProducts = async (req, res, next) => {
 
     const created = [];
     for (const r of cleaned) {
-      const sku = await productModel.getNextSkuForLocation(r.location_id, client);
-      if (!sku) throw new Error(`Location ${r.location_id} not found.`);
+      // 1. Check for existing product by name (case-insensitive trim match)
+      const existing = await productModel.findActiveByName(r.name, client);
 
+      let productId, productSku;
       const trackExpiry = !!r.expiry_date;
-      const productRes = await client.query(
-        `INSERT INTO invex.products
-           (name, sku, category_id, supplier_id, unit_price, reorder_level, track_expiry, unit_of_measure)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING id, sku, name`,
-        [
-          r.name, sku, r.category_id, r.supplier_id,
-          r.unit_price, r.reorder_level, trackExpiry,
-          r.unit_of_measure || 'pcs',
-        ]
-      );
-      const product = productRes.rows[0];
+
+      if (existing) {
+        // MATCH FOUND: Use existing product
+        productId = existing.id;
+        productSku = existing.sku;
+
+        // Optionally update price/unit of measure if they were provided in the CSV
+        await productModel.applyImportUpdate(client, productId, {
+          unit_price: r.unit_price,
+          unit_of_measure: r.unit_of_measure,
+          reorder_level: r.reorder_level,
+          track_expiry: trackExpiry,
+        });
+      } else {
+        // NO MATCH: Create new product
+        productSku = await productModel.getNextSkuForLocation(r.location_id, client);
+        if (!productSku) throw new Error(`Location ${r.location_id} not found.`);
+
+        const inserted = await productModel.insertProductMinimal(client, {
+          name: r.name,
+          sku: productSku,
+          category_id: r.category_id,
+          supplier_id: r.supplier_id,
+          unit_price: r.unit_price,
+          reorder_level: r.reorder_level,
+          track_expiry: trackExpiry,
+          unit_of_measure: r.unit_of_measure,
+        });
+        productId = inserted.id;
+      }
 
       if (trackExpiry) {
-        await client.query(
-          `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [product.id, r.location_id, 'INIT-' + sku, 0, r.expiry_date]
-        );
+        await productModel.insertInitialBatch(client, {
+          product_id: productId,
+          location_id: r.location_id,
+          sku: productSku,
+          expiry_date: r.expiry_date,
+        });
       }
 
       if (r.initial_quantity > 0) {
-        await client.query(
-          `INSERT INTO invex.product_stock (product_id, location_id, quantity, location_sku)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (product_id, location_id)
-           DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
-                         location_sku = COALESCE(invex.product_stock.location_sku, EXCLUDED.location_sku),
-                         last_updated = CURRENT_TIMESTAMP`,
-          [product.id, r.location_id, r.initial_quantity, sku]
-        );
+        await productModel.upsertInitialStock(client, {
+          product_id: productId,
+          location_id: r.location_id,
+          quantity: r.initial_quantity,
+          location_sku: productSku,
+        });
       }
 
-      created.push({ id: product.id, sku: product.sku, name: product.name });
+      created.push({ id: productId, sku: productSku, name: r.name });
     }
 
     await client.query('COMMIT');
@@ -242,6 +259,9 @@ const commitImportedProducts = async (req, res, next) => {
       count: created.length,
       message: `Imported ${created.length} products via file`
     });
+
+    // Trigger notification scan
+    void notificationService.runScan({ silent: true });
 
     return res.status(201).json({
       success: true,
@@ -278,45 +298,26 @@ const sendExportFile = async (res, data, format, filenameBase) => {
   }
 };
 
+const appendLocationToFilename = async (baseName, location_id) => {
+  const name = await locationModel.getNameById(location_id);
+  if (!name) return baseName;
+  const safeName = name.replace(/[^a-z0-9]/gi, '-');
+  return `${baseName}-${safeName}`;
+};
+
 // GET /api/export/products
 const exportProducts = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
     const { location_id } = req.query;
-    const values = [];
-    let whereClause = '';
-    let joinClause = '';
     let filenameBase = 'products';
 
     if (location_id) {
-      joinClause = 'JOIN invex.product_stock ps ON p.id = ps.product_id';
-      whereClause = 'WHERE ps.location_id = $1';
-      values.push(location_id);
-      
-      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
-      if (locRes.rows.length > 0) {
-        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
-        filenameBase += `-${safeName}`;
-      }
+      filenameBase = await appendLocationToFilename(filenameBase, location_id);
     }
-    
-    const result = await query(`
-      SELECT 
-        p.id, p.name, p.sku, 
-        c.name as category_name, 
-        s.name as supplier_name, 
-        p.unit_price, p.reorder_level, 
-        p.track_expiry, p.unit_of_measure, 
-        p.created_at
-      FROM invex.active_products p
-      LEFT JOIN invex.categories c ON p.category_id = c.id
-      LEFT JOIN invex.suppliers s ON p.supplier_id = s.id
-      ${joinClause}
-      ${whereClause}
-      ORDER BY p.id ASC
-    `, values);
 
-    await sendExportFile(res, result.rows, format, filenameBase);
+    const rows = await reportModel.exportProducts({ location_id });
+    await sendExportFile(res, rows, format, filenameBase);
   } catch (error) {
     next(error);
   }
@@ -327,40 +328,14 @@ const exportStockReport = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
     const { location_id } = req.query;
-    const values = [];
-    let whereClause = '';
     let filenameBase = 'stock-report';
 
     if (location_id) {
-      whereClause = 'WHERE ps.location_id = $1';
-      values.push(location_id);
-      
-      // Fetch location name for the filename
-      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
-      if (locRes.rows.length > 0) {
-        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
-        filenameBase += `-${safeName}`;
-      }
+      filenameBase = await appendLocationToFilename(filenameBase, location_id);
     }
-    
-    const result = await query(`
-      SELECT 
-        COALESCE(ps.location_sku, p.sku) AS sku,
-        p.name as product_name,
-        l.name as location_name,
-        ps.quantity as current_stock,
-        p.reorder_level,
-        CASE WHEN ps.quantity < p.reorder_level THEN 'LOW STOCK' ELSE 'OK' END as status,
-        ps.last_updated
-      FROM invex.product_stock ps
-      JOIN invex.active_products p ON ps.product_id = p.id
-      JOIN invex.active_locations l ON ps.location_id = l.id
-      WHERE (ps.quantity > 0 OR ps.location_sku IS NOT NULL)
-        ${location_id ? `AND ps.location_id = $1` : ''}
-      ORDER BY l.name ASC, p.name ASC
-    `, values);
 
-    await sendExportFile(res, result.rows, format, filenameBase);
+    const rows = await reportModel.exportStockReport({ location_id });
+    await sendExportFile(res, rows, format, filenameBase);
   } catch (error) {
     next(error);
   }
@@ -371,45 +346,14 @@ const exportMovementLog = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
     const { location_id } = req.query;
-    const values = [];
-    let whereClause = '';
     let filenameBase = 'movement-log';
 
     if (location_id) {
-      whereClause = 'WHERE sm.location_id = $1';
-      values.push(location_id);
-
-      // Fetch location name for the filename
-      const locRes = await query('SELECT name FROM invex.locations WHERE id = $1', [location_id]);
-      if (locRes.rows.length > 0) {
-        const safeName = locRes.rows[0].name.replace(/[^a-z0-9]/gi, '-');
-        filenameBase += `-${safeName}`;
-      }
+      filenameBase = await appendLocationToFilename(filenameBase, location_id);
     }
-    
-    const result = await query(`
-      SELECT 
-        sm.movement_id,
-        sm.movement_date,
-        COALESCE(ps.location_sku, p.sku) AS sku,
-        p.name as product_name,
-        sm.quantity_change,
-        l.name as location_name,
-        u.username as performed_by,
-        sm.source_type,
-        sm.notes
-      FROM invex.stock_movements sm
-      JOIN invex.products p ON sm.product_id = p.id
-      JOIN invex.locations l ON sm.location_id = l.id
-      LEFT JOIN invex.product_stock ps
-        ON ps.product_id = sm.product_id
-       AND ps.location_id = sm.location_id
-      LEFT JOIN invex.users u ON sm.user_id = u.id
-      ${whereClause}
-      ORDER BY sm.movement_date DESC
-    `, values);
 
-    await sendExportFile(res, result.rows, format, filenameBase);
+    const rows = await reportModel.exportMovementLog({ location_id });
+    await sendExportFile(res, rows, format, filenameBase);
   } catch (error) {
     next(error);
   }

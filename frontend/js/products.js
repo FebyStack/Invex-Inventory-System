@@ -474,6 +474,7 @@ form.onsubmit = async (e) => {
     return;
   }
 
+  const notesRaw = document.getElementById('notes').value;
   const basePayload = {
     name: document.getElementById('name').value,
     category_id: parseInt(document.getElementById('category_id').value),
@@ -481,7 +482,8 @@ form.onsubmit = async (e) => {
     unit_price: parseFloat(document.getElementById('unit_price').value),
     reorder_level: reorderRaw === '' ? 10 : parseInt(reorderRaw, 10),
     unit_of_measure: uom,
-    track_expiry: trackExpiry
+    track_expiry: trackExpiry,
+    notes: notesRaw.trim() === '' ? null : notesRaw.trim()
   };
   if (trackExpiry && expiryDateInput.value) {
     const dateVal = expiryDateInput.value;
@@ -595,6 +597,8 @@ tableBody.onclick = async (e) => {
       const unit = unitCatalog.find(u => u.v === p.unit_of_measure) || { v: 'pcs', l: 'Pieces (pcs)' };
       unitSearch.value = unit.l;
       unitHidden.value = unit.v;
+
+      document.getElementById('notes').value = p.notes || '';
 
       document.getElementById('track_expiry').checked = p.track_expiry;
       if (p.initial_expiry_date) {

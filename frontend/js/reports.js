@@ -69,11 +69,15 @@
         tbody.innerHTML = '';
         data.data.forEach(item => {
           const isOut = item.current_stock === 0;
+          const locationLabel = item.location_name
+            ? `<div style="font-size:10px;color:var(--fg-3);margin-top:2px">📍 ${escapeHtml(item.location_name)}</div>`
+            : '';
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>
               <div style="font-weight:500;color:var(--fg-1)">${escapeHtml(item.product_name)}</div>
               <div style="font-size:11px;color:var(--fg-4);font-family:'DM Mono',monospace">${escapeHtml(item.sku)}</div>
+              ${locationLabel}
             </td>
             <td style="text-align:right;font-family:'DM Mono',monospace;color:${isOut ? 'var(--danger)' : 'var(--warning)'}">${Number(item.current_stock) || 0}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--fg-3)">${Number(item.reorder_level) || 0}</td>

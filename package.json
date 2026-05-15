@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "animejs": "^4.4.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
@@ -27,6 +28,7 @@
     "nodemailer": "^6.9.16",
     "papaparse": "^5.5.3",
     "pg": "^8.20.0",
+    "ws": "^8.20.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -236,10 +236,14 @@ form.onsubmit = async (e) => {
       closeModal();
       loadCategories();
     } else {
-      alert(result.message || 'Could not save category.');
+      showAlert({
+        title: 'Save Failed',
+        text: result.message || 'Could not save category.',
+        type: 'danger'
+      });
     }
   } catch (err) {
-    alert('Network error.');
+    showAlert({ title: 'Network Error', text: 'Failed to connect to the server.', type: 'danger' });
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save';
@@ -261,7 +265,14 @@ grid.onclick = async (e) => {
     const token = sessionStorage.getItem('token');
 
     if (btn.classList.contains('delete-btn')) {
-      if (!confirm("Delete this category? Products using it won't be affected.")) return;
+      const confirmed = await showConfirm({
+        title: 'Delete Category',
+        text: 'Are you sure you want to delete this category? This action cannot be undone.',
+        confirmText: 'Delete',
+        type: 'danger'
+      });
+      if (!confirmed) return;
+
       try {
         const res = await fetch(`/api/categories/${id}`, {
           method: 'DELETE',
@@ -271,9 +282,15 @@ grid.onclick = async (e) => {
         if (result.success) {
           loadCategories();
         } else {
-          alert(result.message || 'Could not delete category.');
+          showAlert({
+            title: 'Delete Failed',
+            text: result.message || 'Could not delete category.',
+            type: 'danger'
+          });
         }
-      } catch { alert('Network error.'); }
+      } catch { 
+        showAlert({ title: 'Network Error', text: 'Failed to connect to the server.', type: 'danger' });
+      }
       return;
     }
 

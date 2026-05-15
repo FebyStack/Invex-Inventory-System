@@ -93,4 +93,19 @@ const getFacets = async () => {
   };
 };
 
-module.exports = { getAll, getFacets };
+/**
+ * Insert an activity_logs row using the supplied DB client. Use this when
+ * the activity log must be part of an open transaction — callers that just
+ * want fire-and-forget logging should use src/utils/logger.logActivity.
+ */
+const insertLog = async (client, { user_id, action, entity_type, entity_id, location_id, details }) => {
+  const serialized = details == null || typeof details === 'string' ? details : JSON.stringify(details);
+  await client.query(
+    `INSERT INTO invex.activity_logs
+       (user_id, action, entity_type, entity_id, location_id, details)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [user_id, action, entity_type, entity_id, location_id, serialized]
+  );
+};
+
+module.exports = { getAll, getFacets, insertLog };

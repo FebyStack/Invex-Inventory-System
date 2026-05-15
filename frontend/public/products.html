@@ -212,18 +212,12 @@
             <input type="number" id="initial_quantity" class="form-control" min="0" value="0" placeholder="0">
             <div style="margin-top: 4px; font-size: 11px; color: var(--fg-4);">Stock to add at the selected location(s).</div>
           </div>
-          <div class="form-group">
-            <!-- Empty column for balance -->
+          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:26px;">
+            <label style="display:flex;align-items:center;gap:8px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg-2);font-weight:400;cursor:pointer;">
+              <input type="checkbox" id="track_expiry" checked style="width:auto;height:auto;cursor:pointer;">
+              Track expiry dates
+            </label>
           </div>
-        </div>
-
-        <div style="margin: 20px 0 10px 0; height: 1px; background: var(--border);"></div>
-
-        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <input type="checkbox" id="track_expiry" checked style="width:auto;height:auto;cursor:pointer;">
-          <label for="track_expiry"
-            style="margin: 0; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--fg-2); font-weight: 400;">Track
-            expiry dates</label>
         </div>
 
         <div class="form-group" id="expiry-date-group">
@@ -252,6 +246,11 @@
           </div>
           <input type="hidden" id="expiry_date">
           <div style="margin-top: 4px; font-size: 11px; color: var(--fg-4);">Easily select the month and year of expiration.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notes <span style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <textarea id="notes" class="form-control" rows="3" maxlength="2000" placeholder="Status, handling instructions, or anything worth noting about this product."></textarea>
         </div>
 
         <div class="modal-footer">

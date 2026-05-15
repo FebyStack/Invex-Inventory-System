@@ -1,5 +1,6 @@
 const notificationModel = require('../models/notificationModel');
 const notificationService = require('../services/notificationService');
+const realtimeService = require('../services/realtimeService');
 
 exports.list = async (req, res, next) => {
   try {
@@ -13,6 +14,7 @@ exports.list = async (req, res, next) => {
 exports.markRead = async (req, res, next) => {
   try {
     await notificationModel.markRead(req.params.id);
+    realtimeService.broadcast({ type: 'notification:read', data: { id: Number(req.params.id) } });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -22,6 +24,7 @@ exports.markRead = async (req, res, next) => {
 exports.markAllRead = async (req, res, next) => {
   try {
     await notificationModel.markAllRead();
+    realtimeService.broadcast({ type: 'notification:read-all' });
     res.json({ success: true });
   } catch (err) {
     next(err);

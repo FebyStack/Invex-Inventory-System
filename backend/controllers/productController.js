@@ -83,6 +83,7 @@ exports.createProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
+      notes,
       expiry_date, // Added optional expiry date for the initial batch
       initial_quantity, // Optional initial stock quantity
     } = req.body;
@@ -107,6 +108,7 @@ exports.createProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Location not found.' });
     }
 
+    const trimmedNotes = typeof notes === 'string' ? notes.trim() : notes;
     const product = await productModel.createProduct({
       name,
       sku,
@@ -116,30 +118,29 @@ exports.createProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
+      notes: trimmedNotes ? trimmedNotes : null,
     }, client);
 
     // If an expiry date was provided, create an initial batch (with 0 quantity)
     // to "auto-track" that specific expiry date for this product at this location.
     if (track_expiry && expiry_date) {
-      await client.query(
-        `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [product.id, locationId, 'INIT-' + sku, 0, expiry_date]
-      );
+      await productModel.insertInitialBatch(client, {
+        product_id: product.id,
+        location_id: locationId,
+        sku,
+        expiry_date,
+      });
     }
 
     // Seed initial stock quantity at the selected location
     const initQty = parseInt(initial_quantity, 10) || 0;
     if (initQty > 0) {
-      await client.query(
-        `INSERT INTO invex.product_stock (product_id, location_id, quantity, location_sku)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (product_id, location_id)
-         DO UPDATE SET quantity = invex.product_stock.quantity + EXCLUDED.quantity,
-                       location_sku = COALESCE(invex.product_stock.location_sku, EXCLUDED.location_sku),
-                       last_updated = CURRENT_TIMESTAMP`,
-        [product.id, locationId, initQty, product.sku]
-      );
+      await productModel.upsertInitialStock(client, {
+        product_id: product.id,
+        location_id: locationId,
+        quantity: initQty,
+        location_sku: product.sku,
+      });
     }
 
     await client.query('COMMIT');
@@ -193,7 +194,20 @@ exports.updateProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
+      notes,
     } = req.body;
+
+    // Treat an empty/whitespace notes string as an explicit clear (null) so
+    // the user can wipe a previous note. `undefined` means "don't touch".
+    let notesNormalized;
+    if (notes === undefined) {
+      notesNormalized = undefined;
+    } else if (notes === null) {
+      notesNormalized = null;
+    } else {
+      const trimmed = String(notes).trim();
+      notesNormalized = trimmed === '' ? null : trimmed;
+    }
 
     const updated = await productModel.updateProduct(req.params.id, {
       name,
@@ -204,6 +218,7 @@ exports.updateProduct = async (req, res, next) => {
       reorder_level,
       track_expiry,
       unit_of_measure,
+      notes: notesNormalized,
     });
 
     if (!updated) {
@@ -212,40 +227,17 @@ exports.updateProduct = async (req, res, next) => {
 
     if (track_expiry && req.body.expiry_date) {
       // Check if an INIT- batch already exists for this product
-      const existingBatch = await pool.query(
-        `SELECT id FROM invex.product_batches WHERE product_id = $1 AND batch_no LIKE 'INIT-%' LIMIT 1`,
-        [req.params.id]
-      );
+      const existingBatch = await productModel.findInitBatchByProduct(req.params.id);
 
-      if (existingBatch.rows.length > 0) {
+      if (existingBatch) {
         // Update the existing initial batch
-        await pool.query(
-          `UPDATE invex.product_batches 
-           SET expiry_date = $1
-           WHERE product_id = $2 AND batch_no LIKE 'INIT-%'`,
-          [req.body.expiry_date, req.params.id]
-        );
+        await productModel.updateInitBatchExpiry(req.params.id, req.body.expiry_date);
       } else {
         // No INIT- batch exists yet — create one using the product's primary location
-        const locResult = await pool.query(
-          `SELECT location_id FROM invex.product_stock 
-           WHERE product_id = $1 AND quantity > 0
-           ORDER BY quantity DESC LIMIT 1`,
-          [req.params.id]
-        );
-        const locationId = locResult.rows.length > 0
-          ? locResult.rows[0].location_id
-          : (await pool.query(
-              `SELECT location_id FROM invex.product_stock WHERE product_id = $1 ORDER BY location_id ASC LIMIT 1`,
-              [req.params.id]
-            )).rows[0]?.location_id;
+        const locationId = await productModel.findPrimaryLocationId(req.params.id);
 
         if (locationId) {
-          await pool.query(
-            `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
-             VALUES ($1, $2, 'INIT-' || (SELECT sku FROM invex.products WHERE id = $1), 0, $3)`,
-            [req.params.id, locationId, req.body.expiry_date]
-          );
+          await productModel.insertInitialBatchFromProductSku(req.params.id, locationId, req.body.expiry_date);
         }
       }
     }
@@ -346,15 +338,8 @@ exports.setStock = async (req, res, next) => {
     // falling back to the first known location for this product.
     let locationId = parseInt(req.body && req.body.location_id, 10);
     if (!Number.isInteger(locationId)) {
-      const primary = await client.query(
-        `SELECT location_id, quantity
-           FROM invex.product_stock
-          WHERE product_id = $1
-          ORDER BY quantity DESC, location_id ASC
-          LIMIT 1`,
-        [productId]
-      );
-      if (primary.rowCount === 0) {
+      const primary = await stockModel.getPrimaryLocationStock(productId, client);
+      if (!primary) {
         await client.query('ROLLBACK');
         transactionStarted = false;
         return res.status(409).json({
@@ -362,19 +347,14 @@ exports.setStock = async (req, res, next) => {
           message: 'This product has no location assigned yet. Use the Adjustments page to seed stock.',
         });
       }
-      locationId = primary.rows[0].location_id;
+      locationId = primary.location_id;
     }
 
     // For decreases, make sure the chosen location can absorb the full
     // delta without going negative. If not, surface a 409 so the user
     // knows they need the multi-location Adjustments flow.
     if (delta < 0) {
-      const stockHere = await client.query(
-        `SELECT quantity FROM invex.product_stock
-          WHERE product_id = $1 AND location_id = $2`,
-        [productId, locationId]
-      );
-      const available = Number(stockHere.rows[0]?.quantity || 0);
+      const available = await stockModel.getQuantityAt(productId, locationId, client);
       if (available < Math.abs(delta)) {
         await client.query('ROLLBACK');
         transactionStarted = false;
@@ -519,13 +499,7 @@ exports.adjustStock = async (req, res, next) => {
       // Read current qty under a row lock so concurrent edits don't race
       // each other into negative stock. New locations have no row yet —
       // treated as quantity 0.
-      const cur = await client.query(
-        `SELECT quantity FROM invex.product_stock
-          WHERE product_id = $1 AND location_id = $2
-          FOR UPDATE`,
-        [productId, change.location_id]
-      );
-      const currentQty = Number(cur.rows[0]?.quantity || 0);
+      const currentQty = await stockModel.lockQuantityAt(client, productId, change.location_id);
       const delta = change.target_quantity - currentQty;
 
       if (delta === 0) continue;

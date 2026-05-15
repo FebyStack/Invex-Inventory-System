@@ -1,6 +1,9 @@
-const { pool, query } = require('../src/config/db');
+const { pool } = require('../src/config/db');
+const transferModel = require('../models/transferModel');
+const activityLogModel = require('../models/activityLogModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
+const notificationService = require('../services/notificationService');
 
 /**
  * GET /api/transfers
@@ -8,43 +11,15 @@ const { logActivity } = require('../src/utils/logger');
 exports.getAllTransfers = async (req, res, next) => {
   try {
     const { product_id, from_location_id, to_location_id, transferred_by, date_from, date_to } = req.query;
-    let sql = `
-      SELECT *
-      FROM invex.transfer_log_details
-      WHERE 1 = 1
-    `;
-    const values = [];
-    let idx = 1;
-
-    if (product_id) {
-      sql += ` AND product_id = $${idx++}`;
-      values.push(product_id);
-    }
-    if (from_location_id) {
-      sql += ` AND from_location_id = $${idx++}`;
-      values.push(from_location_id);
-    }
-    if (to_location_id) {
-      sql += ` AND to_location_id = $${idx++}`;
-      values.push(to_location_id);
-    }
-    if (transferred_by) {
-      sql += ` AND transferred_by_id = $${idx++}`;
-      values.push(transferred_by);
-    }
-    if (date_from) {
-      sql += ` AND transferred_at >= $${idx++}`;
-      values.push(date_from);
-    }
-    if (date_to) {
-      sql += ` AND transferred_at <= $${idx++}`;
-      values.push(date_to);
-    }
-
-    sql += ' ORDER BY transferred_at DESC';
-
-    const result = await query(sql, values);
-    return res.json({ success: true, count: result.rowCount, data: result.rows });
+    const rows = await transferModel.listTransfers({
+      product_id,
+      from_location_id,
+      to_location_id,
+      transferred_by,
+      date_from,
+      date_to,
+    });
+    return res.json({ success: true, count: rows.length, data: rows });
   } catch (error) {
     return next(error);
   }
@@ -55,18 +30,10 @@ exports.getAllTransfers = async (req, res, next) => {
  */
 exports.getTransferById = async (req, res, next) => {
   try {
-    const result = await query(
-      `SELECT *
-       FROM invex.transfer_log_details
-       WHERE id = $1`,
-      [req.params.id]
-    );
-
-    const transfer = result.rows[0];
+    const transfer = await transferModel.getTransferById(req.params.id);
     if (!transfer) {
       return res.status(404).json({ success: false, message: 'Transfer not found.' });
     }
-
     return res.json({ success: true, data: transfer });
   } catch (error) {
     return next(error);
@@ -112,15 +79,7 @@ exports.createTransfer = async (req, res, next) => {
     const sourceLocationSku = await stockModel.ensureLocationSku(product_id, from_location_id, client);
     const destinationLocationSku = await stockModel.ensureLocationSku(product_id, to_location_id, client);
 
-    const sourceStockResult = await client.query(
-      `SELECT quantity
-       FROM invex.product_stock
-       WHERE product_id = $1 AND location_id = $2
-       FOR UPDATE`,
-      [product_id, from_location_id]
-    );
-
-    const sourceStock = sourceStockResult.rows[0];
+    const sourceStock = await transferModel.lockSourceStock(client, product_id, from_location_id);
     if (!sourceStock || sourceStock.quantity < transferQuantity) {
       await client.query('ROLLBACK');
       transactionStarted = false;
@@ -131,18 +90,7 @@ exports.createTransfer = async (req, res, next) => {
     await stockModel.incrementStock(product_id, to_location_id, transferQuantity, client);
 
     if (batch_id) {
-      const sourceBatchResult = await client.query(
-        `SELECT id, product_id, batch_no, quantity, expiry_date
-         FROM invex.product_batches
-         WHERE id = $1
-           AND product_id = $2
-           AND location_id = $3
-           AND is_deleted = FALSE
-         FOR UPDATE`,
-        [batch_id, product_id, from_location_id]
-      );
-
-      const sourceBatch = sourceBatchResult.rows[0];
+      const sourceBatch = await transferModel.lockSourceBatch(client, batch_id, product_id, from_location_id);
       if (!sourceBatch) {
         await client.query('ROLLBACK');
         transactionStarted = false;
@@ -155,72 +103,56 @@ exports.createTransfer = async (req, res, next) => {
         return res.status(400).json({ success: false, message: 'Insufficient stock at source location' });
       }
 
-      await client.query(
-        `UPDATE invex.product_batches
-         SET quantity = quantity - $2
-         WHERE id = $1 AND location_id = $3`,
-        [batch_id, transferQuantity, from_location_id]
-      );
+      await transferModel.decrementBatchAtLocation(client, batch_id, from_location_id, transferQuantity);
 
-      const destinationBatchResult = await client.query(
-        `SELECT id
-         FROM invex.product_batches
-         WHERE product_id = $1
-           AND location_id = $2
-           AND batch_no = $3
-           AND expiry_date = $4
-           AND is_deleted = FALSE
-         LIMIT 1`,
-        [sourceBatch.product_id, to_location_id, sourceBatch.batch_no, sourceBatch.expiry_date]
+      const destinationBatch = await transferModel.findDestinationBatch(
+        client,
+        sourceBatch.product_id,
+        to_location_id,
+        sourceBatch.batch_no,
+        sourceBatch.expiry_date
       );
-
-      const destinationBatch = destinationBatchResult.rows[0];
       if (destinationBatch) {
-        await client.query(
-          `UPDATE invex.product_batches
-           SET quantity = quantity + $2
-           WHERE id = $1`,
-          [destinationBatch.id, transferQuantity]
-        );
+        await transferModel.incrementBatch(client, destinationBatch.id, transferQuantity);
       } else {
-        await client.query(
-          `INSERT INTO invex.product_batches (product_id, location_id, batch_no, quantity, expiry_date)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [sourceBatch.product_id, to_location_id, sourceBatch.batch_no, transferQuantity, sourceBatch.expiry_date]
-        );
+        await transferModel.createBatchAtLocation(client, {
+          product_id: sourceBatch.product_id,
+          location_id: to_location_id,
+          batch_no: sourceBatch.batch_no,
+          quantity: transferQuantity,
+          expiry_date: sourceBatch.expiry_date,
+        });
       }
     }
 
-    const transferResult = await client.query(
-      `INSERT INTO invex.location_transfer_logs
-         (from_location_id, to_location_id, product_id, batch_id, quantity, transferred_by, notes, transferred_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-       RETURNING id, from_location_id, to_location_id, product_id, batch_id, quantity, transferred_by, notes, transferred_at`,
-      [
-        from_location_id,
-        to_location_id,
-        product_id,
-        batch_id || null,
-        transferQuantity,
-        req.user.id,
-        notes || null,
-      ]
-    );
+    const transfer = await transferModel.insertTransferLog(client, {
+      from_location_id,
+      to_location_id,
+      product_id,
+      batch_id,
+      quantity: transferQuantity,
+      transferred_by: req.user.id,
+      notes,
+    });
 
-    const transfer = transferResult.rows[0];
     transfer.source_location_sku = sourceLocationSku;
     transfer.destination_location_sku = destinationLocationSku;
     const activityDetails = `Transferred ${transfer.quantity} units of product ${transfer.product_id} from location ${transfer.from_location_id} to location ${transfer.to_location_id}.`;
 
-    await client.query(
-      `INSERT INTO invex.activity_logs
-         (user_id, action, entity_type, entity_id, location_id, details)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [req.user.id, 'TRANSFER', 'location_transfer_logs', transfer.id, from_location_id, activityDetails]
-    );
+    await activityLogModel.insertLog(client, {
+      user_id: req.user.id,
+      action: 'TRANSFER',
+      entity_type: 'location_transfer_logs',
+      entity_id: transfer.id,
+      location_id: from_location_id,
+      details: activityDetails,
+    });
 
     await client.query('COMMIT');
     transactionStarted = false;
+
+    // Trigger notification scan
+    void notificationService.runScan({ silent: true });
 
     return res.status(201).json({ success: true, data: transfer });
   } catch (error) {
@@ -239,15 +171,7 @@ exports.createTransfer = async (req, res, next) => {
  */
 exports.deleteTransfer = async (req, res, next) => {
   try {
-    const result = await query(
-      `UPDATE invex.location_transfer_logs
-       SET is_deleted = TRUE
-       WHERE id = $1 AND is_deleted = FALSE
-       RETURNING id, from_location_id, to_location_id, product_id, quantity`,
-      [req.params.id]
-    );
-
-    const deleted = result.rows[0];
+    const deleted = await transferModel.softDeleteTransfer(req.params.id);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Transfer not found.' });
     }

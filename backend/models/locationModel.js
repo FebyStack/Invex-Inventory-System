@@ -252,6 +252,18 @@ const countProductsAtLocation = async (id) => {
 };
 
 /**
+ * Lightweight name lookup. Does not filter on is_deleted — used by export
+ * filename helpers that just need the latest known name for a given id.
+ */
+const getNameById = async (id) => {
+  const result = await query(
+    `SELECT name FROM invex.locations WHERE id = $1`,
+    [id]
+  );
+  return result.rows[0]?.name || null;
+};
+
+/**
  * Soft-delete a location.
  */
 const softDeleteLocation = async (id) => {
@@ -267,6 +279,7 @@ const softDeleteLocation = async (id) => {
 module.exports = {
   getAllLocations,
   getLocationById,
+  getNameById,
   createLocation,
   locationCodeExists,
   updateLocation,

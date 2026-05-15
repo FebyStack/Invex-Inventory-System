@@ -1,7 +1,9 @@
 const { pool } = require('../src/config/db');
 const orderModel = require('../models/orderModel');
+const transferModel = require('../models/transferModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
+const notificationService = require('../services/notificationService');
 
 const ORDER_REF_PREFIX = {
   IN: 'IN',
@@ -133,20 +135,15 @@ exports.createOrder = async (req, res, next) => {
         itemSkuRefs.push(stock.location_sku);
 
         // Record in location_transfer_logs for centralized transfer history
-        await client.query(
-          `INSERT INTO invex.location_transfer_logs 
-             (from_location_id, to_location_id, product_id, batch_id, quantity, transferred_by, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [
-            source_location_id,
-            destination_location_id,
-            item.product_id,
-            batchId, // from above (if any)
-            item.quantity,
-            req.user.id,
-            `Order ${order.reference_no || order.id} transfer`
-          ]
-        );
+        await transferModel.insertTransferLog(client, {
+          from_location_id: source_location_id,
+          to_location_id: destination_location_id,
+          product_id: item.product_id,
+          batch_id: batchId,
+          quantity: item.quantity,
+          transferred_by: req.user.id,
+          notes: `Order ${order.reference_no || order.id} transfer`,
+        });
       }
     }
 
@@ -158,11 +155,13 @@ exports.createOrder = async (req, res, next) => {
 
     await client.query('COMMIT');
 
-    // Log activity
     void logActivity(req.user.id, `CREATE_${order_type}_ORDER`, 'orders', order.id, {
       reference_no: order.reference_no,
       itemCount: items.length,
     });
+
+    // Trigger notification scan for any new low-stock items
+    void notificationService.runScan({ silent: true });
 
     return res.status(201).json({ success: true, data: order });
   } catch (error) {
@@ -235,6 +234,9 @@ exports.deleteOrder = async (req, res, next) => {
     await client.query('COMMIT');
 
     void logActivity(req.user.id, 'DELETE_ORDER', 'orders', id);
+
+    // Trigger notification scan for any newly low-stock items after deletion/reversal
+    void notificationService.runScan({ silent: true });
 
     return res.json({ success: true, message: 'Order deleted and stock reversed successfully.' });
   } catch (error) {

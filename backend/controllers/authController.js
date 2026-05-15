@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { query } = require('../src/config/db');
+const userModel = require('../models/userModel');
 const config = require('../src/config/env');
 const { logActivity } = require('../src/utils/logger');
 const { validatePassword } = require('../src/utils/passwordPolicy');
@@ -53,8 +53,7 @@ exports.register = async (req, res, next) => {
     }
 
     // 2. Check if user already exists
-    const existingUser = await query('SELECT id FROM invex.users WHERE username = $1', [username]);
-    if (existingUser.rows.length > 0) {
+    if (await userModel.usernameExists(username)) {
       return res.status(400).json({
         success: false,
         message: 'Username is already taken.',
@@ -66,14 +65,13 @@ exports.register = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 4. Insert into database
-    const newUserResult = await query(
-      `INSERT INTO invex.users (username, password, full_name, email, role)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, username, full_name, email, role, created_at`,
-      [username, hashedPassword, full_name, email, role]
-    );
-
-    const newUser = newUserResult.rows[0];
+    const newUser = await userModel.createWithHashedPassword({
+      username,
+      password: hashedPassword,
+      full_name,
+      email,
+      role,
+    });
 
     // 5. Log activity (async)
     void logActivity(newUser.id, 'REGISTER', 'users', newUser.id, {
@@ -105,15 +103,7 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    const userResult = await query(
-      `SELECT id, username, password, full_name, email, role
-       FROM invex.users
-       WHERE username = $1 AND is_deleted = FALSE
-       LIMIT 1`,
-      [username]
-    );
-
-    const user = userResult.rows[0];
+    const user = await userModel.findByUsernameWithPassword(username);
 
     if (!user) {
       return res.status(401).json({
@@ -193,12 +183,7 @@ exports.changePassword = async (req, res, next) => {
     }
 
     // Get current user's password hash
-    const userResult = await query(
-      'SELECT id, password FROM invex.users WHERE id = $1 AND is_deleted = FALSE',
-      [req.user.id]
-    );
-
-    const user = userResult.rows[0];
+    const user = await userModel.getUserWithPasswordById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
@@ -213,10 +198,7 @@ exports.changePassword = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(new_password, salt);
 
-    await query(
-      'UPDATE invex.users SET password = $1 WHERE id = $2',
-      [hashedPassword, req.user.id]
-    );
+    await userModel.updatePasswordHash(req.user.id, hashedPassword);
 
     void logActivity(req.user.id, 'CHANGE_PASSWORD', 'users', req.user.id);
 
@@ -228,15 +210,7 @@ exports.changePassword = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    const userResult = await query(
-      `SELECT id, username, full_name, email, role, created_at
-       FROM invex.users
-       WHERE id = $1 AND is_deleted = FALSE
-       LIMIT 1`,
-      [req.user.id]
-    );
-
-    const user = userResult.rows[0];
+    const user = await userModel.getUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({

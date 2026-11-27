@@ -150,16 +150,14 @@
         } catch (err) {
           console.error('Logout API error:', err);
         } finally {
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('user');
-          window.location.href = '/login.html';
+          window.Invex.endSession(); // role-guard.js, loaded in every page's <head>
         }
       });
     }
 
     // 5. Session guard
     if (!sessionStorage.getItem('token')) {
-      window.location.href = '/login.html';
+      window.Invex.endSession(); // no-op if the session was already ended (keeps that redirect)
     }
 
     // 6. Display user initials and info in footer

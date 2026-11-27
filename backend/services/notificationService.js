@@ -194,7 +194,7 @@ function composeDigest(items) {
 
 // ── Public API ──────────────────────────────────────────────────────────
 
-async function runScan({ silent = false } = {}) {
+async function scan({ silent = false } = {}) {
   const findings = [
     ...(await scanLowStock()),
     ...(await scanExpiring(7)),
@@ -249,6 +249,31 @@ async function runScan({ silent = false } = {}) {
   return { findings, newlyCreated, emailResult };
 }
 
+// Scanner states: idle → scanning → scanning with one rerun queued → idle.
+// Every stock write asks for a scan. Only one runs at a time; a request that arrives mid-scan gets a single
+// follow-up scan (so it sees data committed after the running scan read it) instead of a parallel one.
+let scanning = null;
+let rerun = null;
+
+function runScan(options) {
+  if (!scanning) {
+    scanning = scan(options).finally(() => { scanning = null; });
+    return scanning;
+  }
+  if (!rerun) {
+    rerun = scanning.catch(() => {}).then(() => {
+      rerun = null;
+      return runScan(options);
+    });
+  }
+  return rerun;
+}
+
+// Fire-and-forget scan after a stock change. A failed scan must never fail (or crash) the request that asked.
+function requestScan() {
+  runScan({ silent: true }).catch((err) => console.error('[notifications] scan failed:', err.message));
+}
+
 let intervalHandle = null;
 function start(intervalMs = 15 * 60 * 1000) {
   if (intervalHandle) return;
@@ -269,4 +294,4 @@ function stop() {
   }
 }
 
-module.exports = { runScan, start, stop };
+module.exports = { runScan, requestScan, start, stop };

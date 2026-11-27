@@ -154,8 +154,11 @@
   // ── Realtime push ─────────────────────────────────────────────────────
   // Open a WebSocket so the bell reacts the instant the notification
   // scanner creates a row (or another tab marks one read).
+  // Socket states: connecting → open → waiting (backoff timer running) → connecting …
+  // `failedAttempts` counts connects since the socket was last open; it sets the backoff
+  // and tells `open` whether this is a reconnect (alerts may have been missed meanwhile).
   let ws = null;
-  let reconnectDelay = 1000;
+  let failedAttempts = 0;
   let reconnectTimer = null;
 
   function connectWS() {
@@ -173,7 +176,8 @@
     }
 
     ws.addEventListener('open', () => {
-      reconnectDelay = 1000;
+      if (failedAttempts > 0) fetchNotifications();
+      failedAttempts = 0;
     });
 
     ws.addEventListener('message', (evt) => {
@@ -198,13 +202,14 @@
 
   function scheduleReconnect() {
     if (reconnectTimer) return;
+    // Capped exponential backoff (1s, 2s, 4s … 30s) so a downed server
+    // doesn't hammer the client into a tight loop.
+    const delay = Math.min(1000 * 2 ** failedAttempts, 30_000);
+    failedAttempts += 1;
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      // Capped exponential backoff so a downed server doesn't hammer the
-      // client into a tight loop.
-      reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
       connectWS();
-    }, reconnectDelay);
+    }, delay);
   }
 
   fetchNotifications();

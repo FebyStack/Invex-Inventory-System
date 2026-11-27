@@ -224,7 +224,7 @@ Pages in `frontend/public`: `login`, `register`, `dashboard`, `products`, `produ
 `users`, `reason-codes`, `activity-log`, `profile`, and `index`.
 
 - The token and the user object live in `sessionStorage` (`token`, `user`). The theme is in `localStorage`.
-- `frontend/js/api.js` exports `fetchApi`, which adds the token and sends the user to the login page on a 401.
+- `frontend/js/role-guard.js` wraps `fetch`: a 403 shows the permission popup, a 401 with a token error code ends the session and returns to the login page (`Invex.endSession`). Pages call `fetch` directly.
   Several page scripts call `fetch` directly with the same header.
 - `frontend/components/sidebar.html` is the menu; `frontend/js/sidebar.js` maps each label to its page and
   shows items with class `admin-item` to super admins only.
@@ -242,7 +242,7 @@ Pages in `frontend/public`: `login`, `register`, `dashboard`, `products`, `produ
   meanwhile (section 6). The pages still show edit and delete buttons to sub admins.
 - The live database has a leftover `public.categories` table that nothing uses.
 - No automated tests beyond the smoke script (`scripts/smoke-test.sh`, 39 checks; needs a `super_admin` login via
-  `INVEX_USER`/`INVEX_PASS`). `frontend/js/auth.js` is empty. No README.
+  `INVEX_USER`/`INVEX_PASS`). No README.
 
 ## 12. What the Advanced Database project adds
 

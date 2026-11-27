@@ -19,6 +19,11 @@ const submitBtn = document.getElementById('submit-btn');
 const btnText = document.getElementById('btn-text');
 const btnLoader = document.getElementById('btn-loader');
 
+if (new URLSearchParams(window.location.search).get('reason') === 'expired') {
+    errorMsg.textContent = 'Your session ended. Please sign in again.';
+    errorMsg.style.display = 'block';
+}
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 

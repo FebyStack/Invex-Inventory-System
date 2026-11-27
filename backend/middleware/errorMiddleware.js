@@ -3,6 +3,11 @@
  * Catches all errors thrown in route handlers and returns a consistent JSON response.
  */
 const errorHandler = (err, req, res, next) => {
+  // Expected failures (HttpError in backend/src/utils/transaction.js): reply as written, no stack, no error log.
+  if (err.name === 'HttpError') {
+    return res.status(err.statusCode).json({ success: false, message: err.message, ...err.extra });
+  }
+
   const statusCode = err.statusCode || res.statusCode || 500;
   const normalizedStatusCode = statusCode >= 400 ? statusCode : 500;
   const isDevelopment = process.env.NODE_ENV === 'development';

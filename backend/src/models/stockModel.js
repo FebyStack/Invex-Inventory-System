@@ -137,7 +137,44 @@ const lockQuantityAt = async (client, productId, locationId) => {
   return Number(result.rows[0]?.quantity || 0);
 };
 
+/**
+ * What each movement type does to stock, in order: [operation, which location].
+ * Orders use IN / OUT / TRANSFER; stock adjustments use INCREASE / DECREASE / TRANSFER.
+ * This table is the single definition; undoing a movement runs the same steps with the operation flipped.
+ */
+const MOVEMENTS = {
+  IN: [['add', 'to']],
+  OUT: [['remove', 'from']],
+  INCREASE: [['add', 'from']],
+  DECREASE: [['remove', 'from']],
+  TRANSFER: [['remove', 'from'], ['add', 'to']],
+};
+const ORDER_TYPES = ['IN', 'OUT', 'TRANSFER'];
+const ADJUSTMENT_TYPES = ['INCREASE', 'DECREASE', 'TRANSFER'];
+
+/**
+ * Apply one stock movement inside the caller's transaction (pass `{ reverse: true }` to undo it).
+ * `from` is the source location (the only location for INCREASE / DECREASE), `to` the destination.
+ * Returns the stock row of the last step. Throws "Insufficient stock ..." when a removal cannot be covered.
+ */
+const applyMovement = async (client, type, { productId, from, to, qty }, { reverse = false } = {}) => {
+  const steps = MOVEMENTS[type];
+  if (!steps) throw new Error(`Unknown stock movement type: ${type}`);
+
+  let stock;
+  for (const [operation, side] of steps) {
+    const adds = (operation === 'add') !== reverse;
+    const locationId = side === 'to' ? to : from;
+    stock = await (adds ? incrementStock : decrementStock)(productId, locationId, qty, client);
+  }
+  return stock;
+};
+
 module.exports = {
+  MOVEMENTS,
+  ORDER_TYPES,
+  ADJUSTMENT_TYPES,
+  applyMovement,
   getStockByProduct,
   getStockByLocation,
   incrementStock,

@@ -76,7 +76,17 @@ const softDelete = async (id) => {
   return result.rows[0] || null;
 };
 
+/**
+ * Return the active reason code with this code, creating it on first use
+ * (system codes such as MANUAL_EDIT and RECEIVE).
+ */
+const ensure = async ({ code, description, adjustment_type }) => {
+  const existing = (await getAll()).find((r) => r.code === code);
+  return existing || create({ code, description, adjustment_type });
+};
+
 module.exports = {
+  ensure,
   getAll,
   getById,
   codeExists,

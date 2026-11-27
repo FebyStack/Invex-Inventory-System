@@ -23,6 +23,11 @@ Safe test run without touching real data (verified 2026-11-25): copy the databas
 start a second server on it (`PORT=3100 DB_NAME=invex_smoke NOTIF_SCAN_INTERVAL_MS=0 node server.js`; env vars beat
 `backend/.env`), register a user, promote it to `super_admin` in SQL, then
 `INVEX_URL=http://localhost:3100 INVEX_USER=<user> INVEX_PASS=<pw> ./scripts/smoke-test.sh`. Drop `invex_smoke` after.
+Since 2026-11-27 `backend/.env` points at Supabase, so `DB_NAME` alone is NOT enough: start the test server with
+`PORT=3100 DB_HOST=/tmp DB_PORT=5432 DB_NAME=invex_smoke DB_USER=postgres DB_SSL=false NOTIF_SCAN_INTERVAL_MS=0 node server.js`
+(`/tmp` is the local Postgres socket, no password needed). Three checks to run on it: `scripts/smoke-test.sh` (39),
+`node scripts/run-postman.js` (96, `INVEX_URL=http://localhost:3100/api`), and
+`node scripts/stock-behaviour-check.js` (64 steps; run before and after a change to stock code and diff the output).
 
 Database: PostgreSQL, schema `invex`. From 2026-11-27 the team uses one shared Supabase database (`invex-sg`, see State;
 setup in `docs/TEAM-SETUP.md`); Febriel's old local database is `inventory_db` (user `postgres`). Whole-system description: `context.md`. Config in `backend/.env` (gitignored): `PORT`, `NODE_ENV`,
@@ -36,8 +41,21 @@ pgAdmin script (schema + data, not committed). Building from `database/database.
   `/ws` for notification pushes. No build step.
 - **Backend**: `backend/routes` → `backend/controllers` → `backend/models` → `pg` pool (`backend/src/config/db.js`,
   `search_path=invex`). Auth is a JWT in the `Authorization` header (`backend/middleware/authMiddleware.js`).
-- **Frontend**: plain HTML pages in `frontend/public`, one script per page in `frontend/js`, shared fetch wrapper
-  `frontend/js/api.js`. Token and user live in `sessionStorage`.
+- **Transactions**: only `withTransaction(work)` in `backend/src/utils/transaction.js` issues BEGIN/COMMIT/ROLLBACK.
+  Controllers validate and send 4xx replies first, then call it; inside, stop early with `throw new HttpError(status, message)`
+  (the error handler replies `{ success: false, message }`, no stack). Never call `res` or use the shared pool inside it.
+  Why: hand-written transactions leaked an open one (`set-stock` 403) and held a connection during validation; the
+  Supabase pool is 3. The planned `callProcedure.js` should build on it.
+- **Stock movements**: `stockModel.MOVEMENTS` is the one table of what IN / OUT / INCREASE / DECREASE / TRANSFER do to
+  stock; `stockModel.applyMovement(client, type, { productId, from, to, qty }, { reverse })` applies or undoes one.
+  Mirror this table when writing the PL/pgSQL procedures.
+- **Notification scans**: stock writes call `notificationService.requestScan()` (never throws). `runScan` runs one scan
+  at a time and queues at most one rerun.
+- **Frontend**: plain HTML pages in `frontend/public`, one script per page in `frontend/js`, each using `fetch` directly.
+  Token and user live in `sessionStorage`. `frontend/js/role-guard.js` (in every signed-in page's `<head>`) wraps
+  `window.fetch`: 403 shows the permission popup, 401 with a `TOKEN_*` / `AUTH_FAILED` code calls
+  `Invex.endSession('expired')`. `Invex.endSession()` is the only code that clears the session and goes to the login
+  page (logout and the sidebar guard use it too; it is idempotent so a second redirect cannot drop the notice).
 - **Soft deletes everywhere**: `is_deleted` + `deleted_at`, set by `trg_*_soft_delete` triggers; `active_*` views hide
   deleted rows.
 - **Notifications**: `backend/services/notificationService.js` scans every 15 minutes for low stock and expiring
@@ -107,6 +125,14 @@ pgAdmin script (schema + data, not committed). Building from `database/database.
 
 - `docs/` is never pushed (Febriel, 2026-11-27): it is gitignored and lives only on Febriel's disk. Teammates get
   `docs/TEAM-SETUP.md` privately. The earlier docs commit 46a304e was dropped from main. Commits never credit Claude.
+- 2026-11-27 (state machines + dead code, on branch `febriel`, not pushed, not merged to main): the 10 hand-written transactions in 6 controllers now go
+  through `withTransaction`; stock effects go through `stockModel.applyMovement`; scanner is single-flight; session end
+  is one function; the bell refetches after its socket reconnects. Checked on a local copy: 62 of 64 snapshot steps
+  identical before/after, the 2 that differ are intended (`order_type` outside IN/OUT/TRANSFER is now 400 instead of a
+  500 from the CHECK constraint; `set-stock` 403 no longer leaves an open transaction), smoke 39/39, Postman 96/96,
+  browser check of login, logout, wrong-password 401 and rejected-token redirect. `scripts/stock-behaviour-check.js`
+  was parameterized after that run and only syntax-checked since. Teammates need `npm install` after pulling (4
+  packages removed). Not tested against Supabase.
 
 ## Secrets in git history (found 2026-11-27, not rewritten)
 
@@ -133,9 +159,19 @@ history was not done. `backend/.DS_Store` and `frontend/.DS_Store` are still tra
   four indexes that the live database has; `004b_transfer_adjustments.sql` adds them. Cleaning `database.sql` itself is
   Leo's task (Nov 25).
 - UI transfers go through `POST /api/adjustments` (type TRANSFER); no page calls `/api/transfers`.
-- `backend/` and `backend/src/` both hold `csvHelper`, `excelHelper`, `logger`, `uploadMiddleware`. Leave until after
-  the defense.
-- `frontend/js/auth.js` is empty. No README, no `.env.example`, no automated tests beyond the smoke script.
+- Removed 2026-11-27 (nothing required them): the five empty files in `backend/models/utils/`, the unused duplicate
+  `backend/middleware/uploadMiddleware.js` (routes use `backend/src/middleware/`), `frontend/js/api.js`, `utils.js`,
+  `auth.js`, the empty `frontend/public/product-form.html`, and the packages `animejs`, `bcryptjs`, `csv-parser`, `xlsx`.
+  The folder split `backend/` vs `backend/src/` itself stays until after the defense.
+- Exported but never called: `categoryModel.DEFAULT_COLOR`, `orderModel.getOrderItems`, `stockModel.getStockByLocation`,
+  `passwordPolicy.MIN_LENGTH`, `notificationService.stop`, `realtimeService.clientCount`. Left in place.
+- Still implicit (found 2026-11-27, not changed): the import page's steps (file chosen → parsed → review → saved) and
+  the add/edit/delete modal modes are tracked by DOM visibility plus loose variables per page; batch status
+  (expired / expiring) is derived separately in `batches.js`, `reports.js`, `notificationService.js` and `reportModel.js`
+  with different day limits (2, 7, 30). No README, no automated tests beyond the three scripts above.
+- `DELETE /api/adjustments/:id` answers 500 when the stock can no longer be reversed (orders answer 400).
+  `POST /api/locations/import-stock` with an unknown location and `POST /api/products` with an unknown category answer
+  500 from the foreign key.
 - JWT secret falls back to `default-secret-change-me` when `backend/.env` has none.
 
 ## Decisions
@@ -147,4 +183,4 @@ history was not done. `backend/.DS_Store` and `frontend/.DS_Store` are still tra
 - 2026-11-23: for the Advanced Database project only the five stock operations move into PL/pgSQL procedures; audit
   goes to a new trigger-written `audit_logs` table and `activity_logs` stays for app events. Reasons are in the plan.
 
-last Claude session: 2026-11-25 23:13
+last Claude session: 2026-11-27

@@ -1,9 +1,9 @@
-const { pool } = require('../src/config/db');
 const orderModel = require('../models/orderModel');
 const transferModel = require('../models/transferModel');
 const stockModel = require('../src/models/stockModel');
 const { scopeLocation } = require('../src/utils/locationScope');
 const { logActivity } = require('../src/utils/logger');
+const { withTransaction } = require('../src/utils/transaction');
 const notificationService = require('../services/notificationService');
 
 const ORDER_REF_PREFIX = {
@@ -62,7 +62,6 @@ exports.getOrderById = async (req, res, next) => {
  * Complex transactional creation of an order and its items.
  */
 exports.createOrder = async (req, res, next) => {
-  const client = await pool.connect();
   try {
     const {
       order_type,
@@ -76,6 +75,10 @@ exports.createOrder = async (req, res, next) => {
 
     if (!order_type || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'order_type and items[] are required.' });
+    }
+
+    if (!stockModel.ORDER_TYPES.includes(order_type)) {
+      return res.status(400).json({ success: false, message: 'order_type must be IN, OUT, or TRANSFER.' });
     }
 
     if (order_type === 'IN' && !destination_location_id) {
@@ -111,78 +114,75 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
-    await client.query('BEGIN');
-
-    // 1. Create the main order record
-    const order = await orderModel.createOrder(client, {
-      order_type,
-      source_location_id,
-      destination_location_id,
-      supplier_id,
-      user_id: req.user.id,
-      reference_no,
-      notes,
-    });
-
-    // 2. Process each item
-    const itemSkuRefs = [];
-    for (const item of items) {
-      let batchId = null;
-
-      // Handle batch creation for IN orders if expiry tracking is on
-      if (order_type === 'IN' && item.batch_no && item.expiry_date) {
-        const batch = await orderModel.createBatch(client, {
-          product_id: item.product_id,
-          location_id: destination_location_id,
-          batch_no: item.batch_no,
-          quantity: item.quantity,
-          expiry_date: item.expiry_date,
-        });
-        batchId = batch.id;
-      }
-
-      // Create order item
-      await orderModel.createOrderItem(client, {
-        order_id: order.id,
-        product_id: item.product_id,
-        batch_id: batchId,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
+    const order = await withTransaction(async (client) => {
+      // 1. Create the main order record
+      const created = await orderModel.createOrder(client, {
+        order_type,
+        source_location_id,
+        destination_location_id,
+        supplier_id,
+        user_id: req.user.id,
+        reference_no,
+        notes,
       });
 
-      // Update stock levels
-      if (order_type === 'IN') {
-        const stock = await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
-        itemSkuRefs.push(stock.location_sku);
-      } else if (order_type === 'OUT') {
-        const stock = await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
-        itemSkuRefs.push(stock.location_sku);
-      } else if (order_type === 'TRANSFER') {
-        // Atomic transfer: out from source, in to destination
-        await stockModel.decrementStock(item.product_id, source_location_id, item.quantity, client);
-        const stock = await stockModel.incrementStock(item.product_id, destination_location_id, item.quantity, client);
-        itemSkuRefs.push(stock.location_sku);
+      // 2. Process each item
+      const itemSkuRefs = [];
+      for (const item of items) {
+        let batchId = null;
 
-        // Record in location_transfer_logs for centralized transfer history
-        await transferModel.insertTransferLog(client, {
-          from_location_id: source_location_id,
-          to_location_id: destination_location_id,
+        // Handle batch creation for IN orders if expiry tracking is on
+        if (order_type === 'IN' && item.batch_no && item.expiry_date) {
+          const batch = await orderModel.createBatch(client, {
+            product_id: item.product_id,
+            location_id: destination_location_id,
+            batch_no: item.batch_no,
+            quantity: item.quantity,
+            expiry_date: item.expiry_date,
+          });
+          batchId = batch.id;
+        }
+
+        // Create order item
+        await orderModel.createOrderItem(client, {
+          order_id: created.id,
           product_id: item.product_id,
           batch_id: batchId,
           quantity: item.quantity,
-          transferred_by: req.user.id,
-          notes: `Order ${order.reference_no || order.id} transfer`,
+          unit_price: item.unit_price,
         });
+
+        // Update stock levels (what each order type does to stock: stockModel.MOVEMENTS)
+        const stock = await stockModel.applyMovement(client, order_type, {
+          productId: item.product_id,
+          from: source_location_id,
+          to: destination_location_id,
+          qty: item.quantity,
+        });
+        itemSkuRefs.push(stock.location_sku);
+
+        if (order_type === 'TRANSFER') {
+          // Record in location_transfer_logs for centralized transfer history
+          await transferModel.insertTransferLog(client, {
+            from_location_id: source_location_id,
+            to_location_id: destination_location_id,
+            product_id: item.product_id,
+            batch_id: batchId,
+            quantity: item.quantity,
+            transferred_by: req.user.id,
+            notes: `Order ${created.reference_no || created.id} transfer`,
+          });
+        }
       }
-    }
 
-    if (!order.reference_no) {
-      const generatedReference = buildGeneratedReference(order_type, order.id, itemSkuRefs.filter(Boolean));
-      const updatedRef = await orderModel.updateOrderReference(client, order.id, generatedReference);
-      order.reference_no = updatedRef?.reference_no || generatedReference;
-    }
+      if (!created.reference_no) {
+        const generatedReference = buildGeneratedReference(order_type, created.id, itemSkuRefs.filter(Boolean));
+        const updatedRef = await orderModel.updateOrderReference(client, created.id, generatedReference);
+        created.reference_no = updatedRef?.reference_no || generatedReference;
+      }
 
-    await client.query('COMMIT');
+      return created;
+    });
 
     void logActivity(req.user.id, `CREATE_${order_type}_ORDER`, 'orders', order.id, {
       reference_no: order.reference_no,
@@ -190,18 +190,15 @@ exports.createOrder = async (req, res, next) => {
     });
 
     // Trigger notification scan for any new low-stock items
-    void notificationService.runScan({ silent: true });
+    notificationService.requestScan();
 
     return res.status(201).json({ success: true, data: order });
   } catch (error) {
-    await client.query('ROLLBACK');
     // Map specific stock error to 400 Bad Request
     if (error.message.includes('Insufficient stock')) {
       return res.status(400).json({ success: false, message: error.message });
     }
     return next(error);
-  } finally {
-    client.release();
   }
 };
 
@@ -230,51 +227,40 @@ exports.updateOrder = async (req, res, next) => {
  * Soft delete and REVERSE stock changes.
  */
 exports.deleteOrder = async (req, res, next) => {
-  const client = await pool.connect();
   try {
     const { id } = req.params;
-    
+
     // Get order and items before deleting
     const order = await orderModel.getOrderById(id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
 
-    await client.query('BEGIN');
-
-    // 1. Reverse the stock logic
-    for (const item of order.items) {
-      if (order.order_type === 'IN') {
-        // Reverse IN: decrement destination
-        await stockModel.decrementStock(item.product_id, order.destination_location_id, item.quantity, client);
-      } else if (order.order_type === 'OUT') {
-        // Reverse OUT: increment source
-        await stockModel.incrementStock(item.product_id, order.source_location_id, item.quantity, client);
-      } else if (order.order_type === 'TRANSFER') {
-        // Reverse TRANSFER: increment source, decrement destination
-        await stockModel.incrementStock(item.product_id, order.source_location_id, item.quantity, client);
-        await stockModel.decrementStock(item.product_id, order.destination_location_id, item.quantity, client);
+    await withTransaction(async (client) => {
+      // 1. Undo each item's stock movement
+      for (const item of order.items) {
+        await stockModel.applyMovement(client, order.order_type, {
+          productId: item.product_id,
+          from: order.source_location_id,
+          to: order.destination_location_id,
+          qty: item.quantity,
+        }, { reverse: true });
       }
-    }
 
-    // 2. Soft-delete
-    await orderModel.softDeleteOrder(id, client);
-
-    await client.query('COMMIT');
+      // 2. Soft-delete
+      await orderModel.softDeleteOrder(id, client);
+    });
 
     void logActivity(req.user.id, 'DELETE_ORDER', 'orders', id);
 
     // Trigger notification scan for any newly low-stock items after deletion/reversal
-    void notificationService.runScan({ silent: true });
+    notificationService.requestScan();
 
     return res.json({ success: true, message: 'Order deleted and stock reversed successfully.' });
   } catch (error) {
-    await client.query('ROLLBACK');
     if (error.message.includes('Insufficient stock')) {
       return res.status(400).json({ success: false, message: `Cannot delete order: ${error.message}` });
     }
     return next(error);
-  } finally {
-    client.release();
   }
 };

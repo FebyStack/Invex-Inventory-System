@@ -283,7 +283,7 @@
       } else {
         const res = await fetch(`/api/reports/dashboard?days=${days}`, { headers });
         if (res.status === 401 || res.status === 403) {
-          window.location.href = '/login.html';
+          window.Invex.endSession(); // no-op if role-guard.js already ended it for a rejected token
           return;
         }
         json = await res.json();

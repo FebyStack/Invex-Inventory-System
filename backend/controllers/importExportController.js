@@ -1,12 +1,12 @@
 const path = require('path');
 const fs = require('fs');
-const { pool } = require('../src/config/db');
 const csvHelper = require('../src/utils/csvHelper');
 const excelHelper = require('../src/utils/excelHelper');
 const productModel = require('../models/productModel');
 const locationModel = require('../models/locationModel');
 const reportModel = require('../models/reportModel');
 const { logActivity } = require('../src/utils/logger');
+const { withTransaction } = require('../src/utils/transaction');
 const notificationService = require('../services/notificationService');
 const { scopeLocation } = require('../src/utils/locationScope');
 
@@ -185,76 +185,74 @@ const commitImportedProducts = async (req, res, next) => {
     });
   }
 
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-
-    // Lock each touched location so concurrent imports get distinct SKUs.
-    const locks = Array.from(new Set(cleaned.map((r) => r.location_id))).sort((a, b) => a - b);
-    for (const lid of locks) {
-      await client.query('SELECT pg_advisory_xact_lock($1)', [lid]);
-    }
-
-    const created = [];
-    for (const r of cleaned) {
-      // 1. Check for existing product by name (case-insensitive trim match)
-      const existing = await productModel.findActiveByName(r.name, client);
-
-      let productId, productSku;
-      const trackExpiry = !!r.expiry_date;
-
-      if (existing) {
-        // MATCH FOUND: Use existing product
-        productId = existing.id;
-        productSku = existing.sku;
-
-        // Optionally update price/unit of measure if they were provided in the CSV
-        await productModel.applyImportUpdate(client, productId, {
-          unit_price: r.unit_price,
-          unit_of_measure: r.unit_of_measure,
-          reorder_level: r.reorder_level,
-          track_expiry: trackExpiry,
-        });
-      } else {
-        // NO MATCH: Create new product
-        productSku = await productModel.getNextSkuForLocation(r.location_id, client);
-        if (!productSku) throw new Error(`Location ${r.location_id} not found.`);
-
-        const inserted = await productModel.insertProductMinimal(client, {
-          name: r.name,
-          sku: productSku,
-          category_id: r.category_id,
-          supplier_id: r.supplier_id,
-          unit_price: r.unit_price,
-          reorder_level: r.reorder_level,
-          track_expiry: trackExpiry,
-          unit_of_measure: r.unit_of_measure,
-        });
-        productId = inserted.id;
+    const created = await withTransaction(async (client) => {
+      // Lock each touched location so concurrent imports get distinct SKUs.
+      const locks = Array.from(new Set(cleaned.map((r) => r.location_id))).sort((a, b) => a - b);
+      for (const lid of locks) {
+        await client.query('SELECT pg_advisory_xact_lock($1)', [lid]);
       }
 
-      if (trackExpiry) {
-        await productModel.insertInitialBatch(client, {
-          product_id: productId,
-          location_id: r.location_id,
-          sku: productSku,
-          expiry_date: r.expiry_date,
-        });
+      const imported = [];
+      for (const r of cleaned) {
+        // 1. Check for existing product by name (case-insensitive trim match)
+        const existing = await productModel.findActiveByName(r.name, client);
+
+        let productId, productSku;
+        const trackExpiry = !!r.expiry_date;
+
+        if (existing) {
+          // MATCH FOUND: Use existing product
+          productId = existing.id;
+          productSku = existing.sku;
+
+          // Optionally update price/unit of measure if they were provided in the CSV
+          await productModel.applyImportUpdate(client, productId, {
+            unit_price: r.unit_price,
+            unit_of_measure: r.unit_of_measure,
+            reorder_level: r.reorder_level,
+            track_expiry: trackExpiry,
+          });
+        } else {
+          // NO MATCH: Create new product
+          productSku = await productModel.getNextSkuForLocation(r.location_id, client);
+          if (!productSku) throw new Error(`Location ${r.location_id} not found.`);
+
+          const inserted = await productModel.insertProductMinimal(client, {
+            name: r.name,
+            sku: productSku,
+            category_id: r.category_id,
+            supplier_id: r.supplier_id,
+            unit_price: r.unit_price,
+            reorder_level: r.reorder_level,
+            track_expiry: trackExpiry,
+            unit_of_measure: r.unit_of_measure,
+          });
+          productId = inserted.id;
+        }
+
+        if (trackExpiry) {
+          await productModel.insertInitialBatch(client, {
+            product_id: productId,
+            location_id: r.location_id,
+            sku: productSku,
+            expiry_date: r.expiry_date,
+          });
+        }
+
+        if (r.initial_quantity > 0) {
+          await productModel.upsertInitialStock(client, {
+            product_id: productId,
+            location_id: r.location_id,
+            quantity: r.initial_quantity,
+            location_sku: productSku,
+          });
+        }
+
+        imported.push({ id: productId, sku: productSku, name: r.name });
       }
-
-      if (r.initial_quantity > 0) {
-        await productModel.upsertInitialStock(client, {
-          product_id: productId,
-          location_id: r.location_id,
-          quantity: r.initial_quantity,
-          location_sku: productSku,
-        });
-      }
-
-      created.push({ id: productId, sku: productSku, name: r.name });
-    }
-
-    await client.query('COMMIT');
+      return imported;
+    });
 
     void logActivity(req.user.id, 'IMPORT_PRODUCTS', 'products', null, {
       count: created.length,
@@ -262,7 +260,7 @@ const commitImportedProducts = async (req, res, next) => {
     });
 
     // Trigger notification scan
-    void notificationService.runScan({ silent: true });
+    notificationService.requestScan();
 
     return res.status(201).json({
       success: true,
@@ -270,7 +268,6 @@ const commitImportedProducts = async (req, res, next) => {
       data: created,
     });
   } catch (err) {
-    await client.query('ROLLBACK');
     if (err.code === '23505') {
       return res.status(409).json({
         success: false,
@@ -278,8 +275,6 @@ const commitImportedProducts = async (req, res, next) => {
       });
     }
     return next(err);
-  } finally {
-    client.release();
   }
 };
 

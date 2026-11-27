@@ -1,8 +1,8 @@
-const { pool } = require('../src/config/db');
 const transferModel = require('../models/transferModel');
 const activityLogModel = require('../models/activityLogModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
+const { withTransaction, HttpError } = require('../src/utils/transaction');
 const notificationService = require('../services/notificationService');
 const { scopeLocation } = require('../src/utils/locationScope');
 
@@ -70,9 +70,6 @@ exports.getTransferById = async (req, res, next) => {
  * Executes a location-to-location stock transfer immediately.
  */
 exports.createTransfer = async (req, res, next) => {
-  const client = await pool.connect();
-  let transactionStarted = false;
-
   try {
     const { from_location_id, to_location_id, product_id, batch_id, quantity, notes } = req.body;
     const transferQuantity = Number(quantity);
@@ -116,95 +113,86 @@ exports.createTransfer = async (req, res, next) => {
       }
     }
 
-    await client.query('BEGIN');
-    transactionStarted = true;
+    const transfer = await withTransaction(async (client) => {
+      const sourceLocationSku = await stockModel.ensureLocationSku(product_id, from_location_id, client);
+      const destinationLocationSku = await stockModel.ensureLocationSku(product_id, to_location_id, client);
 
-    const sourceLocationSku = await stockModel.ensureLocationSku(product_id, from_location_id, client);
-    const destinationLocationSku = await stockModel.ensureLocationSku(product_id, to_location_id, client);
-
-    const sourceStock = await transferModel.lockSourceStock(client, product_id, from_location_id);
-    if (!sourceStock || sourceStock.quantity < transferQuantity) {
-      await client.query('ROLLBACK');
-      transactionStarted = false;
-      return res.status(400).json({ success: false, message: 'Insufficient stock at source location' });
-    }
-
-    await stockModel.decrementStock(product_id, from_location_id, transferQuantity, client);
-    await stockModel.incrementStock(product_id, to_location_id, transferQuantity, client);
-
-    if (batch_id) {
-      const sourceBatch = await transferModel.lockSourceBatch(client, batch_id, product_id, from_location_id);
-      if (!sourceBatch) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(404).json({ success: false, message: 'Batch not found.' });
+      const sourceStock = await transferModel.lockSourceStock(client, product_id, from_location_id);
+      if (!sourceStock || sourceStock.quantity < transferQuantity) {
+        throw new HttpError(400, 'Insufficient stock at source location');
       }
 
-      if (sourceBatch.quantity < transferQuantity) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(400).json({ success: false, message: 'Insufficient stock at source location' });
+      await stockModel.applyMovement(client, 'TRANSFER', {
+        productId: product_id,
+        from: from_location_id,
+        to: to_location_id,
+        qty: transferQuantity,
+      });
+
+      if (batch_id) {
+        const sourceBatch = await transferModel.lockSourceBatch(client, batch_id, product_id, from_location_id);
+        if (!sourceBatch) {
+          throw new HttpError(404, 'Batch not found.');
+        }
+
+        if (sourceBatch.quantity < transferQuantity) {
+          throw new HttpError(400, 'Insufficient stock at source location');
+        }
+
+        await transferModel.decrementBatchAtLocation(client, batch_id, from_location_id, transferQuantity);
+
+        const destinationBatch = await transferModel.findDestinationBatch(
+          client,
+          sourceBatch.product_id,
+          to_location_id,
+          sourceBatch.batch_no,
+          sourceBatch.expiry_date
+        );
+        if (destinationBatch) {
+          await transferModel.incrementBatch(client, destinationBatch.id, transferQuantity);
+        } else {
+          await transferModel.createBatchAtLocation(client, {
+            product_id: sourceBatch.product_id,
+            location_id: to_location_id,
+            batch_no: sourceBatch.batch_no,
+            quantity: transferQuantity,
+            expiry_date: sourceBatch.expiry_date,
+          });
+        }
       }
 
-      await transferModel.decrementBatchAtLocation(client, batch_id, from_location_id, transferQuantity);
-
-      const destinationBatch = await transferModel.findDestinationBatch(
-        client,
-        sourceBatch.product_id,
+      const created = await transferModel.insertTransferLog(client, {
+        from_location_id,
         to_location_id,
-        sourceBatch.batch_no,
-        sourceBatch.expiry_date
-      );
-      if (destinationBatch) {
-        await transferModel.incrementBatch(client, destinationBatch.id, transferQuantity);
-      } else {
-        await transferModel.createBatchAtLocation(client, {
-          product_id: sourceBatch.product_id,
-          location_id: to_location_id,
-          batch_no: sourceBatch.batch_no,
-          quantity: transferQuantity,
-          expiry_date: sourceBatch.expiry_date,
-        });
-      }
-    }
+        product_id,
+        batch_id,
+        quantity: transferQuantity,
+        transferred_by: req.user.id,
+        notes,
+      });
 
-    const transfer = await transferModel.insertTransferLog(client, {
-      from_location_id,
-      to_location_id,
-      product_id,
-      batch_id,
-      quantity: transferQuantity,
-      transferred_by: req.user.id,
-      notes,
+      created.source_location_sku = sourceLocationSku;
+      created.destination_location_sku = destinationLocationSku;
+      const activityDetails = `Transferred ${created.quantity} units of product ${created.product_id} from location ${created.from_location_id} to location ${created.to_location_id}.`;
+
+      await activityLogModel.insertLog(client, {
+        user_id: req.user.id,
+        action: 'TRANSFER',
+        entity_type: 'location_transfer_logs',
+        entity_id: created.id,
+        location_id: from_location_id,
+        details: activityDetails,
+      });
+
+      return created;
     });
-
-    transfer.source_location_sku = sourceLocationSku;
-    transfer.destination_location_sku = destinationLocationSku;
-    const activityDetails = `Transferred ${transfer.quantity} units of product ${transfer.product_id} from location ${transfer.from_location_id} to location ${transfer.to_location_id}.`;
-
-    await activityLogModel.insertLog(client, {
-      user_id: req.user.id,
-      action: 'TRANSFER',
-      entity_type: 'location_transfer_logs',
-      entity_id: transfer.id,
-      location_id: from_location_id,
-      details: activityDetails,
-    });
-
-    await client.query('COMMIT');
-    transactionStarted = false;
 
     // Trigger notification scan
-    void notificationService.runScan({ silent: true });
+    notificationService.requestScan();
 
     return res.status(201).json({ success: true, data: transfer });
   } catch (error) {
-    if (transactionStarted) {
-      await client.query('ROLLBACK');
-    }
     return next(error);
-  } finally {
-    client.release();
   }
 };
 

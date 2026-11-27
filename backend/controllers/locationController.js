@@ -2,8 +2,8 @@ const locationModel = require('../models/locationModel');
 const adjustmentModel = require('../models/adjustmentModel');
 const reasonCodeModel = require('../models/reasonCodeModel');
 const stockModel = require('../src/models/stockModel');
-const { pool } = require('../src/config/db');
 const { logActivity } = require('../src/utils/logger');
+const { withTransaction } = require('../src/utils/transaction');
 
 const normalizeLocationType = (type) => {
   if (type === undefined || type === null) return type;
@@ -177,7 +177,6 @@ exports.getInventoryMatrix = async (req, res, next) => {
  * Auto-creates the RECEIVE reason code if it doesn't exist.
  */
 exports.importStock = async (req, res, next) => {
-  const client = await pool.connect();
   try {
     const { product_id, allocations, notes } = req.body;
 
@@ -200,34 +199,30 @@ exports.importStock = async (req, res, next) => {
     }
 
     // Find or create RECEIVE reason code so audit trail is intact.
-    let receive = (await reasonCodeModel.getAll()).find((r) => r.code === 'RECEIVE');
-    if (!receive) {
-      receive = await reasonCodeModel.create({
-        code: 'RECEIVE',
-        description: 'Stock received into a location',
-        adjustment_type: 'INCREASE',
-      });
-    }
+    const receive = await reasonCodeModel.ensure({
+      code: 'RECEIVE',
+      description: 'Stock received into a location',
+      adjustment_type: 'INCREASE',
+    });
 
-    await client.query('BEGIN');
-
-    const results = [];
-    for (const a of valid) {
-      const adj = await adjustmentModel.createAdjustment(client, {
-        product_id,
-        location_id: a.location_id,
-        batch_id: null,
-        adjustment_type: 'INCREASE',
-        quantity_change: a.quantity,
-        reason_code_id: receive.id,
-        notes: notes || 'Imported via Locations page',
-        user_id: req.user.id,
-      });
-      await stockModel.incrementStock(product_id, a.location_id, a.quantity, client);
-      results.push(adj);
-    }
-
-    await client.query('COMMIT');
+    const results = await withTransaction(async (client) => {
+      const adjustments = [];
+      for (const a of valid) {
+        const adj = await adjustmentModel.createAdjustment(client, {
+          product_id,
+          location_id: a.location_id,
+          batch_id: null,
+          adjustment_type: 'INCREASE',
+          quantity_change: a.quantity,
+          reason_code_id: receive.id,
+          notes: notes || 'Imported via Locations page',
+          user_id: req.user.id,
+        });
+        await stockModel.incrementStock(product_id, a.location_id, a.quantity, client);
+        adjustments.push(adj);
+      }
+      return adjustments;
+    });
 
     const total = valid.reduce((s, a) => s + a.quantity, 0);
     void logActivity(req.user.id, 'IMPORT_STOCK', 'stock_adjustments', null, {
@@ -242,10 +237,7 @@ exports.importStock = async (req, res, next) => {
       data: { imported: results.length, total_units: total, adjustments: results },
     });
   } catch (err) {
-    await client.query('ROLLBACK');
     return next(err);
-  } finally {
-    client.release();
   }
 };
 

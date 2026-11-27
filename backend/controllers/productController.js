@@ -2,9 +2,17 @@ const productModel = require('../models/productModel');
 const stockModel = require('../src/models/stockModel');
 const adjustmentModel = require('../models/adjustmentModel');
 const reasonCodeModel = require('../models/reasonCodeModel');
-const { pool } = require('../src/config/db');
 const { logActivity } = require('../src/utils/logger');
 const { scopeLocation } = require('../src/utils/locationScope');
+const { withTransaction, HttpError } = require('../src/utils/transaction');
+
+// Reason code recorded when stock is edited from the Products page. Created on first use so a
+// fresh install doesn't fail.
+const MANUAL_EDIT_REASON = {
+  code: 'MANUAL_EDIT',
+  description: 'Stock total edited from the Products page',
+  adjustment_type: 'BOTH',
+};
 
 /**
  * GET /api/products
@@ -84,9 +92,6 @@ exports.getNextSku = async (req, res, next) => {
  * Creates a new product. Requires admin role.
  */
 exports.createProduct = async (req, res, next) => {
-  const client = await pool.connect();
-  let transactionStarted = false;
-
   try {
     const {
       name,
@@ -115,54 +120,53 @@ exports.createProduct = async (req, res, next) => {
     const scope = scopeLocation(req, res, locationId);
     if (!scope) return;
 
-    await client.query('BEGIN');
-    transactionStarted = true;
-    await client.query('SELECT pg_advisory_xact_lock($1)', [locationId]);
-
-    const sku = await productModel.getNextSkuForLocation(locationId, client);
-    if (!sku) {
-      await client.query('ROLLBACK');
-      transactionStarted = false;
-      return res.status(404).json({ success: false, message: 'Location not found.' });
-    }
-
-    const trimmedNotes = typeof notes === 'string' ? notes.trim() : notes;
-    const product = await productModel.createProduct({
-      name,
-      sku,
-      category_id,
-      supplier_id: supplier_id || null,
-      unit_price,
-      reorder_level,
-      track_expiry,
-      unit_of_measure,
-      notes: trimmedNotes ? trimmedNotes : null,
-    }, client);
-
-    // If an expiry date was provided, create an initial batch (with 0 quantity)
-    // to "auto-track" that specific expiry date for this product at this location.
-    if (track_expiry && expiry_date) {
-      await productModel.insertInitialBatch(client, {
-        product_id: product.id,
-        location_id: locationId,
-        sku,
-        expiry_date,
-      });
-    }
-
-    // Seed initial stock quantity at the selected location
     const initQty = parseInt(initial_quantity, 10) || 0;
-    if (initQty > 0) {
-      await productModel.upsertInitialStock(client, {
-        product_id: product.id,
-        location_id: locationId,
-        quantity: initQty,
-        location_sku: product.sku,
-      });
-    }
 
-    await client.query('COMMIT');
-    transactionStarted = false;
+    const product = await withTransaction(async (client) => {
+      // One SKU generator per location at a time.
+      await client.query('SELECT pg_advisory_xact_lock($1)', [locationId]);
+
+      const sku = await productModel.getNextSkuForLocation(locationId, client);
+      if (!sku) {
+        throw new HttpError(404, 'Location not found.');
+      }
+
+      const trimmedNotes = typeof notes === 'string' ? notes.trim() : notes;
+      const created = await productModel.createProduct({
+        name,
+        sku,
+        category_id,
+        supplier_id: supplier_id || null,
+        unit_price,
+        reorder_level,
+        track_expiry,
+        unit_of_measure,
+        notes: trimmedNotes ? trimmedNotes : null,
+      }, client);
+
+      // If an expiry date was provided, create an initial batch (with 0 quantity)
+      // to "auto-track" that specific expiry date for this product at this location.
+      if (track_expiry && expiry_date) {
+        await productModel.insertInitialBatch(client, {
+          product_id: created.id,
+          location_id: locationId,
+          sku,
+          expiry_date,
+        });
+      }
+
+      // Seed initial stock quantity at the selected location
+      if (initQty > 0) {
+        await productModel.upsertInitialStock(client, {
+          product_id: created.id,
+          location_id: locationId,
+          quantity: initQty,
+          location_sku: created.sku,
+        });
+      }
+
+      return created;
+    });
 
     // Log activity (fire-and-forget)
     void logActivity(req.user.id, 'CREATE_PRODUCT', 'products', product.id, {
@@ -173,10 +177,6 @@ exports.createProduct = async (req, res, next) => {
 
     return res.status(201).json({ success: true, data: product });
   } catch (err) {
-    if (transactionStarted) {
-      await client.query('ROLLBACK');
-    }
-
     // Handle unique constraint violation (duplicate SKU)
     if (err.code === '23505') {
       return res.status(409).json({
@@ -192,8 +192,6 @@ exports.createProduct = async (req, res, next) => {
       });
     }
     return next(err);
-  } finally {
-    client.release();
   }
 };
 
@@ -320,8 +318,6 @@ exports.deleteProduct = async (req, res, next) => {
  * Adjustments page.
  */
 exports.setStock = async (req, res, next) => {
-  const client = await pool.connect();
-  let transactionStarted = false;
   try {
     const productId = parseInt(req.params.id, 10);
     if (!Number.isInteger(productId)) {
@@ -348,12 +344,10 @@ exports.setStock = async (req, res, next) => {
       return res.json({ success: true, message: 'No change.', data: { delta: 0 } });
     }
 
-    await client.query('BEGIN');
-    transactionStarted = true;
-
     // Pick the location to apply the change to. Caller can specify;
     // otherwise we use the location currently holding the most stock,
     // falling back to the first known location for this product.
+    // Permission checks happen here, before the transaction opens.
     let locationId = parseInt(req.body && req.body.location_id, 10);
     if (Number.isInteger(locationId)) {
       const scope = scopeLocation(req, res, locationId);
@@ -366,68 +360,46 @@ exports.setStock = async (req, res, next) => {
       }
       locationId = req.user.location_id;
     }
-    if (!Number.isInteger(locationId)) {
-      const primary = await stockModel.getPrimaryLocationStock(productId, client);
-      if (!primary) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(409).json({
-          success: false,
-          message: 'This product has no location assigned yet. Use the Adjustments page to seed stock.',
-        });
-      }
-      locationId = primary.location_id;
-    }
 
-    // For decreases, make sure the chosen location can absorb the full
-    // delta without going negative. If not, surface a 409 so the user
-    // knows they need the multi-location Adjustments flow.
-    if (delta < 0) {
-      const available = await stockModel.getQuantityAt(productId, locationId, client);
-      if (available < Math.abs(delta)) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(409).json({
-          success: false,
-          message: `The chosen location only holds ${available} units. Use the Adjustments page to redistribute stock across locations.`,
-        });
-      }
-    }
-
-    // Find or create the MANUAL_EDIT reason code so the adjustment can be
-    // categorized later. Created lazily so a fresh install doesn't fail.
-    let reason = (await reasonCodeModel.getAll()).find((r) => r.code === 'MANUAL_EDIT');
-    if (!reason) {
-      reason = await reasonCodeModel.create({
-        code: 'MANUAL_EDIT',
-        description: 'Stock total edited from the Products page',
-        adjustment_type: 'BOTH',
-      });
-    }
-
+    const reason = await reasonCodeModel.ensure(MANUAL_EDIT_REASON);
     const adjustmentType = delta > 0 ? 'INCREASE' : 'DECREASE';
     const quantityChange = Math.abs(delta);
 
-    const adjustment = await adjustmentModel.createAdjustment(client, {
-      product_id: productId,
-      location_id: locationId,
-      to_location_id: null,
-      batch_id: null,
-      adjustment_type: adjustmentType,
-      quantity_change: quantityChange,
-      reason_code_id: reason.id,
-      notes: `Total stock set to ${targetQuantity} from Products page (was ${currentTotal}).`,
-      user_id: req.user.id,
+    const adjustment = await withTransaction(async (client) => {
+      if (!Number.isInteger(locationId)) {
+        const primary = await stockModel.getPrimaryLocationStock(productId, client);
+        if (!primary) {
+          throw new HttpError(409, 'This product has no location assigned yet. Use the Adjustments page to seed stock.');
+        }
+        locationId = primary.location_id;
+      }
+
+      // For decreases, make sure the chosen location can absorb the full
+      // delta without going negative. If not, surface a 409 so the user
+      // knows they need the multi-location Adjustments flow.
+      if (delta < 0) {
+        const available = await stockModel.getQuantityAt(productId, locationId, client);
+        if (available < quantityChange) {
+          throw new HttpError(409, `The chosen location only holds ${available} units. Use the Adjustments page to redistribute stock across locations.`);
+        }
+      }
+
+      const created = await adjustmentModel.createAdjustment(client, {
+        product_id: productId,
+        location_id: locationId,
+        to_location_id: null,
+        batch_id: null,
+        adjustment_type: adjustmentType,
+        quantity_change: quantityChange,
+        reason_code_id: reason.id,
+        notes: `Total stock set to ${targetQuantity} from Products page (was ${currentTotal}).`,
+        user_id: req.user.id,
+      });
+
+      await stockModel.applyMovement(client, adjustmentType, { productId, from: locationId, qty: quantityChange });
+
+      return created;
     });
-
-    if (adjustmentType === 'INCREASE') {
-      await stockModel.incrementStock(productId, locationId, quantityChange, client);
-    } else {
-      await stockModel.decrementStock(productId, locationId, quantityChange, client);
-    }
-
-    await client.query('COMMIT');
-    transactionStarted = false;
 
     void logActivity(req.user.id, `STOCK_${adjustmentType}`, 'products', productId, {
       via: 'set-stock',
@@ -448,15 +420,10 @@ exports.setStock = async (req, res, next) => {
       },
     });
   } catch (err) {
-    if (transactionStarted) {
-      try { await client.query('ROLLBACK'); } catch { /* ignore */ }
-    }
     if (err.message && err.message.includes('Insufficient stock')) {
       return res.status(409).json({ success: false, message: err.message });
     }
     return next(err);
-  } finally {
-    client.release();
   }
 };
 
@@ -476,8 +443,6 @@ exports.setStock = async (req, res, next) => {
  * the Products page.
  */
 exports.adjustStock = async (req, res, next) => {
-  const client = await pool.connect();
-  let transactionStarted = false;
   try {
     const productId = parseInt(req.params.id, 10);
     if (!Number.isInteger(productId)) {
@@ -512,69 +477,53 @@ exports.adjustStock = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    // Auto-create the MANUAL_EDIT reason code once so adjustments can be
-    // categorized later without forcing the operator to pick one.
-    let reason = (await reasonCodeModel.getAll()).find((r) => r.code === 'MANUAL_EDIT');
-    if (!reason) {
-      reason = await reasonCodeModel.create({
-        code: 'MANUAL_EDIT',
-        description: 'Stock total edited from the Products page',
-        adjustment_type: 'BOTH',
-      });
-    }
+    // Adjustments are categorized as MANUAL_EDIT without forcing the operator to pick a reason.
+    const reason = await reasonCodeModel.ensure(MANUAL_EDIT_REASON);
 
-    await client.query('BEGIN');
-    transactionStarted = true;
+    const applied = await withTransaction(async (client) => {
+      const done = [];
+      for (const change of normalized) {
+        // Read current qty under a row lock so concurrent edits don't race
+        // each other into negative stock. New locations have no row yet —
+        // treated as quantity 0.
+        const currentQty = await stockModel.lockQuantityAt(client, productId, change.location_id);
+        const delta = change.target_quantity - currentQty;
 
-    const applied = [];
-    for (const change of normalized) {
-      // Read current qty under a row lock so concurrent edits don't race
-      // each other into negative stock. New locations have no row yet —
-      // treated as quantity 0.
-      const currentQty = await stockModel.lockQuantityAt(client, productId, change.location_id);
-      const delta = change.target_quantity - currentQty;
+        if (delta === 0) continue;
+        if (delta < 0 && currentQty + delta < 0) {
+          throw new HttpError(409, `Cannot reduce location ${change.location_id} below 0 (currently ${currentQty}).`);
+        }
 
-      if (delta === 0) continue;
-      if (delta < 0 && currentQty + delta < 0) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(409).json({
-          success: false,
-          message: `Cannot reduce location ${change.location_id} below 0 (currently ${currentQty}).`,
+        const adjustmentType = delta > 0 ? 'INCREASE' : 'DECREASE';
+        const quantityChange = Math.abs(delta);
+
+        const adjustment = await adjustmentModel.createAdjustment(client, {
+          product_id: productId,
+          location_id: change.location_id,
+          to_location_id: null,
+          batch_id: null,
+          adjustment_type: adjustmentType,
+          quantity_change: quantityChange,
+          reason_code_id: reason.id,
+          notes: `Set to ${change.target_quantity} from Products page (was ${currentQty}).`,
+          user_id: req.user.id,
+        });
+
+        await stockModel.applyMovement(client, adjustmentType, {
+          productId,
+          from: change.location_id,
+          qty: quantityChange,
+        });
+
+        done.push({
+          location_id: change.location_id,
+          delta,
+          target_quantity: change.target_quantity,
+          adjustment_id: adjustment.id,
         });
       }
-
-      const adjustmentType = delta > 0 ? 'INCREASE' : 'DECREASE';
-      const quantityChange = Math.abs(delta);
-
-      const adjustment = await adjustmentModel.createAdjustment(client, {
-        product_id: productId,
-        location_id: change.location_id,
-        to_location_id: null,
-        batch_id: null,
-        adjustment_type: adjustmentType,
-        quantity_change: quantityChange,
-        reason_code_id: reason.id,
-        notes: `Set to ${change.target_quantity} from Products page (was ${currentQty}).`,
-        user_id: req.user.id,
-      });
-
-      if (adjustmentType === 'INCREASE') {
-        await stockModel.incrementStock(productId, change.location_id, quantityChange, client);
-      } else {
-        await stockModel.decrementStock(productId, change.location_id, quantityChange, client);
-      }
-
-      applied.push({
-        location_id: change.location_id,
-        delta,
-        target_quantity: change.target_quantity,
-        adjustment_id: adjustment.id,
-      });
-    }
-
-    await client.query('COMMIT');
-    transactionStarted = false;
+      return done;
+    });
 
     if (applied.length > 0) {
       void logActivity(req.user.id, 'ADJUST_STOCK_BATCH', 'products', productId, {
@@ -585,15 +534,10 @@ exports.adjustStock = async (req, res, next) => {
 
     return res.json({ success: true, data: { product_id: productId, applied } });
   } catch (err) {
-    if (transactionStarted) {
-      try { await client.query('ROLLBACK'); } catch { /* ignore */ }
-    }
     if (err.message && err.message.includes('Insufficient stock')) {
       return res.status(409).json({ success: false, message: err.message });
     }
     return next(err);
-  } finally {
-    client.release();
   }
 };
 

@@ -55,6 +55,19 @@
     });
   }
 
+  // Session states: signed in → ended (signed out, or the server rejected the token).
+  // This is the only place that clears the stored session and returns to the sign-in page.
+  let sessionEnded = false;
+  function endSession(reason) {
+    if (sessionEnded) return;
+    sessionEnded = true;
+    try {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+    } catch { /* storage unavailable */ }
+    window.location.href = reason ? `/login.html?reason=${reason}` : '/login.html';
+  }
+
   function denyAccess(opts = {}) {
     buildModal({
       title: opts.title || 'Permission denied',
@@ -87,11 +100,18 @@
   // Catches 403 responses from any /api/* call and shows the popup,
   // so staff get a friendly message whenever they hit a route they
   // don't have permission for (e.g. clicking "Add Location" as staff).
+  // Also ends the session when the server rejects the token (401 with a
+  // TOKEN_* / AUTH_FAILED code). A 401 without a code is a normal answer,
+  // e.g. a wrong current password on the profile page, and is left alone.
   const originalFetch = window.fetch.bind(window);
   window.fetch = async function (...args) {
     const response = await originalFetch(...args);
     try {
       const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+      if (response.status === 401 && url.includes('/api/')) {
+        const data = await response.clone().json().catch(() => null);
+        if (data && /^(TOKEN_|AUTH_FAILED)/.test(data.code || '')) endSession('expired');
+      }
       if (response.status === 403 && url.includes('/api/')) {
         // Try to read the server's message without consuming the body for the caller.
         const cloned = response.clone();
@@ -113,6 +133,7 @@
   // Public API
   window.Invex = window.Invex || {};
   window.Invex.denyAccess = denyAccess;
+  window.Invex.endSession = endSession;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', guardAdminOnlyPage);

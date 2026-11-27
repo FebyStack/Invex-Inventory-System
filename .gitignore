@@ -14,6 +14,9 @@ backend/.env
 *.p12
 # The Supabase CA certificate (backend/certs/supabase-ca.crt) is public and IS committed.
 
+# Documentation stays local, never pushed (proposal, diagrams, setup guides)
+docs/
+
 # Database dumps (contain real data)
 invex_supabase_*.sql
 *.dump

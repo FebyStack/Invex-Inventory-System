@@ -16,6 +16,7 @@ const reportRoutes = require('../routes/reportRoute');
 const importExportRoutes = require('../routes/importExportRoute');
 const userRoutes = require('../routes/userRoute');
 const reasonCodeRoutes = require('../routes/reasonCodeRoute');
+const auditRoutes = require('../routes/auditRoute');
 
 // Import middleware
 const { errorHandler, asyncHandler } = require('../middleware/errorMiddleware');
@@ -54,6 +55,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api', importExportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reason-codes', reasonCodeRoutes);
+app.use('/api/audit-logs', auditRoutes);
 
 // ---------------------
 // Health Check

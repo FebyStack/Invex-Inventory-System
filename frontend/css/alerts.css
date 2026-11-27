@@ -1,0 +1,44 @@
+/* Toast & Banner Alert Styling for Invex */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 280px;
+  max-width: 420px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  font-size: 0.9rem;
+  color: #ffffff;
+  animation: slideIn 0.25s ease-out;
+}
+
+.toast-success {
+  background: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.toast-error {
+  background: #7f1d1d;
+  border-left: 4px solid #ef4444;
+}
+
+.toast-info {
+  background: #1e3a8a;
+  border-left: 4px solid #3b82f6;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

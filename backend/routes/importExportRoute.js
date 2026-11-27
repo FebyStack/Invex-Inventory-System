@@ -14,8 +14,8 @@ const { authorize } = require('../middleware/roleMiddleware');
 // Import Products — two-step flow:
 //   POST /import/products         → parse + validate the upload, returns rows
 //   POST /import/products/commit  → create products from the reviewed rows
-router.post('/import/products', authenticate, authorize('admin'), upload.single('file'), importExportController.importProducts);
-router.post('/import/products/commit', authenticate, authorize('admin'), importExportController.commitImportedProducts);
+router.post('/import/products', authenticate, authorize('super_admin'), upload.single('file'), importExportController.importProducts);
+router.post('/import/products/commit', authenticate, authorize('super_admin'), importExportController.commitImportedProducts);
 
 // Export Routes
 router.get('/export/products', authenticate, importExportController.exportProducts);

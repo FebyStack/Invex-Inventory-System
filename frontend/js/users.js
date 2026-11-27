@@ -66,8 +66,17 @@
     statTotal.textContent  = users.length;
     statTotalHint.textContent = users.length === 1 ? 'just one for now' : 'across the workspace';
     statActive.textContent = users.filter(u => statusOf(u) === 'online').length;
-    statAdmins.textContent = users.filter(u => u.role === 'admin').length;
+    // "Admins" tile counts both admin tiers (super + sub) — they're the
+    // ones who can change inventory.
+    statAdmins.textContent = users.filter(u => u.role === 'super_admin' || u.role === 'sub_admin').length;
     statStaff.textContent  = users.filter(u => u.role === 'staff').length;
+  }
+
+  // Human-readable label for a role string, used in the list view.
+  function roleLabel(role) {
+    if (role === 'super_admin') return 'super admin';
+    if (role === 'sub_admin')   return 'sub admin';
+    return role || '';
   }
 
   function render(users) {
@@ -90,11 +99,17 @@
 
     users.forEach(u => {
       const status = statusOf(u);
-      const roleColor = u.role === 'admin' ? 'var(--accent)' : 'var(--success)';
+      const roleColor =
+        u.role === 'super_admin' ? 'var(--accent)' :
+        u.role === 'sub_admin'   ? 'var(--warning, #d97706)' :
+                                   'var(--success)';
       const isSelf = currentUserId && String(u.id) === String(currentUserId);
+      const locText = u.location_name
+        ? ` · ${escapeHtml(u.location_name)}`
+        : (u.role !== 'super_admin' ? ' · <span style="color:var(--danger,#dc2626)">no location</span>' : '');
       const row = document.createElement('div');
       row.className = 'row user-row';
-      row.style.gridTemplateColumns = '1fr 100px 120px 64px';
+      row.style.gridTemplateColumns = '1fr 160px 120px 64px';
       row.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="avatar-with-status">
@@ -106,7 +121,7 @@
             <div style="font-size:11px;color:var(--fg-4);">${escapeHtml(u.email || '@' + u.username)}</div>
           </div>
         </div>
-        <div class="mono" style="font-size:11px;color:${roleColor};letter-spacing:0.06em;text-transform:uppercase;">${escapeHtml(u.role)}</div>
+        <div class="mono" style="font-size:11px;color:${roleColor};letter-spacing:0.06em;text-transform:uppercase;">${escapeHtml(roleLabel(u.role))}${locText}</div>
         <div style="font-size:11px;color:var(--fg-4);">${escapeHtml(timeSince(u.updated_at || u.created_at))}</div>
         <div class="row-actions" style="display:flex;gap:4px;">
           <button class="action-btn edit-btn" data-id="${u.id}" title="Edit user">
@@ -156,6 +171,40 @@
     }
   });
 
+  // ── Locations dropdown ─────────────────────
+  // Loaded once on init and cached; the form's <select> stays populated
+  // for every open of the modal.
+  const roleSelect     = document.getElementById('role');
+  const locationSelect = document.getElementById('location_id');
+  const locationRow    = document.getElementById('location-row');
+
+  async function loadLocationsIntoSelect() {
+    try {
+      const res = await fetch('/api/locations', { headers });
+      const data = await res.json();
+      if (!data.success) return;
+      const locs = data.data || [];
+      const opts = ['<option value="">— Select a location —</option>']
+        .concat(locs.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`));
+      locationSelect.innerHTML = opts.join('');
+    } catch { /* leave the default placeholder option */ }
+  }
+
+  // Super admins don't have a location — hide the row when that role is
+  // selected. For staff / sub admin make it required.
+  function syncLocationVisibility() {
+    const role = roleSelect.value;
+    if (role === 'super_admin') {
+      locationRow.style.display = 'none';
+      locationSelect.required = false;
+      locationSelect.value = '';
+    } else {
+      locationRow.style.display = '';
+      locationSelect.required = true;
+    }
+  }
+  roleSelect.addEventListener('change', syncLocationVisibility);
+
   // ── Modal ──────────────────────────────────
   document.getElementById('new-user-btn').onclick = () => {
     form.reset();
@@ -163,6 +212,7 @@
     modalTitle.textContent = 'New user';
     document.getElementById('password').required = true;
     pwHint.textContent = '';
+    syncLocationVisibility();
     modal.style.display = 'flex';
   };
   function openEdit(u) {
@@ -173,6 +223,8 @@
     document.getElementById('role').value = u.role;
     document.getElementById('password').value = '';
     document.getElementById('password').required = false;
+    locationSelect.value = u.location_id != null ? String(u.location_id) : '';
+    syncLocationVisibility();
     pwHint.textContent = '(leave blank to keep current)';
     modalTitle.textContent = 'Edit user';
     modal.style.display = 'flex';
@@ -212,6 +264,19 @@
       email:     document.getElementById('email').value.trim(),
       role:      document.getElementById('role').value,
     };
+    // Location: super_admin sends null (clears any prior assignment);
+    // other roles must have one.
+    if (payload.role === 'super_admin') {
+      payload.location_id = null;
+    } else {
+      const lid = locationSelect.value;
+      if (!lid) {
+        alert('Please assign a location for this user.');
+        locationSelect.focus();
+        return;
+      }
+      payload.location_id = parseInt(lid, 10);
+    }
     const pw = document.getElementById('password').value;
     if (pw) payload.password = pw;
     if (!isEdit && !pw) { alert('Password is required for new users.'); return; }
@@ -229,5 +294,6 @@
     } catch { alert('Network error.'); }
   };
 
+  loadLocationsIntoSelect();
   loadUsers();
 })();

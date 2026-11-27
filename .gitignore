@@ -1,9 +1,23 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables and secrets (never commit; share the DB password privately)
 .env
+.env.*
+**/.env
+**/.env.*
 backend/.env
+!.env.example
+!backend/.env.example
+*.pem
+*.key
+*.p12
+# The Supabase CA certificate (backend/certs/supabase-ca.crt) is public and IS committed.
+
+# Database dumps (contain real data)
+invex_supabase_*.sql
+*.dump
+*.backup
 
 # Postman environments may contain credentials — keep out of git
 postman/environments/*.environment.yaml

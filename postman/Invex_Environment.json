@@ -1,37 +1,31 @@
 {
-  "id": "invex-env-001",
   "name": "Invex Local",
   "values": [
     {
       "key": "baseUrl",
       "value": "http://localhost:3000/api",
-      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminUsername",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "type": "secret",
       "enabled": true
     },
     {
       "key": "adminToken",
       "value": "",
-      "type": "default",
       "enabled": true
     },
     {
       "key": "staffToken",
       "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "productId",
-      "value": "",
-      "type": "default",
       "enabled": true
     }
-  ],
-  "_postman_variable_scope": "environment"
+  ]
 }

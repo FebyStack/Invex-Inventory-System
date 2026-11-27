@@ -3,6 +3,7 @@ const adjustmentModel = require('../models/adjustmentModel');
 const productModel = require('../models/productModel');
 const reasonCodeModel = require('../models/reasonCodeModel');
 const stockModel = require('../src/models/stockModel');
+const { scopeLocation } = require('../src/utils/locationScope');
 const { logActivity } = require('../src/utils/logger');
 const notificationService = require('../services/notificationService');
 
@@ -11,8 +12,14 @@ const notificationService = require('../services/notificationService');
  */
 exports.getAllAdjustments = async (req, res, next) => {
   try {
-    const { product_id, location_id, adjustment_type } = req.query;
-    const adjustments = await adjustmentModel.getAllAdjustments({ product_id, location_id, adjustment_type });
+    const { product_id, adjustment_type } = req.query;
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const adjustments = await adjustmentModel.getAllAdjustments({
+      product_id,
+      location_id: scope.locationId,
+      adjustment_type,
+    });
     return res.json({ success: true, count: adjustments.length, data: adjustments });
   } catch (error) {
     return next(error);
@@ -71,6 +78,25 @@ exports.createAdjustment = async (req, res, next) => {
         success: false,
         message: 'Source and destination locations must be different.',
       });
+    }
+
+    // Lock non-super-admins to their assigned location. For a TRANSFER it's
+    // enough that one side is theirs.
+    if (req.user.role !== 'super_admin') {
+      const ownLoc = req.user.location_id;
+      if (ownLoc == null) {
+        return res.status(403).json({ success: false, code: 'NO_LOCATION_ASSIGNMENT', message: 'Your account has no location assigned yet.' });
+      }
+      const fromInt = parseInt(location_id, 10);
+      const toInt = adjustment_type === 'TRANSFER' ? parseInt(to_location_id, 10) : null;
+      const touchesOwn = fromInt === ownLoc || toInt === ownLoc;
+      if (!touchesOwn) {
+        return res.status(403).json({
+          success: false,
+          code: 'LOCATION_FORBIDDEN',
+          message: 'You can only adjust stock for your assigned location.',
+        });
+      }
     }
 
     const qty = Number(quantity_change);
@@ -206,7 +232,9 @@ exports.deleteAdjustment = async (req, res, next) => {
  */
 exports.getProductHistory = async (req, res, next) => {
   try {
-    const history = await adjustmentModel.getProductHistory(req.params.id, req.query.location_id);
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const history = await adjustmentModel.getProductHistory(req.params.id, scope.locationId);
     return res.json({ success: true, count: history.length, data: history });
   } catch (error) {
     return next(error);

@@ -107,7 +107,7 @@ else
 fi
 
 last "$(api GET /api/auth/me)" '.user.role'
-if [[ "$VAL" == "admin" ]]; then ok "GET /api/auth/me (role=admin)"; else fail "GET /api/auth/me" "role=$VAL"; fi
+if [[ "$VAL" == "super_admin" ]]; then ok "GET /api/auth/me (role=super_admin)"; else fail "GET /api/auth/me" "role=$VAL"; fi
 
 # Password policy: weak password should be rejected on change-password
 last "$(api PUT /api/auth/change-password '{"current_password":"placeholder","new_password":"short"}')"

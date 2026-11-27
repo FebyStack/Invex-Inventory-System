@@ -14,9 +14,9 @@ router.get('/', asyncHandler(reasonCodeController.getAll));
 router.get('/:id', asyncHandler(reasonCodeController.getById));
 
 // POST   /api/reason-codes          (admin only)
-router.post('/', authorize('admin'), asyncHandler(reasonCodeController.create));
+router.post('/', authorize('super_admin'), asyncHandler(reasonCodeController.create));
 
 // DELETE /api/reason-codes/:id      (admin only)
-router.delete('/:id', authorize('admin'), asyncHandler(reasonCodeController.remove));
+router.delete('/:id', authorize('super_admin'), asyncHandler(reasonCodeController.remove));
 
 module.exports = router;

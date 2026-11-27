@@ -127,12 +127,13 @@
   uploadBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
 
-    // Guard: only admins can import. Staff hit the popup instead of a 403.
+    // Guard: only super admins can import — other roles hit the popup
+    // instead of a 403 from the server.
     const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('user') || '{}'); } catch { return {}; } })();
-    if (currentUser.role !== 'admin' && window.Invex && window.Invex.denyAccess) {
+    if (currentUser.role !== 'super_admin' && window.Invex && window.Invex.denyAccess) {
       window.Invex.denyAccess({
-        title: 'Admins only',
-        message: 'Importing products is restricted to administrators. You can still export from this page.',
+        title: 'Super admins only',
+        message: 'Importing products is restricted to super administrators. You can still export from this page.',
       });
       return;
     }

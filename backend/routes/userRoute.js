@@ -8,7 +8,7 @@ const { asyncHandler } = require('../middleware/errorMiddleware');
 // All user routes require authentication AND admin role.
 // Staff manage their own profile via /api/auth/me and /api/auth/change-password.
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize('super_admin'));
 
 // GET    /api/users
 router.get('/', asyncHandler(userController.getAllUsers));

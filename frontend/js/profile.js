@@ -33,8 +33,11 @@
         document.getElementById('p-email').textContent = u.email || '-';
 
         const roleEl = document.getElementById('p-role');
-        const roleClass = u.role === 'admin' ? 'role-admin' : 'role-staff';
-        roleEl.innerHTML = `<span class="role-badge ${roleClass}">${escapeHtml(u.role)}</span>`;
+        // Reuse the existing admin badge style for both admin tiers; staff
+        // keeps its own. The label is humanized (super_admin → "super admin").
+        const roleClass = (u.role === 'super_admin' || u.role === 'sub_admin') ? 'role-admin' : 'role-staff';
+        const pretty = String(u.role || '').replace(/_/g, ' ');
+        roleEl.innerHTML = `<span class="role-badge ${roleClass}">${escapeHtml(pretty)}</span>`;
 
         if (u.created_at) {
           document.getElementById('p-joined').textContent = new Date(u.created_at).toLocaleDateString('en-US', {

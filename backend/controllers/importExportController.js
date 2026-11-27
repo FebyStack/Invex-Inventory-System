@@ -8,6 +8,7 @@ const locationModel = require('../models/locationModel');
 const reportModel = require('../models/reportModel');
 const { logActivity } = require('../src/utils/logger');
 const notificationService = require('../services/notificationService');
+const { scopeLocation } = require('../src/utils/locationScope');
 
 // ── Import-template fields ─────────────────────────────────────────────
 // SKU, category_id, supplier_id are *intentionally* not in the template.
@@ -309,7 +310,9 @@ const appendLocationToFilename = async (baseName, location_id) => {
 const exportProducts = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
-    const { location_id } = req.query;
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const location_id = scope.locationId;
     let filenameBase = 'products';
 
     if (location_id) {
@@ -327,7 +330,9 @@ const exportProducts = async (req, res, next) => {
 const exportStockReport = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
-    const { location_id } = req.query;
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const location_id = scope.locationId;
     let filenameBase = 'stock-report';
 
     if (location_id) {
@@ -345,7 +350,9 @@ const exportStockReport = async (req, res, next) => {
 const exportMovementLog = async (req, res, next) => {
   try {
     const format = req.query.format === 'xlsx' ? 'xlsx' : 'csv';
-    const { location_id } = req.query;
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const location_id = scope.locationId;
     let filenameBase = 'movement-log';
 
     if (location_id) {

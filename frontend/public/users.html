@@ -116,10 +116,17 @@
             <div class="form-group">
               <label for="role">Role</label>
               <select id="role" class="form-control" required>
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
+                <option value="staff">Staff (limited, one location)</option>
+                <option value="sub_admin">Sub admin (one location)</option>
+                <option value="super_admin">Super admin (full access)</option>
               </select>
             </div>
+          </div>
+          <div class="form-group" id="location-row">
+            <label for="location_id">Assigned location <span id="loc-hint" style="color:var(--fg-4);font-weight:400;text-transform:none;letter-spacing:0;">(required for staff & sub admin)</span></label>
+            <select id="location_id" class="form-control">
+              <option value="">— Select a location —</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">

@@ -9,10 +9,12 @@ const SALT_ROUNDS = 10;
  */
 const getAllUsers = async () => {
   const result = await query(
-    `SELECT id, username, full_name, email, role, created_at
-     FROM invex.users
-     WHERE is_deleted = FALSE
-     ORDER BY created_at DESC`
+    `SELECT u.id, u.username, u.full_name, u.email, u.role, u.location_id, u.created_at,
+            l.name AS location_name
+     FROM invex.users u
+     LEFT JOIN invex.locations l ON u.location_id = l.id
+     WHERE u.is_deleted = FALSE
+     ORDER BY u.created_at DESC`
   );
   return result.rows;
 };
@@ -23,9 +25,11 @@ const getAllUsers = async () => {
  */
 const getUserById = async (id) => {
   const result = await query(
-    `SELECT id, username, full_name, email, role, created_at
-     FROM invex.users
-     WHERE id = $1 AND is_deleted = FALSE`,
+    `SELECT u.id, u.username, u.full_name, u.email, u.role, u.location_id, u.created_at,
+            l.name AS location_name
+     FROM invex.users u
+     LEFT JOIN invex.locations l ON u.location_id = l.id
+     WHERE u.id = $1 AND u.is_deleted = FALSE`,
     [id]
   );
   return result.rows[0] || null;
@@ -35,14 +39,14 @@ const getUserById = async (id) => {
  * Create a new user. Hashes the password before storing.
  * @param {object} data - { username, full_name, email, password, role }
  */
-const createUser = async ({ username, full_name, email, password, role }) => {
+const createUser = async ({ username, full_name, email, password, role, location_id }) => {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
   const result = await query(
-    `INSERT INTO invex.users (username, full_name, email, password, role)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, username, full_name, email, role, created_at`,
-    [username, full_name, email, hashedPassword, role]
+    `INSERT INTO invex.users (username, full_name, email, password, role, location_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, username, full_name, email, role, location_id, created_at`,
+    [username, full_name, email, hashedPassword, role, location_id ?? null]
   );
   return result.rows[0];
 };
@@ -53,12 +57,14 @@ const createUser = async ({ username, full_name, email, password, role }) => {
  * @param {number} id
  * @param {object} data - any subset of { username, full_name, email, password, role }
  */
-const updateUser = async (id, { username, full_name, email, password, role }) => {
+const updateUser = async (id, { username, full_name, email, password, role, location_id }) => {
   const fields = [];
   const values = [];
   let idx = 1;
 
-  const columns = { username, full_name, email, role };
+  // `location_id` is a column that may be explicitly nulled (super_admin
+  // unassigns a sub_admin's location). `undefined` means "leave it alone".
+  const columns = { username, full_name, email, role, location_id };
   for (const [col, val] of Object.entries(columns)) {
     if (val !== undefined) {
       fields.push(`${col} = $${idx++}`);
@@ -80,7 +86,7 @@ const updateUser = async (id, { username, full_name, email, password, role }) =>
   const result = await query(
     `UPDATE invex.users SET ${fields.join(', ')}
      WHERE id = $${idx} AND is_deleted = FALSE
-     RETURNING id, username, full_name, email, role, created_at`,
+     RETURNING id, username, full_name, email, role, location_id, created_at`,
     values
   );
   return result.rows[0] || null;
@@ -92,7 +98,7 @@ const updateUser = async (id, { username, full_name, email, password, role }) =>
  */
 const findByUsernameWithPassword = async (username) => {
   const result = await query(
-    `SELECT id, username, password, full_name, email, role
+    `SELECT id, username, password, full_name, email, role, location_id
      FROM invex.users
      WHERE username = $1 AND is_deleted = FALSE
      LIMIT 1`,
@@ -116,12 +122,12 @@ const usernameExists = async (username) => {
  * Insert a new user with an already-hashed password. Used by the auth
  * controller, which handles hashing alongside its own password-policy checks.
  */
-const createWithHashedPassword = async ({ username, password, full_name, email, role }) => {
+const createWithHashedPassword = async ({ username, password, full_name, email, role, location_id }) => {
   const result = await query(
-    `INSERT INTO invex.users (username, password, full_name, email, role)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, username, full_name, email, role, created_at`,
-    [username, password, full_name, email, role]
+    `INSERT INTO invex.users (username, password, full_name, email, role, location_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, username, full_name, email, role, location_id, created_at`,
+    [username, password, full_name, email, role, location_id ?? null]
   );
   return result.rows[0];
 };

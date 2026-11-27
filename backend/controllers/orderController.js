@@ -2,6 +2,7 @@ const { pool } = require('../src/config/db');
 const orderModel = require('../models/orderModel');
 const transferModel = require('../models/transferModel');
 const stockModel = require('../src/models/stockModel');
+const { scopeLocation } = require('../src/utils/locationScope');
 const { logActivity } = require('../src/utils/logger');
 const notificationService = require('../services/notificationService');
 
@@ -26,8 +27,15 @@ const buildGeneratedReference = (orderType, orderId, itemSkuRefs) => {
  */
 exports.getAllOrders = async (req, res, next) => {
   try {
-    const { order_type, location_id, date_from, date_to } = req.query;
-    const orders = await orderModel.getAllOrders({ order_type, location_id, date_from, date_to });
+    const { order_type, date_from, date_to } = req.query;
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const orders = await orderModel.getAllOrders({
+      order_type,
+      location_id: scope.locationId,
+      date_from,
+      date_to,
+    });
     return res.json({ success: true, data: orders });
   } catch (error) {
     return next(error);
@@ -80,6 +88,27 @@ exports.createOrder = async (req, res, next) => {
 
     if (order_type === 'TRANSFER' && (!source_location_id || !destination_location_id)) {
       return res.status(400).json({ success: false, message: 'source_location_id and destination_location_id are required for transfers.' });
+    }
+
+    // Non-super-admins can only create orders touching their own location.
+    // For TRANSFER it's enough that one side is theirs (they're routing
+    // stock to/from their warehouse).
+    if (req.user.role !== 'super_admin') {
+      const ownLoc = req.user.location_id;
+      if (ownLoc == null) {
+        return res.status(403).json({ success: false, code: 'NO_LOCATION_ASSIGNMENT', message: 'Your account has no location assigned yet.' });
+      }
+      const touches = [source_location_id, destination_location_id]
+        .filter((v) => v != null)
+        .map((v) => parseInt(v, 10));
+      const hasOwn = touches.includes(ownLoc);
+      if (!hasOwn) {
+        return res.status(403).json({
+          success: false,
+          code: 'LOCATION_FORBIDDEN',
+          message: 'You can only create orders that involve your assigned location.',
+        });
+      }
     }
 
     await client.query('BEGIN');

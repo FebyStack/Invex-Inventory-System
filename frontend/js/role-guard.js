@@ -66,14 +66,17 @@
   function guardAdminOnlyPage() {
     if (!document.body.hasAttribute('data-admin-only')) return;
     const user = getUser();
-    if (user.role === 'admin') return;
+    // `data-admin-only` is now "super admin only" — governance pages
+    // (users, activity log, reason codes) belong here.
+    if (user.role === 'super_admin') return;
 
-    // Hide page content immediately so staff don't see admin UI flash through.
+    // Hide page content immediately so non-super-admins don't see admin UI
+    // flash through before the redirect.
     document.body.style.visibility = 'hidden';
     requestAnimationFrame(() => {
       document.body.style.visibility = 'visible';
       buildModal({
-        title: 'Admins only',
+        title: 'Super admins only',
         message: 'You don’t have permission to view this page. You’ll be returned to the dashboard.',
         redirectTo: '/dashboard.html',
       });

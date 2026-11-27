@@ -15,12 +15,12 @@ router.get('/', asyncHandler(supplierController.getAll));
 router.get('/:id', asyncHandler(supplierController.getById));
 
 // POST   /api/suppliers       — Create supplier (admin only)
-router.post('/', authorize('admin'), asyncHandler(supplierController.create));
+router.post('/', authorize('super_admin'), asyncHandler(supplierController.create));
 
 // PUT    /api/suppliers/:id   — Update supplier (admin only)
-router.put('/:id', authorize('admin'), asyncHandler(supplierController.update));
+router.put('/:id', authorize('super_admin'), asyncHandler(supplierController.update));
 
 // DELETE /api/suppliers/:id   — Soft-delete supplier (admin only)
-router.delete('/:id', authorize('admin'), asyncHandler(supplierController.remove));
+router.delete('/:id', authorize('super_admin'), asyncHandler(supplierController.remove));
 
 module.exports = router;

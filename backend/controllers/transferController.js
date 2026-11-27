@@ -4,6 +4,7 @@ const activityLogModel = require('../models/activityLogModel');
 const stockModel = require('../src/models/stockModel');
 const { logActivity } = require('../src/utils/logger');
 const notificationService = require('../services/notificationService');
+const { scopeLocation } = require('../src/utils/locationScope');
 
 /**
  * GET /api/transfers
@@ -11,6 +12,30 @@ const notificationService = require('../services/notificationService');
 exports.getAllTransfers = async (req, res, next) => {
   try {
     const { product_id, from_location_id, to_location_id, transferred_by, date_from, date_to } = req.query;
+    // For sub_admin/staff, force at least one of the location filters to
+    // their own location so they can't list cross-location transfers.
+    if (req.user.role !== 'super_admin') {
+      const ownLoc = req.user.location_id;
+      if (ownLoc == null) {
+        return res.status(403).json({ success: false, code: 'NO_LOCATION_ASSIGNMENT', message: 'Your account has no location assigned yet.' });
+      }
+      const fromInt = from_location_id != null ? parseInt(from_location_id, 10) : null;
+      const toInt = to_location_id != null ? parseInt(to_location_id, 10) : null;
+      if ((fromInt != null && fromInt !== ownLoc) || (toInt != null && toInt !== ownLoc)) {
+        return res.status(403).json({ success: false, code: 'LOCATION_FORBIDDEN', message: 'You can only view transfers for your assigned location.' });
+      }
+      // Fall back to listing transfers where ownLoc is either side.
+      if (fromInt == null && toInt == null) {
+        const both = await transferModel.listTransfers({ product_id, from_location_id: ownLoc, transferred_by, date_from, date_to });
+        const dest = await transferModel.listTransfers({ product_id, to_location_id: ownLoc, transferred_by, date_from, date_to });
+        const merged = [...both, ...dest].reduce((acc, row) => {
+          if (!acc.has(row.id)) acc.set(row.id, row);
+          return acc;
+        }, new Map());
+        const rows = Array.from(merged.values()).sort((a, b) => new Date(b.transferred_at) - new Date(a.transferred_at));
+        return res.json({ success: true, count: rows.length, data: rows });
+      }
+    }
     const rows = await transferModel.listTransfers({
       product_id,
       from_location_id,
@@ -71,6 +96,24 @@ exports.createTransfer = async (req, res, next) => {
         success: false,
         message: 'quantity must be greater than 0.',
       });
+    }
+
+    // Sub-admins can only initiate a transfer that involves their location
+    // on one of the two sides.
+    if (req.user.role !== 'super_admin') {
+      const ownLoc = req.user.location_id;
+      if (ownLoc == null) {
+        return res.status(403).json({ success: false, code: 'NO_LOCATION_ASSIGNMENT', message: 'Your account has no location assigned yet.' });
+      }
+      const fromInt = parseInt(from_location_id, 10);
+      const toInt = parseInt(to_location_id, 10);
+      if (fromInt !== ownLoc && toInt !== ownLoc) {
+        return res.status(403).json({
+          success: false,
+          code: 'LOCATION_FORBIDDEN',
+          message: 'You can only create transfers that involve your assigned location.',
+        });
+      }
     }
 
     await client.query('BEGIN');

@@ -17,6 +17,7 @@ router.get('/:id', asyncHandler(transferController.getTransferById));
 router.post('/', asyncHandler(transferController.createTransfer));
 
 // DELETE /api/transfers/:id       (admin only)
-router.delete('/:id', authorize('admin'), asyncHandler(transferController.deleteTransfer));
+// super_admin only: these handlers do not check the record's location yet (see PROJECT.md).
+router.delete('/:id', authorize('super_admin'), asyncHandler(transferController.deleteTransfer));
 
 module.exports = router;

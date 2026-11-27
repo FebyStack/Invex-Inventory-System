@@ -67,7 +67,7 @@ async function markEmailSent(ids) {
 async function getAdminEmails() {
   const result = await query(
     `SELECT email, full_name FROM invex.users
-     WHERE role = 'admin' AND is_deleted = FALSE AND email IS NOT NULL AND email <> ''`
+     WHERE role IN ('super_admin', 'sub_admin') AND is_deleted = FALSE AND email IS NOT NULL AND email <> ''`
   );
   return result.rows;
 }

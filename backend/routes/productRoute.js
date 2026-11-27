@@ -25,20 +25,24 @@ router.get('/:id/stock', asyncHandler(productController.getProductStock));
 router.get('/:id/history', asyncHandler(adjustmentController.getProductHistory));
 
 // POST   /api/products              (admin only)
-router.post('/', authorize('admin'), asyncHandler(productController.createProduct));
+router.post('/', authorize('super_admin', 'sub_admin'), asyncHandler(productController.createProduct));
 
 // PUT    /api/products/:id        (admin only)
-router.put('/:id', authorize('admin'), asyncHandler(productController.updateProduct));
+// super_admin only: these handlers do not check the record's location yet (see PROJECT.md).
+router.put('/:id', authorize('super_admin'), asyncHandler(productController.updateProduct));
 
-// POST   /api/products/:id/set-stock   (admin only)
-// Translates a target total quantity into an INCREASE/DECREASE adjustment.
-router.post('/:id/set-stock', authorize('admin'), asyncHandler(productController.setStock));
+// POST   /api/products/:id/set-stock   — staff may set their own location's
+// total. Translates a target total quantity into an INCREASE/DECREASE
+// adjustment. The controller forces a non-super-admin's location_id to
+// their assigned one before writing, so staff can't touch other locations.
+router.post('/:id/set-stock', authorize('super_admin', 'sub_admin', 'staff'), asyncHandler(productController.setStock));
 
-// POST   /api/products/:id/adjust-stock   (admin only)
-// Batched per-location stock editor used by the Products page modal.
-router.post('/:id/adjust-stock', authorize('admin'), asyncHandler(productController.adjustStock));
+// POST   /api/products/:id/adjust-stock   — staff may edit per-location
+// totals at their assigned location only. Each row in the batched payload
+// runs through scopeLocation(), so any out-of-scope row 403s the request.
+router.post('/:id/adjust-stock', authorize('super_admin', 'sub_admin', 'staff'), asyncHandler(productController.adjustStock));
 
 // DELETE /api/products/:id          (admin only)
-router.delete('/:id', authorize('admin'), asyncHandler(productController.deleteProduct));
+router.delete('/:id', authorize('super_admin'), asyncHandler(productController.deleteProduct));
 
 module.exports = router;

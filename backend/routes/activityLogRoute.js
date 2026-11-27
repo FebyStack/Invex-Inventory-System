@@ -7,7 +7,7 @@ const { asyncHandler } = require('../middleware/errorMiddleware');
 
 // Admin-only audit trail viewer. Staff cannot access these endpoints.
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize('super_admin'));
 
 router.get('/', asyncHandler(ctrl.list));
 router.get('/facets', asyncHandler(ctrl.facets));

@@ -31,6 +31,9 @@ const authenticate = (req, res, next) => {
       id: decoded.id,
       username: decoded.username,
       role: decoded.role,
+      // Pre-existing tokens (issued before this column existed) won't have
+      // it — fall back to null so legacy sessions don't crash on lookup.
+      location_id: decoded.location_id ?? null,
     };
     next();
   } catch (error) {

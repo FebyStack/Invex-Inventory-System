@@ -178,13 +178,17 @@
     }
 
     if (roleLabel && user.role) {
-      roleLabel.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+      // Pretty labels: super_admin → "Super admin", sub_admin → "Sub admin"
+      const pretty = String(user.role).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      roleLabel.textContent = pretty;
     }
 
-    // 7. Admin Section Guard — show admin-only items for admins, force-hide for everyone else
+    // 7. Admin Section Guard — the sidebar's "admin" section houses
+    // governance pages (users, activity log, reason codes). Only the
+    // top-tier (super_admin) sees them now.
     const divider = document.getElementById('admin-divider');
     const label = document.getElementById('admin-label');
-    if (user.role === 'admin') {
+    if (user.role === 'super_admin') {
       if (divider) divider.style.display = 'block';
       if (label) label.style.display = 'block';
       document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'flex');

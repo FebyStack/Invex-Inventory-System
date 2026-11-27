@@ -4,6 +4,7 @@ const adjustmentModel = require('../models/adjustmentModel');
 const reasonCodeModel = require('../models/reasonCodeModel');
 const { pool } = require('../src/config/db');
 const { logActivity } = require('../src/utils/logger');
+const { scopeLocation } = require('../src/utils/locationScope');
 
 /**
  * GET /api/products
@@ -15,8 +16,17 @@ const { logActivity } = require('../src/utils/logger');
  */
 exports.getAllProducts = async (req, res, next) => {
   try {
-    const { search, category_id, supplier_id, location_id } = req.query;
-    const products = await productModel.getAllProducts({ search, category_id, supplier_id, location_id });
+    const { search, category_id, supplier_id } = req.query;
+    // sub_admin / staff are clamped to their own location; super_admin sees
+    // all locations when no filter is passed.
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const products = await productModel.getAllProducts({
+      search,
+      category_id,
+      supplier_id,
+      location_id: scope.locationId,
+    });
     return res.json({ success: true, data: products });
   } catch (err) {
     return next(err);
@@ -53,6 +63,10 @@ exports.getNextSku = async (req, res, next) => {
     if (!location_id || !Number.isInteger(locationId)) {
       return res.status(400).json({ success: false, message: 'location_id is required.' });
     }
+
+    // sub_admin can only ask for their own location's SKU.
+    const scope = scopeLocation(req, res, locationId);
+    if (!scope) return;
 
     const sku = await productModel.getNextSkuForLocation(locationId);
     if (!sku) {
@@ -96,6 +110,10 @@ exports.createProduct = async (req, res, next) => {
         message: 'name, location_id, category_id, and unit_price are required.',
       });
     }
+
+    // Non-super-admins can only create products at their own location.
+    const scope = scopeLocation(req, res, locationId);
+    if (!scope) return;
 
     await client.query('BEGIN');
     transactionStarted = true;
@@ -337,6 +355,17 @@ exports.setStock = async (req, res, next) => {
     // otherwise we use the location currently holding the most stock,
     // falling back to the first known location for this product.
     let locationId = parseInt(req.body && req.body.location_id, 10);
+    if (Number.isInteger(locationId)) {
+      const scope = scopeLocation(req, res, locationId);
+      if (!scope) return;
+    } else if (req.user.role !== 'super_admin') {
+      // Non-super-admins can't say "use my primary location" — they're
+      // pinned to their assigned one.
+      if (req.user.location_id == null) {
+        return res.status(403).json({ success: false, code: 'NO_LOCATION_ASSIGNMENT', message: 'Your account has no location assigned yet.' });
+      }
+      locationId = req.user.location_id;
+    }
     if (!Number.isInteger(locationId)) {
       const primary = await stockModel.getPrimaryLocationStock(productId, client);
       if (!primary) {
@@ -472,6 +501,9 @@ exports.adjustStock = async (req, res, next) => {
       if (!Number.isFinite(target) || !Number.isInteger(target) || target < 0) {
         return res.status(400).json({ success: false, message: 'target_quantity must be a non-negative integer.' });
       }
+      // Every row's location must be in scope for the caller.
+      const rowScope = scopeLocation(req, res, locationId);
+      if (!rowScope) return;
       normalized.push({ location_id: locationId, target_quantity: target });
     }
 

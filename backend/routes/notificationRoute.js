@@ -8,7 +8,7 @@ router.use(authenticate);
 
 router.get('/', ctrl.list);
 router.post('/read-all', ctrl.markAllRead);
-router.post('/scan', authorize('admin'), ctrl.triggerScan);
+router.post('/scan', authorize('super_admin'), ctrl.triggerScan);
 router.post('/:id/read', ctrl.markRead);
 
 module.exports = router;

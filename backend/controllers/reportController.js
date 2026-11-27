@@ -1,4 +1,5 @@
 const reportModel = require('../models/reportModel');
+const { scopeLocation } = require('../src/utils/locationScope');
 
 // GET /api/reports/dashboard?days=30
 // Aggregates everything the dashboard needs in a single round-trip:
@@ -63,8 +64,9 @@ const getDashboardData = async (req, res, next) => {
 // GET /api/reports/low-stock
 const getLowStock = async (req, res, next) => {
   try {
-    const { location_id } = req.query;
-    const rows = await reportModel.getLowStock({ location_id });
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const rows = await reportModel.getLowStock({ location_id: scope.locationId });
     res.json({ success: true, count: rows.length, data: rows });
   } catch (error) {
     next(error);
@@ -75,8 +77,9 @@ const getLowStock = async (req, res, next) => {
 const getExpiringBatches = async (req, res, next) => {
   try {
     const days = parseInt(req.query.days || '30', 10);
-    const { location_id } = req.query;
-    const rows = await reportModel.getExpiringBatches({ days, location_id });
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const rows = await reportModel.getExpiringBatches({ days, location_id: scope.locationId });
     res.json({ success: true, count: rows.length, data: rows });
   } catch (error) {
     next(error);
@@ -98,8 +101,9 @@ const getMovementLog = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
-    const { location_id } = req.query;
-    const rows = await reportModel.getMovementLog({ limit, offset, location_id });
+    const scope = scopeLocation(req, res, req.query.location_id);
+    if (!scope) return;
+    const rows = await reportModel.getMovementLog({ limit, offset, location_id: scope.locationId });
     res.json({ success: true, count: rows.length, data: rows });
   } catch (error) {
     next(error);

@@ -11,6 +11,17 @@ module.exports = {
     database: process.env.DB_NAME || 'invex',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
+    // Supabase and other hosted databases need SSL: set DB_SSL=true. The server certificate is always verified;
+    // for Supabase, set DB_SSL_CA to its CA certificate (path relative to backend/), see docs/supabase-setup.md.
+    ssl: process.env.DB_SSL === 'true'
+      ? {
+        rejectUnauthorized: true,
+        ...(process.env.DB_SSL_CA
+          && { ca: require('fs').readFileSync(path.resolve(__dirname, '../..', process.env.DB_SSL_CA), 'utf8') }),
+      }
+      : false,
+    // Hosted poolers allow few connections per project; keep this small when four people share one database.
+    poolMax: parseInt(process.env.DB_POOL_MAX, 10) || 10,
   },
 
   jwt: {
@@ -37,6 +48,8 @@ module.exports = {
 
   notifications: {
     // 0 disables the scanner entirely. Default: 15 minutes.
-    intervalMs: parseInt(process.env.NOTIF_SCAN_INTERVAL_MS, 10) || 15 * 60 * 1000,
+    intervalMs: Number.isNaN(parseInt(process.env.NOTIF_SCAN_INTERVAL_MS, 10))
+      ? 15 * 60 * 1000
+      : parseInt(process.env.NOTIF_SCAN_INTERVAL_MS, 10),
   },
 };

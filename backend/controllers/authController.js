@@ -11,6 +11,10 @@ const signToken = (user) =>
       id: user.id,
       username: user.username,
       role: user.role,
+      // `location_id` is on the token so the role middleware can scope
+      // queries without an extra DB lookup on every request. Null for
+      // super_admins and unassigned users.
+      location_id: user.location_id ?? null,
     },
     config.jwt.secret,
     { expiresIn: '8h' }
@@ -138,6 +142,7 @@ exports.login = async (req, res, next) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
+        location_id: user.location_id ?? null,
       },
     });
   } catch (error) {

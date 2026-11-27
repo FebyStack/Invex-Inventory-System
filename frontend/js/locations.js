@@ -142,8 +142,11 @@ function renderActive() {
   // interceptor in role-guard.js shows the permission popup.
   const deleteBtn = $('delete-loc-btn');
   if (deleteBtn) {
-    const isAdmin = currentUser().role === 'admin';
-    deleteBtn.style.display = (!isAll && isAdmin) ? 'inline-flex' : 'none';
+    // Only super_admin can delete a location. Sub-admins/staff never see
+    // the button; if they trigger DELETE another way, the global 403
+    // interceptor in role-guard.js shows the permission popup.
+    const isSuperAdmin = currentUser().role === 'super_admin';
+    deleteBtn.style.display = (!isAll && isSuperAdmin) ? 'inline-flex' : 'none';
     deleteBtn.onclick = () => confirmDeleteLocation(loc);
   }
 
@@ -445,13 +448,14 @@ const addModal = $('add-loc-modal');
 let addColor = SWATCHES[0];
 
 function openAddLocation() {
-  // Staff cannot create locations — show the popup before the modal opens
-  // instead of letting them fill out a form that the server will reject.
-  if (currentUser().role !== 'admin') {
+  // Only super_admin can create new locations — short-circuit before the
+  // modal opens instead of letting the user fill out a form the server
+  // will reject.
+  if (currentUser().role !== 'super_admin') {
     if (window.Invex && window.Invex.denyAccess) {
       window.Invex.denyAccess({
-        title: 'Admins only',
-        message: 'Creating new locations is restricted to administrators.',
+        title: 'Super admins only',
+        message: 'Creating new locations is restricted to super administrators.',
       });
     } else {
       alert('Creating new locations is restricted to administrators.');

@@ -15,12 +15,12 @@ router.get('/', asyncHandler(categoryController.getAll));
 router.get('/:id', asyncHandler(categoryController.getById));
 
 // POST   /api/categories       — Create category (admin only)
-router.post('/', authorize('admin'), asyncHandler(categoryController.create));
+router.post('/', authorize('super_admin'), asyncHandler(categoryController.create));
 
 // PUT    /api/categories/:id   — Update category (admin only)
-router.put('/:id', authorize('admin'), asyncHandler(categoryController.update));
+router.put('/:id', authorize('super_admin'), asyncHandler(categoryController.update));
 
 // DELETE /api/categories/:id   — Soft-delete category (admin only)
-router.delete('/:id', authorize('admin'), asyncHandler(categoryController.remove));
+router.delete('/:id', authorize('super_admin'), asyncHandler(categoryController.remove));
 
 module.exports = router;

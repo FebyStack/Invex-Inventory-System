@@ -125,7 +125,7 @@ pgAdmin script (schema + data, not committed). Building from `database/database.
 
 - `docs/` is never pushed (Febriel, 2026-11-27): it is gitignored and lives only on Febriel's disk. Teammates get
   `docs/TEAM-SETUP.md` privately. The earlier docs commit 46a304e was dropped from main. Commits never credit Claude.
-- 2026-11-27 (state machines + dead code, on branch `febriel`, not pushed, not merged to main): the 10 hand-written transactions in 6 controllers now go
+- 2026-11-27 (state machines + dead code, on branch `febriel`, pushed to origin 2026-11-27 as bd0f039 + e5977b2, not merged to main): the 10 hand-written transactions in 6 controllers now go
   through `withTransaction`; stock effects go through `stockModel.applyMovement`; scanner is single-flight; session end
   is one function; the bell refetches after its socket reconnects. Checked on a local copy: 62 of 64 snapshot steps
   identical before/after, the 2 that differ are intended (`order_type` outside IN/OUT/TRANSFER is now 400 instead of a
